@@ -11,7 +11,7 @@ As of now, only build 2262.525 (the one that can be downloaded from the Microsof
 Instructions:
 1. Download Windows 11 22621.1255 from UUPDump or 22621.525 from the Microsoft website (https://www.microsoft.com/software-download/windows11)
 2. Mount the downloaded ISO image using Windows Explorer.
-3. For .1255, run tiny11 builder as admininstrator. For .525, use the aply-named script (also as administrator)
+3. For .1255, run tiny11 creator.bat as admininstrator. For .525, use the aply-named script (also as administrator)
 4. Select the drive letter where the image is mounted (only the letter, no colon (:))
 5. Select the SKU that you want the image to be based.
 6. Sit back and relax :)
