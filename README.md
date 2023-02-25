@@ -48,10 +48,9 @@ Edge,
 OneDrive
 
 Known issues:
-1. Microsoft Teams (personal) and Cortana are still here. If you find a way to remove them before I find one, feel free to help!
-2. Although Edge is removed, the icon and a ghost of its taskbar pin are still available. Also, there are some remaints in the Settings. But the app in itself is deleted.
-3. The script is rather inflexible, as in only the builds specified can be modified. This is because with each new build Microsoft also updates the inbox apps included. If one tries to use other builds, it will work with varying degrees of success, but some things like the removal of Edge and OneDrive as well as bypassing system requirements or other patches will always be applied.
-4. Only en-us x64 is supported as of now. This can be easily fixable by the end user, just by replacing every instance of en-us with the language needed (like ro-RO and so on), and every x64 instance with arm64.
+1. Although Edge is removed, the icon and a ghost of its taskbar pin are still available. Also, there are some remaints in the Settings. But the app in itself is deleted.
+2. The script is rather inflexible, as in only the builds specified can be modified. This is because with each new build Microsoft also updates the inbox apps included. If one tries to use other builds, it will work with varying degrees of success, but some things like the removal of Edge and OneDrive as well as bypassing system requirements or other patches will always be applied.
+3. Only en-us x64 is supported as of now. This can be easily fixable by the end user, just by replacing every instance of en-us with the language needed (like ro-RO and so on), and every x64 instance with arm64.
 
 And that's pretty much it for now!
 Thanks for trying it and let me know how you like it!
