@@ -45,7 +45,9 @@ Media Player Legacy,
 Tablet PC Math,
 Wallpapers,
 Edge,
-OneDrive
+OneDrive,
+Cortana,
+Microsoft Teams
 
 Known issues:
 1. Although Edge is removed, the icon and a ghost of its taskbar pin are still available. Also, there are some remaints in the Settings. But the app in itself is deleted.
