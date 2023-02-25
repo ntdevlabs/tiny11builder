@@ -54,5 +54,5 @@ Known issues:
 4. Only en-us x64 is supported as of now. This can be easily fixable by the end user, just by replacing every instance of en-us with the language needed (like ro-RO and so on), and every x64 instance with arm64.
 
 And that's pretty much it for now!
-Thnaks for trying it and let me know how you like it!
+Thanks for trying it and let me know how you like it!
 
