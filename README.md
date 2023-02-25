@@ -8,9 +8,9 @@ It's open-source, so feel free to add or remove anything you want! Feedback is a
 As of now, only build 2262.525 (the one that can be downloaded from the Microsoft website) and 22621.1255 (the latest public build) are supported.
 
 Instructions:
-1. Download Windows 11 22621.1255 from UUPDump or 22621.525 from the Microsoft website (https://www.microsoft.com/software-download/windows11)
+1. Download Windows 11 22621.1265 from UUPDump or 22621.525 from the Microsoft website (https://www.microsoft.com/software-download/windows11)
 2. Mount the downloaded ISO image using Windows Explorer.
-3. For .1255, run tiny11 creator.bat as admininstrator. For .525, use the aply-named script (also as administrator)
+3. For .1265, run tiny11 creator.bat as admininstrator. For .525, use the aply-named script (also as administrator)
 4. Select the drive letter where the image is mounted (only the letter, no colon (:))
 5. Select the SKU that you want the image to be based.
 6. Sit back and relax :)
@@ -50,7 +50,7 @@ OneDrive
 Known issues:
 1. Microsoft Teams (personal) and Cortana are still here. If you find a way to remove them before I find one, feel free to help!
 2. Although Edge is removed, the icon and a ghost of its taskbar pin are still available. Also, there are some remaints in the Settings. But the app in itself is deleted.
-3. The script is rather inflexible, as in only the builds specified can be modified. This is because with each new build Microsoft also updates the inbox apps included.
+3. The script is rather inflexible, as in only the builds specified can be modified. This is because with each new build Microsoft also updates the inbox apps included. If one tries to use other builds, it will work with varying degrees of success, but some things like the removal of Edge and OneDrive as well as bypassing system requirements or other patches will always be applied.
 4. Only en-us is supported as of now. This can be easily fixable by the end user, just by replacing every instance of en-us with the language needed (like ro-RO and so on)
 
 And that's pretty much it for now!
