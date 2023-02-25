@@ -17,14 +17,43 @@ Instructions:
 6. Sit back and relax :)
 7. When the image is completed, you will see it in the folder where the script was extracted, with the name tiny11.iso
 
-And that's pretty much it!
+What is removed:
+Clipchamp
+News
+Weather
+Xbox (although Xbox Identity provider is still here, so it should be possible to be reinstalled with no issues)
+GetHelp
+GetStarted
+Office Hub
+Solitaire
+PeopleApp
+PowerAutomate
+ToDo
+Alarms
+Mail and Calendar
+Feedback Hub
+Maps
+Sound Recorder
+Your Phone
+Media Player
+QuickAssist
+Internet Explorer
+LA57 support
+OCR for en-us
+Speech support
+TTS for en-us
+Media Player Legacy
+Tablet PC Math
+Wallpapers
+Edge
+OneDrive
 
 Known issues:
 1. Microsoft Teams (personal) and Cortana are still here. If you find a way to remove them before I find one, feel free to help!
 2. Although Edge is removed, the icon and a ghost of its taskbar pin are still available. Also, there are some remaints in the Settings. But the app in itself is deleted.
-3. The script is rather unflexible, as in only the builds specified can be modified. This is because with each new build Microsoft also updates the inbox apps included.
+3. The script is rather inflexible, as in only the builds specified can be modified. This is because with each new build Microsoft also updates the inbox apps included.
+4. Only en-us is supported as of now. This can be easily fixable by the end user, just by replacing every instance of en-us with the language needed (like ro-RO and so on)
 
-
-Once again, if you have any proposals on how to fix these issues, feel free to help!
-
+And that's pretty much it for now!
+Thnaks for trying it and let me know how you like it!
 
