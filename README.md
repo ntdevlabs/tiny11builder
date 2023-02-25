@@ -5,7 +5,7 @@ This is a script to automate the build of a streamlined Windows 11 image, simila
 My main goal is to use only Microsoft utilities like DISM, and nothing external. The only executable included is oscdimg.exe, which is provided in the Windows ADK and it is used to create bootable ISO images. Also included is an unattended answer file, which is used to bypass the MS account on OOBE and to deploy the image with the /compact flag.
 It's open-source, so feel free to add or remove anything you want! Feedback is also much appreciated.
 
-As of now, only build 2262.525 (the one that can be downloaded from the Microsoft website) and 22621.1265 (the latest public build) are supported.
+As of now, only build 22621.525 (the one that can be downloaded from the Microsoft website) and 22621.1265 (the latest public build) are supported.
 
 Instructions:
 1. Download Windows 11 22621.1265 from UUPDump or 22621.525 from the Microsoft website (https://www.microsoft.com/software-download/windows11)
