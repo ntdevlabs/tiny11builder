@@ -99,14 +99,14 @@ echo Removing Edge and WebView2
             reg delete "HKLM\zSOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Microsoft Edge" /f /v "NoRemove" >nul 2>&1
             reg delete "HKLM\zSOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Microsoft Edge Update" /f /v "NoRemove" >nul 2>&1
             reg delete "HKLM\zSOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Microsoft EdgeWebView" /f /v "NoRemove" >nul 2>&1
-			reg add "HKLM\zSOFTWARE\Microsoft\EdgeUpdate"" /f /v InstallDefault /d 0 /t reg_dword >nul 2>nul" >nul 2>&1
-  			reg add "HKLM\zSOFTWARE\Microsoft\EdgeUpdate"" /f /v Install{56EB18F8-B008-4CBD-B6D2-8C97FE7E9062} /d 0 /t reg_dword >nul 2>nul" >nul 2>&1
-  			reg add "HKLM\zSOFTWARE\Microsoft\EdgeUpdate"" /f /v Install{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5} /d 0 /t reg_dword >nul 2>nul" >nul 2>&1
-  			reg add "HKLM\zSOFTWARE\Microsoft\EdgeUpdate"" /f /v DoNotUpdateToEdgeWithChromium /d 1 /t reg_dword >nul 2>nul" >nul 2>&1
-			reg add "HKLM\zSOFTWARE\Policies\Microsoft\EdgeUpdate"" /f /v InstallDefault /d 0 /t reg_dword >nul 2>nul" >nul 2>&1
-  			reg add "HKLM\zSOFTWARE\Policies\Microsoft\EdgeUpdate"" /f /v Install{56EB18F8-B008-4CBD-B6D2-8C97FE7E9062} /d 0 /t reg_dword >nul 2>nul" >nul 2>&1
-  			reg add "HKLM\zSOFTWARE\Policies\Microsoft\EdgeUpdate"" /f /v Install{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5} /d 0 /t reg_dword >nul 2>nul" >nul 2>&1
-  			reg add "HKLM\zSOFTWARE\Policies\Microsoft\EdgeUpdate"" /f /v DoNotUpdateToEdgeWithChromium /d 1 /t reg_dword >nul 2>nul" >nul 2>&1
+			reg add "HKLM\zSOFTWARE\Microsoft\EdgeUpdate" /f /v InstallDefault /d 0 /t reg_dword >nul 2>&1
+  			reg add "HKLM\zSOFTWARE\Microsoft\EdgeUpdate" /f /v Install{56EB18F8-B008-4CBD-B6D2-8C97FE7E9062} /d 0 /t reg_dword >nul 2>&1
+  			reg add "HKLM\zSOFTWARE\Microsoft\EdgeUpdate" /f /v Install{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5} /d 0 /t reg_dword >nul 2>&1
+  			reg add "HKLM\zSOFTWARE\Microsoft\EdgeUpdate" /f /v DoNotUpdateToEdgeWithChromium /d 1 /t reg_dword >nul 2>&1
+			reg add "HKLM\zSOFTWARE\Policies\Microsoft\EdgeUpdate" /f /v InstallDefault /d 0 /t reg_dword >nul 2>&1
+  			reg add "HKLM\zSOFTWARE\Policies\Microsoft\EdgeUpdate" /f /v Install{56EB18F8-B008-4CBD-B6D2-8C97FE7E9062} /d 0 /t reg_dword >nul 2>&1
+  			reg add "HKLM\zSOFTWARE\Policies\Microsoft\EdgeUpdate" /f /v Install{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5} /d 0 /t reg_dword >nul 2>&1
+  			reg add "HKLM\zSOFTWARE\Policies\Microsoft\EdgeUpdate" /f /v DoNotUpdateToEdgeWithChromium /d 1 /t reg_dword >nul 2>&1
 echo Removing OneDrive
             takeown /f %HOMEDRIVE%\scratchdir\Windows\System32\OneDriveSetup.exe
             icacls %HOMEDRIVE%\scratchdir\Windows\System32\OneDriveSetup.exe /grant *S-1-5-32-544:F /T /C
