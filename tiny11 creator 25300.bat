@@ -45,7 +45,7 @@ dism /mount-image /imagefile:%tiny11%\sources\install.wim /index:%index% /mountd
 cls
 
 echo Mounting complete! Performing removal of applications...
-dism /image:%HOMEDRIVE%\scratchdir /Get-ProvisionedAppxPackages | find "PackageName:" | find /V "Microsoft.WindowsStore" | find /V "DesktopAppInstaller" | find /V "Microsoft.HEIFImageExtension" | find /V "Microsoft.HEVCVideoExtension" | find /V "Microsoft.MicrosoftStickyNotes" | find /V "Microsoft.Paint" | find /V "Microsoft.RawImageExtension" | find /V "Microsoft.ScreenSketch" | find /V "Microsoft.SecHealthUI" | find /V "Microsoft.StorePurchaseApp" | find /V "Microsoft.VP9VideoExtensions" | find /V "Microsoft.WebMediaExtensions" | find /V "Microsoft.WebpImageExtension" | find /V "Microsoft.Windows.Photos" | find /V "Microsoft.WindowsCalculator" | find /V "Microsoft.WindowsCamera" | find /V "Microsoft.WindowsNotepad" | find /V "Microsoft.WindowsTerminal" | find /V "Microsoft.XboxIdentityProvider" | find /V "MicrosoftWindows.Client.WebExperience" > %tempfile%.1
+dism /image:%HOMEDRIVE%\scratchdir /Get-ProvisionedAppxPackages | find "PackageName:" | find /V "Microsoft.WindowsStore" | find /V "DesktopAppInstaller" | find /V "Microsoft.HEIFImageExtension" | find /V "Microsoft.HEVCVideoExtension" | find /V "Microsoft.MicrosoftStickyNotes" | find /V "Microsoft.Paint" | find /V "Microsoft.RawImageExtension" | find /V "Microsoft.ScreenSketch" | find /V "Microsoft.SecHealthUI" | find /V "Microsoft.StorePurchaseApp" | find /V "Microsoft.VP9VideoExtensions" | find /V "Microsoft.WebMediaExtensions" | find /V "Microsoft.WebpImageExtension" | find /V "Microsoft.Windows.Photos" | find /V "Microsoft.WindowsCalculator" | find /V "Microsoft.WindowsCamera" | find /V "Microsoft.WindowsNotepad" | find /V "Microsoft.WindowsTerminal" | find /V "Microsoft.XboxIdentityProvider" | find /V "MicrosoftWindows.Client.WebExperience" | find /V "Microsoft.VCLibs.140.00" > %tempfile%.1
 > %tempfile%.2 (
   for /f "tokens=*" %%a in (%tempfile%.1) do (
     call :strip2 %%a
@@ -71,14 +71,6 @@ for /f "tokens=*" %%a in (%tempfile%.2) do (
 )
 cls
 
-rem echo Removing Edge:
-rem rd "%HOMEDRIVE%\scratchdir\Program Files (x86)\Microsoft\Edge" /s /q
-rem rd "%HOMEDRIVE%\scratchdir\Program Files (x86)\Microsoft\EdgeUpdate" /s /q
-echo Removing OneDrive:
-takeown /f %HOMEDRIVE%\scratchdir\Windows\System32\OneDriveSetup.exe
-icacls %HOMEDRIVE%\scratchdir\Windows\System32\OneDriveSetup.exe /grant Administrators:F /T /C
-del /f /q /s "%HOMEDRIVE%\scratchdir\Windows\System32\OneDriveSetup.exe"
-echo Removal complete!
 timeout /t 2 /nobreak >nul
 cls
 echo Loading registry...
@@ -98,6 +90,29 @@ echo Bypassing system requirements (on the system image)
 			reg add "HKLM\zSYSTEM\Setup\LabConfig" /v "BypassStorageCheck" /t REG_DWORD /d "1" /f >nul 2>&1
 			reg add "HKLM\zSYSTEM\Setup\LabConfig" /v "BypassTPMCheck" /t REG_DWORD /d "1" /f >nul 2>&1
 			reg add "HKLM\zSYSTEM\Setup\MoSetup" /v "AllowUpgradesWithUnsupportedTPMOrCPU" /t REG_DWORD /d "1" /f >nul 2>&1
+echo Removing Edge and WebView2
+            rd /s /q "%HOMEDRIVE%\scratchdir\Program Files (x86)\Microsoft\Edge"
+            rd /s /q "%HOMEDRIVE%\scratchdir\Program Files (x86)\Microsoft\EdgeUpdate"
+            rd /s /q "%HOMEDRIVE%\scratchdir\Program Files (x86)\Microsoft\EdgeWebView"
+            rd /s /q "%HOMEDRIVE%\scratchdir\Program Files (x86)\Microsoft\EdgeCore"
+            reg delete "HKLM\zSOFTWARE\WOW6432Node\Microsoft\EdgeUpdate" /f >nul 2>&1
+            reg delete "HKLM\zSOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Microsoft Edge" /f /v "NoRemove" >nul 2>&1
+            reg delete "HKLM\zSOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Microsoft Edge Update" /f /v "NoRemove" >nul 2>&1
+            reg delete "HKLM\zSOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Microsoft EdgeWebView" /f /v "NoRemove" >nul 2>&1
+			reg add "HKLM\zSOFTWARE\Microsoft\EdgeUpdate"" /f /v InstallDefault /d 0 /t reg_dword >nul 2>nul" >nul 2>&1
+  			reg add "HKLM\zSOFTWARE\Microsoft\EdgeUpdate"" /f /v Install{56EB18F8-B008-4CBD-B6D2-8C97FE7E9062} /d 0 /t reg_dword >nul 2>nul" >nul 2>&1
+  			reg add "HKLM\zSOFTWARE\Microsoft\EdgeUpdate"" /f /v Install{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5} /d 0 /t reg_dword >nul 2>nul" >nul 2>&1
+  			reg add "HKLM\zSOFTWARE\Microsoft\EdgeUpdate"" /f /v DoNotUpdateToEdgeWithChromium /d 1 /t reg_dword >nul 2>nul" >nul 2>&1
+			reg add "HKLM\zSOFTWARE\Policies\Microsoft\EdgeUpdate"" /f /v InstallDefault /d 0 /t reg_dword >nul 2>nul" >nul 2>&1
+  			reg add "HKLM\zSOFTWARE\Policies\Microsoft\EdgeUpdate"" /f /v Install{56EB18F8-B008-4CBD-B6D2-8C97FE7E9062} /d 0 /t reg_dword >nul 2>nul" >nul 2>&1
+  			reg add "HKLM\zSOFTWARE\Policies\Microsoft\EdgeUpdate"" /f /v Install{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5} /d 0 /t reg_dword >nul 2>nul" >nul 2>&1
+  			reg add "HKLM\zSOFTWARE\Policies\Microsoft\EdgeUpdate"" /f /v DoNotUpdateToEdgeWithChromium /d 1 /t reg_dword >nul 2>nul" >nul 2>&1
+echo Removing OneDrive
+            takeown /f %HOMEDRIVE%\scratchdir\Windows\System32\OneDriveSetup.exe
+            icacls %HOMEDRIVE%\scratchdir\Windows\System32\OneDriveSetup.exe /grant *S-1-5-32-544:F /T /C
+            del /f /q /s "%HOMEDRIVE%\scratchdir\Windows\System32\OneDriveSetup.exe"
+            rem reg delete "HKLM\zSOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "OneDriveSetup" /f >nul 2>&1
+echo Removal complete!
 echo Disabling Teams
 reg add "HKLM\zSOFTWARE\Microsoft\Windows\CurrentVersion\Communications" /v "ConfigureChatAutoInstall" /t REG_DWORD /d "0" /f >nul 2>&1
 echo Disabling Sponsored Apps
@@ -108,13 +123,13 @@ reg add "HKLM\zNTUSER\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryM
 			reg add "HKLM\zSOFTWARE\Microsoft\PolicyManager\current\device\Start" /v "ConfigureStartPins" /t REG_SZ /d "{\"pinnedList\": [{}]}" /f >nul 2>&1
 echo Enabling Local Accounts on OOBE
 reg add "HKLM\zSOFTWARE\Microsoft\Windows\CurrentVersion\OOBE" /v "BypassNRO" /t REG_DWORD /d "1" /f >nul 2>&1
-rem copy /y %~dp0autounattend.xml %HOMEDRIVE%\scratchdir\Windows\System32\Sysprep\autounattend.xml
+copy /y %~dp0autounattend.xml %HOMEDRIVE%\scratchdir\Windows\System32\Sysprep\autounattend.xml
 echo Disabling Reserved Storage
 reg add "HKLM\zSOFTWARE\Microsoft\Windows\CurrentVersion\ReserveManager" /v "ShippedWithReserves" /t REG_DWORD /d "0" /f >nul 2>&1
-echo Enabeling drive compression
-reg add "HKLM\zSYSTEM\CurrentControlSet\Policies" /v "Ntfsenablecompression" /t REG_DWORD /d "1" /f >nul 2>&1
-echo Disabeling hybernation
-reg add "HKLM\zSYSTEM\CurrentControlSet\Control\Power" /v "HibernateEnabledDefault" /t REG_DWORD /d "0" /f >nul 2>&1
+rem echo Enabeling drive compression
+rem reg add "HKLM\zSYSTEM\CurrentControlSet\Policies" /v "Ntfsenablecompression" /t REG_DWORD /d "1" /f >nul 2>&1
+rem echo Disabeling hybernation
+rem reg add "HKLM\zSYSTEM\CurrentControlSet\Control\Power" /v "HibernateEnabledDefault" /t REG_DWORD /d "0" /f >nul 2>&1
 echo Disabling Chat icon
 reg add "HKLM\zSOFTWARE\Policies\Microsoft\Windows\Windows Chat" /v "ChatIcon" /t REG_DWORD /d "3" /f >nul 2>&1
 reg add "HKLM\zNTUSER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v "TaskbarMn" /t REG_DWORD /d "0" /f >nul 2>&1
@@ -171,8 +186,8 @@ echo Unmounting image...
 dism /unmount-image /mountdir:%HOMEDRIVE%\scratchdir /commit
 cls
 echo the tiny11 image is now completed. Proceeding with the making of the ISO...
-rem echo Copying unattended file for bypassing MS account on OOBE...
-rem copy /y %~dp0autounattend.xml %tiny11%\autounattend.xml
+echo Copying unattended file for bypassing MS account on OOBE...
+copy /y %~dp0autounattend.xml %tiny11%\autounattend.xml
 echo.
 echo Creating ISO image...
 %~dp0oscdimg.exe -m -o -u2 -udfver102 -bootdata:2#p0,e,b%tiny11%\boot\etfsboot.com#pEF,e,b%tiny11%\efi\microsoft\boot\efisys.bin %tiny11% %~dp0tiny11.iso
