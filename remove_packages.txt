@@ -1,0 +1,9 @@
+Microsoft-Windows-InternetExplorer-Optional-Package
+Microsoft-Windows-Kernel-LA57-FoD-Package
+Microsoft-Windows-LanguageFeatures-Handwriting
+Microsoft-Windows-LanguageFeatures-OCR
+Microsoft-Windows-LanguageFeatures-Speech
+Microsoft-Windows-LanguageFeatures-TextToSpeech
+Microsoft-Windows-MediaPlayer-Package
+Microsoft-Windows-TabletPCMath-Package
+Microsoft-Windows-Wallpaper-Content-Extended-FoD-Package
