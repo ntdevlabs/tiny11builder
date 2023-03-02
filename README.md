@@ -6,14 +6,12 @@ This is a script to automate the build of a streamlined Windows 11 image, simila
 My main goal is to use only Microsoft utilities like DISM, and nothing external. The only executable included is oscdimg.exe, which is provided in the Windows ADK and it is used to create bootable ISO images. Also included is an unattended answer file, which is used to bypass the MS account on OOBE and to deploy the image with the /compact flag.
 It's open-source, so feel free to add or remove anything you want! Feedback is also much appreciated.
 
-As of now, only build 22621.525 (the one that can be downloaded from the Microsoft website), 22621.1265 (the latest public build) and 25300 (latest Insider build as of now) are supported.
-
 Instructions:
 
-1. Download Windows 11 22621.1265 from UUPDump or 22621.525 or 25300 from the Microsoft website (<https://www.microsoft.com/software-download/windows11>)
+1. Download Windows 11 image from UUPDump or from the Microsoft website (<https://www.microsoft.com/software-download/windows11>).
 2. Mount the downloaded ISO image using Windows Explorer.
-3. For .1265, run tiny11 creator.bat as administrator. For .525 or 25300, use the aptly-named script (also as administrator).
-4. Select the drive letter where the image is mounted (only the letter, no colon (:))
+3. Run tiny11 creator.bat
+4. Select the drive letter where the image is mounted (only the letter, no colon (:)).
 5. Select the SKU that you want the image to be based.
 6. Sit back and relax :)
 7. When the image is completed, you will see it in the folder where the script was extracted, with the name tiny11.iso
@@ -40,9 +38,9 @@ Media Player,
 QuickAssist,
 Internet Explorer,
 LA57 support,
-OCR for en-us,
+OCR,
 Speech support,
-TTS for en-us,
+TTS,
 Media Player Legacy,
 Tablet PC Math,
 Wallpapers,
@@ -53,8 +51,10 @@ Known issues:
 
 1. Microsoft Teams (personal) and Cortana are still here. If you find a way to remove them before I find one, feel free to help!
 2. Although Edge is removed, the icon and a ghost of its taskbar pin are still available. Also, there are some remnants in the Settings. But the app in itself is deleted.
-3. The script is rather inflexible, as in only the builds specified can be modified. This is because with each new build Microsoft also updates the inbox apps included. If one tries to use other builds, it will work with varying degrees of success, but some things like the removal of Edge and OneDrive as well as bypassing system requirements or other patches will always be applied.
-4. Only en-us x64 is supported as of now. This can be easily fixable by the end user, just by replacing every instance of en-us with the language needed (like ro-RO and so on), and every x64 instance with arm64.
+3. If one tries to use other builds than Windows 11, it will work with varying degrees of success, but some things like the removal of Edge and OneDrive as well as bypassing system requirements will always be applied.
+4. ~~Only en-us x64 is supported as of now. This can be easily fixable by the end user, just by replacing every instance of en-us with the language needed (like ro-RO and so on), and every x64 instance with arm64.~~
+As of 2023-03-02 this is no longer the case!
+
 
 And that's pretty much it for now!
 Thanks for trying it and let me know how you like it!
