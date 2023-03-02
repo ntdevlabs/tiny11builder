@@ -1,5 +1,5 @@
 @echo off
-rem cd /d "%~dp0" && ( if exist "%temp%\getadmin.vbs" del "%temp%\getadmin.vbs" ) && fsutil dirty query %systemdrive% 1>nul 2>nul || (  echo Set UAC = CreateObject^("Shell.Application"^) : UAC.ShellExecute "wt", "cmd.exe /k cd ""%~sdp0"" && %~s0 %params%", "", "runas", 1 >> "%temp%\getadmin.vbs" && "%temp%\getadmin.vbs" && exit /B )
+cd /d "%~dp0" && ( if exist "%temp%\getadmin.vbs" del "%temp%\getadmin.vbs" ) && fsutil dirty query %systemdrive% 1>nul 2>nul || (  echo Set UAC = CreateObject^("Shell.Application"^) : UAC.ShellExecute "wt", "cmd.exe /k cd ""%~sdp0"" && %~s0 %params%", "", "runas", 1 >> "%temp%\getadmin.vbs" && "%temp%\getadmin.vbs" && exit /B )
 setlocal EnableExtensions EnableDelayedExpansion
 
 title tiny11 builder alpha
@@ -45,7 +45,7 @@ dism /mount-image /imagefile:%tiny11%\sources\install.wim /index:%index% /mountd
 cls
 
 echo Mounting complete! Performing removal of applications...
-dism /image:%HOMEDRIVE%\scratchdir /Get-ProvisionedAppxPackages | find "PackageName:" | find /V "Microsoft.WindowsStore" | find /V "DesktopAppInstaller" | find /V "Microsoft.HEIFImageExtension" | find /V "Microsoft.HEVCVideoExtension" | find /V "Microsoft.MicrosoftStickyNotes" | find /V "Microsoft.Paint" | find /V "Microsoft.RawImageExtension" | find /V "Microsoft.ScreenSketch" | find /V "Microsoft.SecHealthUI" | find /V "Microsoft.StorePurchaseApp" | find /V "Microsoft.VP9VideoExtensions" | find /V "Microsoft.WebMediaExtensions" | find /V "Microsoft.WebpImageExtension" | find /V "Microsoft.Windows.Photos" | find /V "Microsoft.WindowsCalculator" | find /V "Microsoft.WindowsCamera" | find /V "Microsoft.WindowsNotepad" | find /V "Microsoft.WindowsTerminal" | find /V "Microsoft.XboxIdentityProvider" | find /V "MicrosoftWindows.Client.WebExperience" | find /V "Microsoft.VCLibs.140.00" > %tempfile%.1
+dism /image:%HOMEDRIVE%\scratchdir /Get-ProvisionedAppxPackages | findstr /C:"Clipchamp.Clipchamp" /C:"Microsoft.BingNews" /C:"Microsoft.BingWeather" /C:"Microsoft.GamingApp" /C:"Microsoft.GetHelp" /C:"Microsoft.Getstarted" /C:"Microsoft.MicrosoftOfficeHub" /C:"Microsoft.MicrosoftSolitaireCollection" /C:"Microsoft.People" /C:"Microsoft.PowerAutomateDesktop" /C:"Microsoft.Todos" /C:"Microsoft.WindowsAlarms" /C:"microsoft.windowscommunicationsapps" /C:"Microsoft.WindowsFeedbackHub" /C:"Microsoft.WindowsMaps" /C:"Microsoft.WindowsSoundRecorder" /C:"Microsoft.Xbox.TCUI" /C:"Microsoft.XboxGamingOverlay" /C:"Microsoft.XboxGameOverlay" /C:"Microsoft.XboxSpeechToTextOverlay" /C:"Microsoft.YourPhone" /C:"Microsoft.ZuneMusic" /C:"Microsoft.ZuneVideo" /C:"MicrosoftCorporationII.MicrosoftFamily" /C:"MicrosoftCorporationII.QuickAssist" /C:"MicrosoftTeams" /C:"Microsoft.549981C3F5F10" > %tempfile%.1
 > %tempfile%.2 (
   for /f "tokens=*" %%a in (%tempfile%.1) do (
     call :strip2 %%a
@@ -111,7 +111,7 @@ echo Removing OneDrive
             takeown /f %HOMEDRIVE%\scratchdir\Windows\System32\OneDriveSetup.exe
             icacls %HOMEDRIVE%\scratchdir\Windows\System32\OneDriveSetup.exe /grant *S-1-5-32-544:F /T /C
             del /f /q /s "%HOMEDRIVE%\scratchdir\Windows\System32\OneDriveSetup.exe"
-            rem reg delete "HKLM\zSOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "OneDriveSetup" /f >nul 2>&1
+            reg delete "HKLM\zSOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "OneDriveSetup" /f >nul 2>&1
 echo Removal complete!
 echo Disabling Teams
 reg add "HKLM\zSOFTWARE\Microsoft\Windows\CurrentVersion\Communications" /v "ConfigureChatAutoInstall" /t REG_DWORD /d "0" /f >nul 2>&1
@@ -126,10 +126,6 @@ reg add "HKLM\zSOFTWARE\Microsoft\Windows\CurrentVersion\OOBE" /v "BypassNRO" /t
 copy /y %~dp0autounattend.xml %HOMEDRIVE%\scratchdir\Windows\System32\Sysprep\autounattend.xml
 echo Disabling Reserved Storage
 reg add "HKLM\zSOFTWARE\Microsoft\Windows\CurrentVersion\ReserveManager" /v "ShippedWithReserves" /t REG_DWORD /d "0" /f >nul 2>&1
-rem echo Enabeling drive compression
-rem reg add "HKLM\zSYSTEM\CurrentControlSet\Policies" /v "Ntfsenablecompression" /t REG_DWORD /d "1" /f >nul 2>&1
-rem echo Disabeling hybernation
-rem reg add "HKLM\zSYSTEM\CurrentControlSet\Control\Power" /v "HibernateEnabledDefault" /t REG_DWORD /d "0" /f >nul 2>&1
 echo Disabling Chat icon
 reg add "HKLM\zSOFTWARE\Policies\Microsoft\Windows\Windows Chat" /v "ChatIcon" /t REG_DWORD /d "3" /f >nul 2>&1
 reg add "HKLM\zNTUSER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v "TaskbarMn" /t REG_DWORD /d "0" /f >nul 2>&1
