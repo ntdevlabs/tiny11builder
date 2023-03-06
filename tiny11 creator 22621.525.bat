@@ -16,8 +16,8 @@ if not exist "%DriveLetter%\sources\boot.wim" (
 	echo.Please enter the correct DVD Drive Letter..
 	goto :Stop
 )
-
-if not exist "%DriveLetter%\sources\install.wim" (
+REM Check for install.esd instead of install.wim
+if not exist "%DriveLetter%\sources\install.esd" (
 	echo.Can't find Windows OS Installation files in the specified Drive Letter..
 	echo.
 	echo.Please enter the correct DVD Drive Letter..
@@ -29,6 +29,10 @@ xcopy.exe /E /I /H /R /Y /J %DriveLetter% c:\tiny11 >nul
 echo Copy complete!
 sleep 2
 cls
+REM Convert the ESD format to WIM to execute the script correctly
+echo Converting Install.esd to Install.wim format...
+Dism /Export-image /SourceImageFile:c:\tiny11\sources\install.esd /SourceIndex:1 /DestinationImageFile:c:\tiny11\sources\install.wim /Compress:max /CheckIntegrity
+pause
 echo Getting image information:
 dism /Get-WimInfo /wimfile:c:\tiny11\sources\install.wim
 set index=
@@ -179,6 +183,8 @@ echo Unmounting image...
 dism /unmount-image /mountdir:c:\scratchdir /commit
 echo Exporting image...
 Dism /Export-Image /SourceImageFile:c:\tiny11\sources\install.wim /SourceIndex:%index% /DestinationImageFile:c:\tiny11\sources\install2.wim /compress:max
+REM Delete the ESD file
+del d:\tiny11\sources\install.esd
 del c:\tiny11\sources\install.wim
 ren c:\tiny11\sources\install2.wim install.wim
 echo Windows image completed. Continuing with boot.wim.
