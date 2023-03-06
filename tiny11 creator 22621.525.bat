@@ -16,8 +16,8 @@ if not exist "%DriveLetter%\sources\boot.wim" (
 	echo.Please enter the correct DVD Drive Letter..
 	goto :Stop
 )
-
-if not exist "%DriveLetter%\sources\install.wim" (
+REM Check for install.esd instead of install.wim
+if not exist "%DriveLetter%\sources\install.esd" (
 	echo.Can't find Windows OS Installation files in the specified Drive Letter..
 	echo.
 	echo.Please enter the correct DVD Drive Letter..
