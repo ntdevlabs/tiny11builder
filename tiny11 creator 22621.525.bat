@@ -183,6 +183,8 @@ echo Unmounting image...
 dism /unmount-image /mountdir:c:\scratchdir /commit
 echo Exporting image...
 Dism /Export-Image /SourceImageFile:c:\tiny11\sources\install.wim /SourceIndex:%index% /DestinationImageFile:c:\tiny11\sources\install2.wim /compress:max
+REM Delete the ESD file
+del d:\tiny11\sources\install.esd
 del c:\tiny11\sources\install.wim
 ren c:\tiny11\sources\install2.wim install.wim
 echo Windows image completed. Continuing with boot.wim.
