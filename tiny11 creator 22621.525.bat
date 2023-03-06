@@ -29,6 +29,10 @@ xcopy.exe /E /I /H /R /Y /J %DriveLetter% c:\tiny11 >nul
 echo Copy complete!
 sleep 2
 cls
+REM Convert the ESD format to WIM to execute the script correctly
+echo Converting Install.esd to Install.wim format...
+Dism /Export-image /SourceImageFile:c:\tiny11\sources\install.esd /SourceIndex:1 /DestinationImageFile:c:\tiny11\sources\install.wim /Compress:max /CheckIntegrity
+pause
 echo Getting image information:
 dism /Get-WimInfo /wimfile:c:\tiny11\sources\install.wim
 set index=
