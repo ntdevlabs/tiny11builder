@@ -39,5 +39,17 @@
 		"Microsoft-Windows-MediaPlayer-Package",
 		"Microsoft-Windows-TabletPCMath-Package",
 		"Microsoft-Windows-Wallpaper-Content-Extended-FoD-Package"
+	],
+	"PathsToDelete": [
+		{ "Path": "Windows\\SystemApps\\Microsoft.MicrosoftEdge_*", "IsFolder": true},
+		{ "Path": "Windows\\SystemApps\\Microsoft.MicrosoftEdgeDevToolsClient_*", "IsFolder": true},
+		{ "Path": "ProgramData\\Microsoft\\Windows\\AppRepository\\Microsoft.MicrosoftEdge_*", "IsFolder": true},
+		{ "Path": "ProgramData\\Microsoft\\Windows\\AppRepository\\Packages\\Microsoft.MicrosoftEdge_*", "IsFolder": true},
+		{ "Path": "Program Files\\Internet Explorer", "IsFolder": true},
+		{ "Path": "Program Files (x86)\\Internet Explorer", "IsFolder": true},
+		{ "Path": "Program Files\\WindowsApps\\MicrosoftTeams_*", "IsFolder": true},
+		{ "Path": "Program Files (x86)\\Microsoft\\Edge", "IsFolder": true},
+		{ "Path": "Program Files (x86)\\Microsoft\\EdgeUpdate", "IsFolder": true},
+		{ "Path": "Windows\\System32\\OneDriveSetup.exe", "IsFolder": false}
 	]
 }
