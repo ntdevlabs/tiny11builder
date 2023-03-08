@@ -13,8 +13,9 @@ $isoFolder = $rootWorkdir + "iso\"
 $installImageFolder = $rootWorkdir + "installimage\"
 $bootImageFolder = $rootWorkdir + "bootimage\"
 $isoPath = "c:\windows11.iso"
-$yes = ("O" | choice)[1] #this variable gets the "y" from "yes" (or any other letter it the "yes" word doesn't start with "y" in your language)
-						 #it is used to answer automatically to the takeown.exe command
+$yes = (cmd /c "choice <nul 2>nul")[1]
+#The $yes variable gets the "y" from "yes" (or corresponding letter in the language your computer is using).
+#It is used to answer automatically to the "takeown" command, because the answer choices are localized which is not handy at all.
 
 #Downloading the Windows 11 ISO using WindowsIsoDownloader
 #Write-Output "Downloading Windows 11 iso file from Microsoft using WindowsIsoDownloader..."
