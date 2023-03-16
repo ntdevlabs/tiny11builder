@@ -1,30 +1,50 @@
-# tiny11builder
+# tiny11builder, PowerShell edition
 
-Scripts to build a trimmed-down Windows 11 image.
+This repository contains a PowerShell rewrite of the original, batch written, ntdevlabs/tiny11builder repository.
 
-This is a script to automate the build of a streamlined Windows 11 image, similar to tiny11.
-My main goal is to use only Microsoft utilities like DISM, and nothing external. The only executable included is oscdimg.exe, which is provided in the Windows ADK (<https://learn.microsoft.com/fr-fr/windows-hardware/get-started/adk-install#download-the-adk-for-windows-11-version-22h2>) and it is used to create bootable ISO images. Also included is an unattended answer file, which is used to bypass the MS account on OOBE and to deploy the image with the /compact flag.
-It's open-source, so feel free to add or remove anything you want! Feedback is also much appreciated.
+This script will:
+-download the latest Windows 11 iso from Microsoft.
+-build a trimmed-down Windows 11 installer iso.
 
-Current and new Windows 11 builds are supported, but may need some small adjustments. Please report issue or create pull requests if you're able to patch some issues.
+All the code is very straightforward and easy to inspect, but please open an issue and ask questions if some instructions are not clear enough!
+
+Two executables are included:
+-oscdimg.exe (it is part of the Windows ADK: <https://learn.microsoft.com/fr-fr/windows-hardware/get-started/adk-install#download-the-adk-for-windows-11-version-22h2>. It is used to create bootable ISO images.
+-WindowsIsoDownloader.exe (you can find the source code and build it if you want: <https://github.com/ianis58/WindowsIsoDownloader>).
+
+Also included is autounattend.xml file:
+-it bypass the need to connect to/create a Microsoft account during OOBE (Out Of the Box Experience, AKA the first startup setup wizard).
+-it automatically accept the EULA (End User Licence Agreement) so it skip this step.
+-it skip the product key step (if your PC was bought with Windows 10 or 11 on it and it has EFI/UEFI, the product key is stored in EFI/UEFI and is automatically used. Otherwise, you'll be able to set it after setup).
 
 Instructions:
 
-1. Download latest Windows 11 iso from Microsoft website (<https://www.microsoft.com/software-download/windows11>). As an alternative you can use the automated Windows Iso Downloader tool (<https://github.com/ianis58/WindowsIsoDownloader>).
-2. Place the downloaded file in C:\windows11.iso (be sure to rename it so that it match that filename).
-3. Open a Powershell terminal with admin rights and run the following commands:
+1. Download this repository as zip and unzip it where you want.
+2. Open a Powershell as administrator, go to the extraction path, and run the following commands:
 ```
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 .\tiny11creator.ps1
 ```
-4. Sit back and relax :) (it runs for 13 minutes approximately on my old-but-decent laptop)
-5. When the image is completed, you will see it in c:\tiny11.iso
+3. Sit back and relax :) (it runs for 25 minutes approximately on my old-but-decent laptop). You might see some errors with RemoveWindowsPackage but it's not an issue (has to do with the order and dependencies of packages to remove).
+4. The created Windows 11 installer iso is available in c:\tiny11.iso
+Optional:
+5. After setup and once connected to the internet, I recommend to install the package manager from Microsoft called winget. Run this command in PowerShell:
+```
+Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe
+```
+Then you can run one of these to get your favorite browser:
+```
+winget install Mozilla.Firefox
+winget install Microsoft.Edge
+winget install Opera.Opera
+winget install Google.Chrome
+```
 
 What is removed:
 Clipchamp,
 News,
 Weather,
-Xbox (although Xbox Identity provider is still here, so it should be possible to be reinstalled with no issues),
+Xbox,
 GetHelp,
 GetStarted,
 Office Hub,
@@ -51,12 +71,12 @@ Wallpapers,
 Edge,
 OneDrive
 
+Small tweaks:
+-dark theme enabled by default.
+-some file explorer config turned on: show hidden files, show known file extensions, ...
+-taskbar aligned to the left.
+
 Known issues:
 
-1. Microsoft Teams (personal) and Cortana are still here. If you find a way to remove them before I find one, feel free to help!
-2. Although Edge is removed, the icon and a ghost of its taskbar pin are still available. Also, there are some remnants in the Settings. But the app in itself is deleted.
-3. The script is rather inflexible, as in only the builds specified can be modified. This is because with each new build Microsoft also updates the inbox apps included. If one tries to use other builds, it will work with varying degrees of success, but some things like the removal of Edge and OneDrive as well as bypassing system requirements or other patches will always be applied.
-4. Only en-us x64 is supported as of now. This can be easily fixable by the end user, just by replacing every instance of en-us with the language needed (like ro-RO and so on), and every x64 instance with arm64.
-
-And that's pretty much it for now!
-Thanks for trying it and let me know how you like it!
+1. Microsoft Teams is somehow still there. Feel free to create a PR if you can fix it!
+2. Although Edge is removed, the desktop icon, a ghost of its taskbar pin, and some remnants in the Settings about it are still showing.
