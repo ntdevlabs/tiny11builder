@@ -5,6 +5,7 @@ $wantedImageName = $config.WantedWindowsEdition
 $unwantedProvisionnedPackages = $config.ProvisionnedPackagesToRemove
 $unwantedWindowsPackages = $config.WindowsPackagesToRemove
 $pathsToDelete = $config.PathsToDelete
+$windowsIsoDownloaderReleaseUrl = $config.WindowsIsoDownloaderReleaseUrl
 
 #Defining system variables
 Write-Output "Creating needed variables..."
@@ -12,14 +13,24 @@ $rootWorkdir = "c:\tiny11\"
 $isoFolder = $rootWorkdir + "iso\"
 $installImageFolder = $rootWorkdir + "installimage\"
 $bootImageFolder = $rootWorkdir + "bootimage\"
+$toolsFolder = $rootWorkdir + "tools\"
 $isoPath = "c:\windows11.iso"
 $yes = (cmd /c "choice <nul 2>nul")[1]
 #The $yes variable gets the "y" from "yes" (or corresponding letter in the language your computer is using).
 #It is used to answer automatically to the "takeown" command, because the answer choices are localized which is not handy at all.
 
+md $rootWorkdir | Out-Null
+md ($toolsFolder + "WindowsIsoDownloader\") | Out-Null
+
+Write-Output "Downloading WindowsIsoDownloader release from GitHub..."
+Invoke-WebRequest -Uri $windowsIsoDownloaderReleaseUrl -OutFile WindowsIsoDownloader.zip
+Write-Output "Extracting WindowsIsoDownloader release..."
+Expand-Archive -Path WindowsIsoDownloader.zip -DestinationPath ($toolsFolder + "WindowsIsoDownloader\")
+Remove-Item WindowsIsoDownloader.zip | Out-Null
+
 #Downloading the Windows 11 ISO using WindowsIsoDownloader
 Write-Output "Downloading Windows 11 iso file from Microsoft using WindowsIsoDownloader..."
-$isoDownloadProcess = (Start-Process .\tools\WindowsIsoDownloader\WindowsIsoDownloader.exe -NoNewWindow -Wait -WorkingDirectory .\tools\WindowsIsoDownloader\ -PassThru)
+$isoDownloadProcess = (Start-Process ($toolsFolder + "WindowsIsoDownloader\WindowsIsoDownloader.exe") -NoNewWindow -Wait -WorkingDirectory ($toolsFolder + "WindowsIsoDownloader\") -PassThru)
 
 If ($isoDownloadProcess.ExitCode -eq 0)
 {
@@ -30,7 +41,6 @@ If ($isoDownloadProcess.ExitCode -eq 0)
 
 	#Creating needed temporary folders
 	Write-Output "Creating temporary folders..."
-	md $rootWorkdir | Out-Null
 	md $isoFolder | Out-Null
 	md $installImageFolder | Out-Null
 	md $bootImageFolder | Out-Null
@@ -179,16 +189,12 @@ If ($isoDownloadProcess.ExitCode -eq 0)
 	#Building the new trimmed and patched iso file
 	Write-Output "Building the tiny11.iso file..."
 	.\tools\oscdimg.exe -m -o -u2 -udfver102 -bootdata:("2#p0,e,b" + $isoFolder + "boot\etfsboot.com#pEF,e,b" + $isoFolder + "efi\microsoft\boot\efisys.bin") $isoFolder c:\tiny11.iso | Out-Null
-
-	#Cleaning the folders used during the process
-	Write-Output "Removing work folders..."
-	Remove-Item $isoFolder -Force -Recurse -ErrorAction SilentlyContinue | Out-Null
-	Remove-Item $installImageFolder -Force -Recurse -ErrorAction SilentlyContinue | Out-Null
-	Remove-Item $bootImageFolder -Force -Recurse -ErrorAction SilentlyContinue | Out-Null
-	Remove-Item $rootWorkdir -Force -Recurse -ErrorAction SilentlyContinue | Out-Null
 }
 Else
 {
 	Write-Output "Unable to build the tiny11 iso (an error occured while trying to download the original iso using WindowsIsoDownloader)."
 }
 
+#Cleaning the folders used during the process
+Write-Output "Removing work folders..."
+Remove-Item $rootWorkdir -Force -Recurse -ErrorAction SilentlyContinue | Out-Null
