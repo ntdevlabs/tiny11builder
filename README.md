@@ -7,8 +7,8 @@ This script will:
 * build a trimmed-down Windows 11 installer iso.
 
 Two executables are included:
--oscdimg.exe (it is part of the Windows ADK: <https://learn.microsoft.com/fr-fr/windows-hardware/get-started/adk-install#download-the-adk-for-windows-11-version-22h2>. It is used to create bootable ISO images.
--WindowsIsoDownloader.exe (you can find the source code and build it if you want: <https://github.com/ianis58/WindowsIsoDownloader>) (not directly included, but is downloaded by the PowerShell script).
+* oscdimg.exe (it is part of the Windows ADK: <https://learn.microsoft.com/fr-fr/windows-hardware/get-started/adk-install#download-the-adk-for-windows-11-version-22h2>. It is used to create bootable ISO images.
+* WindowsIsoDownloader.exe (you can find the source code and build it if you want: <https://github.com/ianis58/WindowsIsoDownloader>) (not directly included, but is downloaded by the PowerShell script).
 
 Also included is autounattend.xml file:
 * it bypass the need to connect to/create a Microsoft account during OOBE (Out Of the Box Experience, AKA the first startup setup wizard).
