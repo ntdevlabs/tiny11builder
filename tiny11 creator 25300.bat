@@ -184,7 +184,7 @@ echo Windows image completed. Continuing with boot.wim.
 timeout /t 2 /nobreak > nul
 cls
 echo Mounting boot image:
-dism /mount-image /imagefile:c:\tiny11\sources\boot.wim /index:2 /mountdir:c:\scratchdir
+dism /mount-image /imagefile:c:\tiny11\sources\boot.wim /index:%index% /mountdir:c:\scratchdir
 echo Loading registry...
 reg load HKLM\zCOMPONENTS "c:\scratchdir\Windows\System32\config\COMPONENTS" >nul
 reg load HKLM\zDEFAULT "c:\scratchdir\Windows\System32\config\default" >nul
