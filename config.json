@@ -1,56 +1,86 @@
 {
-	"WindowsIsoDownloaderReleaseUrl": "https://github.com/ianis58/WindowsIsoDownloader/releases/download/v1.0/WindowsIsoDownloader-1.0.zip",
-	"WantedWindowsEdition": "Windows 11 Pro",
-	"ProvisionnedPackagesToRemove": [
-		"Clipchamp.Clipchamp_",
-		"Microsoft.BingNews_",
-		"Microsoft.BingWeather_",
-		"Microsoft.GamingApp_",
-		"Microsoft.GetHelp_",
-		"Microsoft.Getstarted_",
-		"Microsoft.MicrosoftOfficeHub_",
-		"Microsoft.MicrosoftSolitaireCollection_",
-		"Microsoft.People_",
-		"Microsoft.PowerAutomateDesktop_",
-		"Microsoft.Todos_",
-		"Microsoft.WindowsAlarms_",
-		"microsoft.windowscommunicationsapps_",
-		"Microsoft.WindowsFeedbackHub_",
-		"Microsoft.WindowsMaps_",
-		"Microsoft.WindowsSoundRecorder_",
-		"Microsoft.Xbox.TCUI_",
-		"Microsoft.XboxGamingOverlay_",
-		"Microsoft.XboxGameOverlay_",
-		"Microsoft.XboxSpeechToTextOverlay_",
-		"Microsoft.YourPhone_",
-		"Microsoft.ZuneMusic_",
-		"Microsoft.ZuneVideo_",
-		"MicrosoftCorporationII.MicrosoftFamily_",
-		"MicrosoftCorporationII.QuickAssist_",
-		"MicrosoftTeams_",
-		"Microsoft.549981C3F5F10_"
-	],
-	"WindowsPackagesToRemove": [
-		"Microsoft-Windows-InternetExplorer-Optional-Package",
-		"Microsoft-Windows-Kernel-LA57-FoD-Package",
-		"Microsoft-Windows-LanguageFeatures-Handwriting-en-us-Package",
-		"Microsoft-Windows-LanguageFeatures-OCR-en-us-Package",
-		"Microsoft-Windows-LanguageFeatures-Speech-en-us-Package",
-		"Microsoft-Windows-LanguageFeatures-TextToSpeech-en-us-Package",
-		"Microsoft-Windows-MediaPlayer-Package",
-		"Microsoft-Windows-TabletPCMath-Package",
-		"Microsoft-Windows-Wallpaper-Content-Extended-FoD-Package"
-	],
-	"PathsToDelete": [
-		{ "Path": "Windows\\SystemApps\\Microsoft.MicrosoftEdge_*", "IsFolder": true},
-		{ "Path": "Windows\\SystemApps\\Microsoft.MicrosoftEdgeDevToolsClient_*", "IsFolder": true},
-		{ "Path": "ProgramData\\Microsoft\\Windows\\AppRepository\\Microsoft.MicrosoftEdge_*", "IsFolder": true},
-		{ "Path": "ProgramData\\Microsoft\\Windows\\AppRepository\\Packages\\Microsoft.MicrosoftEdge_*", "IsFolder": true},
-		{ "Path": "Program Files\\Internet Explorer", "IsFolder": true},
-		{ "Path": "Program Files (x86)\\Internet Explorer", "IsFolder": true},
-		{ "Path": "Program Files\\WindowsApps\\MicrosoftTeams_*", "IsFolder": true},
-		{ "Path": "Program Files (x86)\\Microsoft\\Edge", "IsFolder": true},
-		{ "Path": "Program Files (x86)\\Microsoft\\EdgeUpdate", "IsFolder": true},
-		{ "Path": "Windows\\System32\\OneDriveSetup.exe", "IsFolder": false}
-	]
+    "WindowsIsoDownloaderReleaseUrl": "https://github.com/ianis58/WindowsIsoDownloader/releases/download/v1.0/WindowsIsoDownloader-1.0.zip",
+    "WantedWindowsEdition": "Windows 11 Pro",
+    "ProvisionnedPackagesToRemove": [
+        "Clipchamp.Clipchamp_",
+        "Microsoft.BingNews_",
+        "Microsoft.BingWeather_",
+        "Microsoft.GamingApp_",
+        "Microsoft.GetHelp_",
+        "Microsoft.Getstarted_",
+        "Microsoft.MicrosoftOfficeHub_",
+        "Microsoft.MicrosoftSolitaireCollection_",
+        "Microsoft.People_",
+        "Microsoft.PowerAutomateDesktop_",
+        "Microsoft.Todos_",
+        "Microsoft.WindowsAlarms_",
+        "microsoft.windowscommunicationsapps_",
+        "Microsoft.WindowsFeedbackHub_",
+        "Microsoft.WindowsMaps_",
+        "Microsoft.WindowsSoundRecorder_",
+        "Microsoft.Xbox.TCUI_",
+        "Microsoft.XboxGamingOverlay_",
+        "Microsoft.XboxGameOverlay_",
+        "Microsoft.XboxSpeechToTextOverlay_",
+        "Microsoft.YourPhone_",
+        "Microsoft.ZuneMusic_",
+        "Microsoft.ZuneVideo_",
+        "MicrosoftCorporationII.MicrosoftFamily_",
+        "MicrosoftCorporationII.QuickAssist_",
+        "MicrosoftTeams_",
+        "Microsoft.549981C3F5F10_"
+    ],
+    "WindowsPackagesToRemove": [
+        "Microsoft-Windows-InternetExplorer-Optional-Package",
+        "Microsoft-Windows-Kernel-LA57-FoD-Package",
+        "Microsoft-Windows-LanguageFeatures-Handwriting-en-us-Package",
+        "Microsoft-Windows-LanguageFeatures-OCR-en-us-Package",
+        "Microsoft-Windows-LanguageFeatures-Speech-en-us-Package",
+        "Microsoft-Windows-LanguageFeatures-TextToSpeech-en-us-Package",
+        "Microsoft-Windows-MediaPlayer-Package",
+        "Microsoft-Windows-TabletPCMath-Package",
+        "Microsoft-Windows-Wallpaper-Content-Extended-FoD-Package"
+    ],
+    "PathsToDelete": [
+        {
+            "Path": "Windows\\SystemApps\\Microsoft.MicrosoftEdge_*",
+            "IsFolder": true
+        },
+        {
+            "Path": "Windows\\SystemApps\\Microsoft.MicrosoftEdgeDevToolsClient_*",
+            "IsFolder": true
+        },
+        {
+            "Path": "ProgramData\\Microsoft\\Windows\\AppRepository\\Microsoft.MicrosoftEdge_*",
+            "IsFolder": true
+        },
+        {
+            "Path": "ProgramData\\Microsoft\\Windows\\AppRepository\\Packages\\Microsoft.MicrosoftEdge_*",
+            "IsFolder": true
+        },
+        {
+            "Path": "Program Files\\Internet Explorer",
+            "IsFolder": true
+        },
+        {
+            "Path": "Program Files (x86)\\Internet Explorer",
+            "IsFolder": true
+        },
+        {
+            "Path": "Program Files\\WindowsApps\\MicrosoftTeams_*",
+            "IsFolder": true
+        },
+        {
+            "Path": "Program Files (x86)\\Microsoft\\Edge",
+            "IsFolder": true
+        },
+        {
+            "Path": "Program Files (x86)\\Microsoft\\EdgeUpdate",
+            "IsFolder": true
+        },
+        {
+            "Path": "Windows\\System32\\OneDriveSetup.exe",
+            "IsFolder": false
+        }
+    ]
 }
