@@ -8,6 +8,10 @@ It's open-source, so feel free to add or remove anything you want! Feedback is a
 
 As of now, only build 22621.525 (the one that can be downloaded from the Microsoft website), 22621.1265 (the latest public build) and 25300 (latest Insider build as of now) are supported.
 
+but do NOT use the oscdimg.exe as the signing is missing a proper timestamp. Always use official Microsoft tools from their website. oscdimg.exe is included in the Windows ADK Package located @ https://learn.microsoft.com/en-us/windows-hardware/get-started/adk-install
+
+Why should you not trust digital signatures - Check out the latest hack from 3cx and it exploiting them in this article: https://www.bleepingcomputer.com/news/microsoft/10-year-old-windows-bug-with-opt-in-fix-exploited-in-3cx-attack/
+
 Instructions:
 
 1. Download Windows 11 22621.1265 from UUPDump or 22621.525 or 25300 from the Microsoft website (<https://www.microsoft.com/software-download/windows11>)
