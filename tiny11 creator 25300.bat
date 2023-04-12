@@ -119,9 +119,9 @@ dism /image:c:\scratchdir /Remove-Package /PackageName:Microsoft-Windows-TabletP
 echo Removing Wallpapers:
 dism /image:c:\scratchdir /Remove-Package /PackageName:Microsoft-Windows-Wallpaper-Content-Extended-FoD-Package~31bf3856ad364e35~amd64~~10.0.25300.1000 > nul
 
-echo Removing Edge:
-rd "C:\scratchdir\Program Files (x86)\Microsoft\Edge" /s /q
-rd "C:\scratchdir\Program Files (x86)\Microsoft\EdgeUpdate" /s /q
+REM echo Removing Edge:
+REM rd "C:\scratchdir\Program Files (x86)\Microsoft\Edge" /s /q
+REM rd "C:\scratchdir\Program Files (x86)\Microsoft\EdgeUpdate" /s /q
 echo Removing OneDrive:
 takeown /f C:\scratchdir\Windows\System32\OneDriveSetup.exe
 icacls C:\scratchdir\Windows\System32\OneDriveSetup.exe /grant Administrators:F /T /C
