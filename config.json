@@ -1,5 +1,5 @@
 {
-    "WindowsIsoDownloaderReleaseUrl": "https://github.com/ianis58/WindowsIsoDownloader/releases/download/v1.0/WindowsIsoDownloader-1.0.zip",
+    "WindowsIsoDownloaderReleaseUrl": "https://github.com/ianis58/WindowsIsoDownloader/releases/latest/download/WindowsIsoDownloader.zip",
     "WantedWindowsEdition": "Windows 11 Pro",
     "ProvisionnedPackagesToRemove": [
         "Clipchamp.Clipchamp_",
