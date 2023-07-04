@@ -25,7 +25,7 @@ if not exist "%DriveLetter%\sources\install.wim" (
 )
 md c:\tiny11
 echo Copying Windows image...
-xcopy.exe /E /I /H /R /Y /J %DriveLetter% c:\tiny11 >nul
+xcopy.exe /E /I /H /R /Y /J %DriveLetter%\ c:\tiny11 >nul
 echo Copy complete!
 sleep 2
 cls
