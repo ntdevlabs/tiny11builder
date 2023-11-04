@@ -25,7 +25,8 @@ Known issues:
 
 ~~1. Microsoft Teams (personal) and Cortana are still here. If you find a way to remove them before I find one, feel free to help!~~
 2. Although Edge is removed, the icon and a ghost of its taskbar pin are still available. Also, there are some remnants in the Settings. But the app in itself is deleted.
-4. Only en-us x64 is supported as of now. This can be easily fixable by the end user, just by replacing every instance of en-us with the language needed (like ro-RO and so on), and every x64 instance with arm64.
+3. Only en-us x64 is supported as of now. This can be easily fixable by the end user, just by replacing every instance of en-us with the language needed (like ro-RO and so on), and every x64 instance with arm64.
+4. The branding is still Windows 11 and the post-setup wasn't intergrated. Will soon be added.
 
 And that's pretty much it for now!
 Thanks for trying it and let me know how you like it!
