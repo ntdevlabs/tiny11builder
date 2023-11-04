@@ -18,7 +18,9 @@ Instructions:
 7. When the image is completed, you will see it in the folder where the script was extracted, with the name nano11.iso
 
 What is removed:
+
 Everything Nano11 Removes
+
 Known issues:
 
 ~~1. Microsoft Teams (personal) and Cortana are still here. If you find a way to remove them before I find one, feel free to help!~~
