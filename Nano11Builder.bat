@@ -1,13 +1,13 @@
 @echo off
 setlocal EnableExtensions EnableDelayedExpansion
 
-title tiny11 builder alpha
-echo Welcome to the tiny11 image creator!
+title Nano11 Builder
+echo Welcome to the Nano11 image creator!
 timeout /t 3 /nobreak > nul
 cls
 
 set DriveLetter=
-set /p DriveLetter=Please enter the drive letter for the Windows 11 image: 
+set /p DriveLetter=Please enter the drive letter for the Windows 11 image to modify: 
 set "DriveLetter=%DriveLetter%:"
 echo.
 if not exist "%DriveLetter%\sources\boot.wim" (
@@ -23,76 +23,76 @@ if not exist "%DriveLetter%\sources\install.wim" (
 	echo.Please enter the correct DVD Drive Letter..
 	goto :Stop
 )
-md c:\tiny11
+md C:\nano11
 echo Copying Windows image...
-xcopy.exe /E /I /H /R /Y /J %DriveLetter% c:\tiny11 >nul
+xcopy.exe /E /I /H /R /Y /J %DriveLetter% C:\nano11 >nul
 echo Copy complete!
 sleep 2
 cls
 echo Getting image information:
-dism /Get-WimInfo /wimfile:c:\tiny11\sources\install.wim
+dism /Get-WimInfo /wimfile:c:\nano11\sources\install.wim
 set index=
 set /p index=Please enter the image index:
 set "index=%index%"
 echo Mounting Windows image. This may take a while.
 echo.
 md c:\scratchdir
-dism /mount-image /imagefile:c:\tiny11\sources\install.wim /index:%index% /mountdir:c:\scratchdir
+dism /mount-image /imagefile:C:\nano11\sources\install.wim /index:%index% /mountdir:c:\scratchdir
 echo Mounting complete! Performing removal of applications...
 echo Removing Clipchamp...
-dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Clipchamp.Clipchamp_2.2.8.0_neutral_~_yxz26nhyzhsrt 
+dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Clipchamp.Clipchamp*
 echo Removing News...
-dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Microsoft.BingNews_2022.507.446.0_neutral_~_8wekyb3d8bbwe
+dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Microsoft.BingNews*
 echo Removing Weather...
-dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Microsoft.BingWeather_2022.507.447.0_neutral_~_8wekyb3d8bbwe
+dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Microsoft.BingWeather*
 echo Removing Xbox...
-dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Microsoft.GamingApp_2022.507.447.0_neutral_~_8wekyb3d8bbwe
+dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Microsoft.GamingApp*
 echo Removing GetHelp...
-dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Microsoft.GetHelp_2022.507.447.0_neutral_~_8wekyb3d8bbwe
+dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Microsoft.GetHelp*
 echo Removing GetStarted...
-dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Microsoft.Getstarted_2022.507.447.0_neutral_~_8wekyb3d8bbwe
+dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Microsoft.Getstarted*
 echo Removing Office Hub...
-dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Microsoft.MicrosoftOfficeHub_2022.507.447.0_neutral_~_8wekyb3d8bbwe
+dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Microsoft.MicrosoftOfficeHub*
 echo Removing Solitaire...
-dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Microsoft.MicrosoftSolitaireCollection_2022.507.447.0_neutral_~_8wekyb3d8bbwe
+dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Microsoft.MicrosoftSolitaireCollection*
 echo Removing PeopleApp...
-dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Microsoft.People_2022.507.446.0_neutral_~_8wekyb3d8bbwe
+dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Microsoft.People*
 echo Removing PowerAutomate...
-dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Microsoft.PowerAutomateDesktop_2022.507.446.0_neutral_~_8wekyb3d8bbwe
+dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Microsoft.PowerAutomateDesktop*
 echo Removing ToDo...
-dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Microsoft.Todos_2022.507.447.0_neutral_~_8wekyb3d8bbwe
+dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Microsoft.Todos*
 echo Removing Alarms...
-dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Microsoft.WindowsAlarms_2022.507.446.0_neutral_~_8wekyb3d8bbwe
+dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Microsoft.WindowsAlarms*
 echo Removing Mail...
-dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:microsoft.windowscommunicationsapps_2022.507.447.0_neutral_~_8wekyb3d8bbwe
+dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:microsoft.windowscommunicationsapps*
 echo Removing Feedback Hub...
-dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Microsoft.WindowsFeedbackHub_2022.507.447.0_neutral_~_8wekyb3d8bbwe
+dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Microsoft.WindowsFeedbackHub*
 echo Removing Maps...
-dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Microsoft.WindowsMaps_2022.507.447.0_neutral_~_8wekyb3d8bbwe
+dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Microsoft.WindowsMaps*
 echo Removing Sound Recorder...
-dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Microsoft.WindowsSoundRecorder_2022.507.447.0_neutral_~_8wekyb3d8bbwe
+dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Microsoft.WindowsSoundRecorder*
 echo Removing XboxTCUI...
-dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Microsoft.Xbox.TCUI_2022.507.446.0_neutral_~_8wekyb3d8bbwe
+dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Microsoft.Xbox.TCUI*e
 echo Removing XboxGamingOverlay...
-dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Microsoft.XboxGamingOverlay_2022.507.447.0_neutral_~_8wekyb3d8bbwe
+dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Microsoft.XboxGamingOverlay*
 echo Removing XboxGameOverlay...
-dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Microsoft.XboxGameOverlay_2022.507.446.0_neutral_~_8wekyb3d8bbwe
+dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Microsoft.XboxGameOverlay*
 echo Removing XboxSpeechToTextOverlay...
-dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Microsoft.XboxSpeechToTextOverlay_2022.507.446.0_neutral_~_8wekyb3d8bbwe
+dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Microsoft.XboxSpeechToTextOverlay*
 echo Removing Your Phone...
-dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Microsoft.YourPhone_2022.507.447.0_neutral_~_8wekyb3d8bbwe
+dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Microsoft.YourPhone*
 echo Removing Music...
-dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Microsoft.ZuneMusic_2022.507.447.0_neutral_~_8wekyb3d8bbwe
+dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Microsoft.ZuneMusic*
 echo Removing Video...
-dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Microsoft.ZuneVideo_2022.507.446.0_neutral_~_8wekyb3d8bbwe
+dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Microsoft.ZuneVideo*
 echo Removing Family...
-dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:MicrosoftCorporationII.MicrosoftFamily_2022.507.447.0_neutral_~_8wekyb3d8bbwe
+dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:MicrosoftCorporationII.MicrosoftFamily*
 echo Removing QuickAssist...
-dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:MicrosoftCorporationII.QuickAssist_2022.507.446.0_neutral_~_8wekyb3d8bbwe
+dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:MicrosoftCorporationII.QuickAssist*
 echo Removing Teams...
-dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:MicrosoftTeams_23002.403.1788.1930_x64__8wekyb3d8bbwe
+dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:MicrosoftTeams*
 echo Removing Cortana...
-dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Microsoft.549981C3F5F10_4.2204.13303.0_neutral_~_8wekyb3d8bbwe
+dism /image:c:\scratchdir /Remove-ProvisionedAppxPackage /PackageName:Microsoft.549981C3F5F10*
 
 echo Removing of system apps complete! Now proceeding to removal of system packages...
 timeout /t 1 /nobreak > nul
@@ -100,8 +100,6 @@ cls
 echo Removing Internet Explorer...
 dism /image:c:\scratchdir /Remove-Package /PackageName:Microsoft-Windows-InternetExplorer-Optional-Package~31bf3856ad364e35~amd64~en-US~11.0.22621.1 > nul
 dism /image:c:\scratchdir /Remove-Package /PackageName:Microsoft-Windows-InternetExplorer-Optional-Package~31bf3856ad364e35~amd64~~11.0.22621.1265 > nul
-echo Removing LA57:
-dism /image:c:\scratchdir /Remove-Package /PackageName:Microsoft-Windows-Kernel-LA57-FoD-Package~31bf3856ad364e35~amd64~~10.0.22621.1265 > nul
 echo Removing Handwriting:
 dism /image:c:\scratchdir /Remove-Package /PackageName:Microsoft-Windows-LanguageFeatures-Handwriting-en-us-Package~31bf3856ad364e35~amd64~~10.0.22621.1265 > nul
 echo Removing OCR:
@@ -115,10 +113,6 @@ dism /image:c:\scratchdir /Remove-Package /PackageName:Microsoft-Windows-MediaPl
 dism /image:c:\scratchdir /Remove-Package /PackageName:Microsoft-Windows-MediaPlayer-Package~31bf3856ad364e35~wow64~en-US~10.0.22621.1 > nul
 dism /image:c:\scratchdir /Remove-Package /PackageName:Microsoft-Windows-MediaPlayer-Package~31bf3856ad364e35~amd64~~10.0.22621.1265 > nul
 dism /image:c:\scratchdir /Remove-Package /PackageName:Microsoft-Windows-MediaPlayer-Package~31bf3856ad364e35~wow64~~10.0.22621.1 > nul
-echo Removing Tablet PC Math:
-dism /image:c:\scratchdir /Remove-Package /PackageName:Microsoft-Windows-TabletPCMath-Package~31bf3856ad364e35~amd64~~10.0.22621.1265 > nul
-echo Removing Wallpapers:
-dism /image:c:\scratchdir /Remove-Package /PackageName:Microsoft-Windows-Wallpaper-Content-Extended-FoD-Package~31bf3856ad364e35~amd64~~10.0.22621.1265 > nul
 
 echo Removing Edge:
 rd "C:\scratchdir\Program Files (x86)\Microsoft\Edge" /s /q
@@ -172,20 +166,24 @@ reg unload HKLM\zNTUSER >nul 2>&1
 reg unload HKLM\zSCHEMA >nul 2>&1
 reg unload HKLM\zSOFTWARE >nul 2>&1
 reg unload HKLM\zSYSTEM >nul 2>&1
+echo Replacing Wallpapers
+del C:\ScratchDir\Windows\Web\Wallpaper\Windows\img19.jpg
+copy /y %~dp0wallpaperdark.jpg c:\scratchdir\Windows\Web\Wallpaper\Windows\img19.jpg
+copy /y %~dp0wallpaperlight.jpg c:\scratchdir\Windows\Web\Wallpaper\Windows\img0.jpg
 echo Cleaning up image...
 dism /image:c:\scratchdir /Cleanup-Image /StartComponentCleanup /ResetBase
 echo Cleanup complete.
 echo Unmounting image...
 dism /unmount-image /mountdir:c:\scratchdir /commit
 echo Exporting image...
-Dism /Export-Image /SourceImageFile:c:\tiny11\sources\install.wim /SourceIndex:%index% /DestinationImageFile:c:\tiny11\sources\install2.wim /compress:max
-del c:\tiny11\sources\install.wim
-ren c:\tiny11\sources\install2.wim install.wim
+Dism /Export-Image /SourceImageFile:c:\nano11\sources\install.wim /SourceIndex:%index% /DestinationImageFile:c:\nano11\sources\install2.wim /compress:max
+del c:\nano11\sources\install.wim
+ren c:\nano11\sources\install2.wim install.wim
 echo Windows image completed. Continuing with boot.wim.
 timeout /t 2 /nobreak > nul
 cls
 echo Mounting boot image:
-dism /mount-image /imagefile:c:\tiny11\sources\boot.wim /index:2 /mountdir:c:\scratchdir
+dism /mount-image /imagefile:c:\nano11\sources\boot.wim /index:2 /mountdir:c:\scratchdir
 echo Loading registry...
 reg load HKLM\zCOMPONENTS "c:\scratchdir\Windows\System32\config\COMPONENTS" >nul
 reg load HKLM\zDEFAULT "c:\scratchdir\Windows\System32\config\default" >nul
@@ -215,18 +213,19 @@ reg unload HKLM\zSYSTEM >nul 2>&1
 echo Unmounting image...
 dism /unmount-image /mountdir:c:\scratchdir /commit 
 cls
-echo the tiny11 image is now completed. Proceeding with the making of the ISO...
+echo the nano11 image is now completed. Proceeding with the making of the ISO...
 echo Copying unattended file for bypassing MS account on OOBE...
-copy /y %~dp0autounattend.xml c:\tiny11\autounattend.xml
+copy /y %~dp0autounattend.xml c:\nano11\autounattend.xml
 echo.
 echo Creating ISO image...
-%~dp0oscdimg.exe -m -o -u2 -udfver102 -bootdata:2#p0,e,bc:\tiny11\boot\etfsboot.com#pEF,e,bc:\tiny11\efi\microsoft\boot\efisys.bin c:\tiny11 %~dp0tiny11.iso
+%~dp0oscdimg.exe -m -o -u2 -udfver102 -bootdata:2#p0,e,bc:\nano11\boot\etfsboot.com#pEF,e,bc:\nano11\efi\microsoft\boot\efisys.bin c:\nano11 %~dp0nano11.iso
 echo Creation completed! Press any key to exit the script...
 pause 
 echo Performing Cleanup...
-rd c:\tiny11 /s /q 
+rd c:\nano11 /s /q 
 rd c:\scratchdir /s /q 
-exit
+echo Creation Complete.
+pause
 
 
 
