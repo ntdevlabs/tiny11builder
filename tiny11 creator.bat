@@ -6,6 +6,15 @@ echo Welcome to the tiny11 image creator!
 timeout /t 3 /nobreak > nul
 cls
 
+echo Checking for administrative Priviliges.
+net session > nul
+if %errorlevel% NEQ 0 (
+	echo.Script must be ran as Administrator.
+	echo.
+	echo.Please run script as Administrator.
+	goto :Stop
+)
+
 set DriveLetter=
 set /p DriveLetter=Please enter the drive letter for the Windows 11 image: 
 set "DriveLetter=%DriveLetter%:"
