@@ -7,7 +7,7 @@ timeout /t 3 /nobreak > nul
 cls
 
 echo Checking for administrative Priviliges.
-net session > nul
+net session >nul 2>&1
 if %errorlevel% NEQ 0 (
 	echo.Script must be ran as Administrator.
 	echo.
