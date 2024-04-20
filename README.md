@@ -1,22 +1,24 @@
 # tiny11builder
 
-Scripts to build a trimmed-down Windows 11 image.
+Scripts to build a trimmed-down Windows 11 image - now in PowerShell!
+Tiny11 builder, now completely overhauled.
+After more than a year (for which I am so sorry) of no updates, tiny11 builder is now a much more complete and flexible solution - one script fits all.
+You can now use it on ANY Windows 11 release (not just a specific build), as well as ANY language or architecture.
+This was made possible thanks to the much-improved scripting capabilities of PowerShell, compared to the older Batch release.
 
-This is a script to automate the build of a streamlined Windows 11 image, similar to tiny11.
-My main goal is to use only Microsoft utilities like DISM, and nothing external. The only executable included is oscdimg.exe, which is provided in the Windows ADK and it is used to create bootable ISO images. Also included is an unattended answer file, which is used to bypass the MS account on OOBE and to deploy the image with the /compact flag.
+This is a script created to automate the build of a streamlined Windows 11 image, similar to tiny11.
+My main goal is to use only Microsoft utilities like DISM, and no utilities from external sources. The only executable included is oscdimg.exe, which is provided in the Windows ADK and it is used to create bootable ISO images. 
+Also included is an unattended answer file, which is used to bypass the Microsoft Account on OOBE and to deploy the image with the /compact flag.
 It's open-source, so feel free to add or remove anything you want! Feedback is also much appreciated.
-
-As of now, only build 22621.525 (the one that can be downloaded from the Microsoft website), 22621.1265 (the latest public build) and 25300 (latest Insider build as of now) are supported.
 
 Instructions:
 
-1. Download Windows 11 22621.1265 from UUPDump or 22621.525 or 25300 from the Microsoft website (<https://www.microsoft.com/software-download/windows11>)
+1. Download Windows 11 from the Microsoft website (<https://www.microsoft.com/software-download/windows11>)
 2. Mount the downloaded ISO image using Windows Explorer.
-3. For .1265, run tiny11 creator.bat as administrator. For .525 or 25300, use the aptly-named script (also as administrator).
-4. Select the drive letter where the image is mounted (only the letter, no colon (:))
-5. Select the SKU that you want the image to be based.
-6. Sit back and relax :)
-7. When the image is completed, you will see it in the folder where the script was extracted, with the name tiny11.iso
+3. Select the drive letter where the image is mounted (only the letter, no colon (:))
+4. Select the SKU that you want the image to be based.
+5. Sit back and relax :)
+6. When the image is completed, you will see it in the folder where the script was extracted, with the name tiny11.iso
 
 What is removed:
 Clipchamp,
@@ -51,10 +53,8 @@ OneDrive
 
 Known issues:
 
-1. Microsoft Teams (personal) and Cortana are still here. If you find a way to remove them before I find one, feel free to help!
-2. Although Edge is removed, the icon and a ghost of its taskbar pin are still available. Also, there are some remnants in the Settings. But the app in itself is deleted.
-3. The script is rather inflexible, as in only the builds specified can be modified. This is because with each new build Microsoft also updates the inbox apps included. If one tries to use other builds, it will work with varying degrees of success, but some things like the removal of Edge and OneDrive as well as bypassing system requirements or other patches will always be applied.
-4. Only en-us x64 is supported as of now. This can be easily fixable by the end user, just by replacing every instance of en-us with the language needed (like ro-RO and so on), and every x64 instance with arm64.
+1. Although Edge is removed, there are some remnants in the Settings. But the app in itself is deleted. You can install a browser using WinGet (after you update the app using Microsoft Store)
+2. Outlook and Dev Home might reappear after some time.
 
 And that's pretty much it for now!
 Thanks for trying it and let me know how you like it!
