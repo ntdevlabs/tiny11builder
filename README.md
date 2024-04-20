@@ -8,7 +8,7 @@ You can now use it on ANY Windows 11 release (not just a specific build), as wel
 This is made possible thanks to the much-improved scripting capabilities of PowerShell, compared to the older Batch release.
 
 Since it is written in PowerShell, make sure to set the execution policy to Unrestricted, so that you could run the script.
-If you haven't done this, make sure to run:
+If you haven't done this before, make sure to run:
 <br> Set-ExecutionPolicy unrestricted </br>
 as administrator in PowerShell before running the script, otherwise it would just crash.
 
