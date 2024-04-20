@@ -2,9 +2,17 @@
 
 Scripts to build a trimmed-down Windows 11 image - now in PowerShell!
 Tiny11 builder, now completely overhauled.
-After more than a year (for which I am so sorry) of no updates, tiny11 builder is now a much more complete and flexible solution - one script fits all.
+After more than a year (for which I am so sorry) of no updates, tiny11 builder is now a much more complete and flexible solution - one script fits all. Also, it is a steppingstone for an even more fleshed-out solution.
+
 You can now use it on ANY Windows 11 release (not just a specific build), as well as ANY language or architecture.
-This was made possible thanks to the much-improved scripting capabilities of PowerShell, compared to the older Batch release.
+This is made possible thanks to the much-improved scripting capabilities of PowerShell, compared to the older Batch release.
+
+Since it is written in PowerShell, make sure to set the execution policy to Unrestricted, so that you could run the script.
+If you haven't done this, make sure to run:
+<br> Set-ExecutionPolicy unrestricted </br>
+as administrator in PowerShell before running the script, otherwise it would just crash.
+
+
 
 This is a script created to automate the build of a streamlined Windows 11 image, similar to tiny11.
 My main goal is to use only Microsoft utilities like DISM, and no utilities from external sources. The only executable included is oscdimg.exe, which is provided in the Windows ADK and it is used to create bootable ISO images. 
@@ -53,7 +61,7 @@ OneDrive
 
 Known issues:
 
-1. Although Edge is removed, there are some remnants in the Settings. But the app in itself is deleted. You can install a browser using WinGet (after you update the app using Microsoft Store)
+1. Although Edge is removed, there are some remnants in the Settings. But the app in itself is deleted. You can install any browser using WinGet (after you update the app using Microsoft Store)
 2. Outlook and Dev Home might reappear after some time.
 
 And that's pretty much it for now!
