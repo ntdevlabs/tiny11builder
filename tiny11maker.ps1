@@ -13,16 +13,16 @@ $myWindowsPrincipal=new-object System.Security.Principal.WindowsPrincipal($myWin
 $adminRole=[System.Security.Principal.WindowsBuiltInRole]::Administrator
 if ($myWindowsPrincipal.IsInRole($adminRole))
 {
-   $Host.UI.RawUI.WindowTitle = "tiny11 builder"
-   Clear-Host
+    $Host.UI.RawUI.WindowTitle = "tiny11 builder"
+    Clear-Host
 }
 else
 {
-   $newProcess = new-object System.Diagnostics.ProcessStartInfo "PowerShell";
-   $newProcess.Arguments = $myInvocation.MyCommand.Definition;
-   $newProcess.Verb = "runas";
-   [System.Diagnostics.Process]::Start($newProcess);
-   exit
+    $newProcess = new-object System.Diagnostics.ProcessStartInfo "PowerShell";
+    $newProcess.Arguments = $myInvocation.MyCommand.Definition;
+    $newProcess.Verb = "runas";
+    [System.Diagnostics.Process]::Start($newProcess);
+    exit
 }
 Write-Host "Welcome to the tiny11 image creator!"
 Start-Sleep -Seconds 3
@@ -33,9 +33,9 @@ $DriveLetter = Read-Host "Please enter the drive letter for the Windows 11 image
 $DriveLetter = $DriveLetter + ":"
 
 if ((Test-Path "$DriveLetter\sources\boot.wim") -eq $false -or (Test-Path "$DriveLetter\sources\install.wim") -eq $false) {
-	Write-Host "Can't find Windows OS Installation files in the specified Drive Letter.."
-	Write-Host "Please enter the correct DVD Drive Letter.."
-	exit
+    Write-Host "Can't find Windows OS Installation files in the specified Drive Letter.."
+    Write-Host "Please enter the correct DVD Drive Letter.."
+    exit
 }
 
 New-Item -ItemType Directory -Force -Path "$mainOSDrive\tiny11"
