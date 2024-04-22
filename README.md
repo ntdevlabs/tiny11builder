@@ -31,29 +31,30 @@ Instructions:
 6. When the image is completed, you will see it in the folder where the script was extracted, with the name tiny11.iso
 
 What is removed:
-Clipchamp,
-News,
-Weather,
-Xbox (although Xbox Identity provider is still here, so it should be possible to be reinstalled with no issues),
-GetHelp,
-GetStarted,
-Office Hub,
-Solitaire,
-PeopleApp,
-PowerAutomate,
-ToDo,
-Alarms,
-Mail and Calendar,
-Feedback Hub,
-Maps,
-Sound Recorder,
-Your Phone,
-Media Player,
-QuickAssist,
-Internet Explorer,
-Tablet PC Math,
-Edge,
-OneDrive
+
+- Clipchamp
+- News
+- Weather
+- Xbox (although Xbox Identity provider is still here, so it should be possible to be reinstalled with no issues)
+- GetHelp
+- GetStarted
+- Office Hub
+- Solitaire
+- PeopleApp
+- PowerAutomate
+- ToDo
+- Alarms
+- Mail and Calendar
+- Feedback Hub
+- Maps
+- Sound Recorder
+- Your Phone
+- Media Player
+- QuickAssist
+- Internet Explorer
+- Tablet PC Math
+- Edge
+- OneDrive
 
 Known issues:
 
