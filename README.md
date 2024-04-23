@@ -1,6 +1,6 @@
 # tiny11builder
 
-Scripts to build a trimmed-down Windows 11 image - now in PowerShell!
+Scripts to build a trimmed-down Windows 11 image - now in **PowerShell**!
 <br>
 Tiny11 builder, now completely overhauled.
 </br>
@@ -9,17 +9,15 @@ After more than a year (for which I am so sorry) of no updates, tiny11 builder i
 You can now use it on ANY Windows 11 release (not just a specific build), as well as ANY language or architecture.
 This is made possible thanks to the much-improved scripting capabilities of PowerShell, compared to the older Batch release.
 </br>
-Since it is written in PowerShell, make sure to set the execution policy to Unrestricted, so that you could run the script.
-If you haven't done this before, make sure to run:
-<br> Set-ExecutionPolicy unrestricted </br>
-as administrator in PowerShell before running the script, otherwise it would just crash.
+Since it is written in PowerShell, you need to set the execution policy to  `Unrestricted`, so that you could run the script.
+If you haven't done this before, make sure to run `Set-ExecutionPolicy unrestricted` as administrator in PowerShell before running the script, otherwise it would just crash.
 
 
 
 This is a script created to automate the build of a streamlined Windows 11 image, similar to tiny11.
-My main goal is to use only Microsoft utilities like DISM, and no utilities from external sources. The only executable included is oscdimg.exe, which is provided in the Windows ADK and it is used to create bootable ISO images. 
-Also included is an unattended answer file, which is used to bypass the Microsoft Account on OOBE and to deploy the image with the /compact flag.
-It's open-source, so feel free to add or remove anything you want! Feedback is also much appreciated.
+My main goal is to use only Microsoft utilities like DISM, and no utilities from external sources. The only executable included is **oscdimg.exe**, which is provided in the Windows ADK and it is used to create bootable ISO images. 
+Also included is an unattended answer file, which is used to bypass the Microsoft Account on OOBE and to deploy the image with the `/compact` flag.
+It's open-source, **so feel free to add or remove anything you want!** Feedback is also much appreciated.
 
 Instructions:
 
@@ -58,9 +56,17 @@ What is removed:
 
 Known issues:
 
-1. Although Edge is removed, there are some remnants in the Settings. But the app in itself is deleted. You can install any browser using WinGet (after you update the app using Microsoft Store)
+1. Although Edge is removed, there are some remnants in the Settings. But the app in itself is deleted. You can install any browser using WinGet (after you update the app using Microsoft Store). If you want Edge, Copilot and Web Search back, simply install Edge using Winget: `winget install edge`.
+**Note:**You might have to update Winget first usimg Microsoft Store.
 2. Outlook and Dev Home might reappear after some time.
 3. If you are using this script on arm64, you might see a glimpse of an error while running the script. This is caused by the fact that the arm64 image doesn't have OneDriveSetup.exe included in the System32 folder.
+
+Features to be implemented:
+- disabling telemetry
+- more ad suppression
+- improved language and arch detection
+- more flexibility in what to keep and what to delete
+- maybe a GUI???
 
 And that's pretty much it for now!
 Thanks for trying it and let me know how you like it!
