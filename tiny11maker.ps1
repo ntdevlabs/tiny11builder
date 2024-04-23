@@ -45,7 +45,7 @@ Write-Host "Copy complete!"
 Start-Sleep -Seconds 2
 Clear-Host
 Write-Host "Getting image information:"
-&  'dism' "/Get-WimInfo" "/wimfile:$mainOSDrive\tiny11\sources\install.wim"
+&  'dism' '/English' "/Get-WimInfo" "/wimfile:$mainOSDrive\tiny11\sources\install.wim"
 $index = Read-Host "Please enter the image index"
 Write-Host "Mounting Windows image. This may take a while."
 $wimFilePath = "$($env:SystemDrive)\tiny11\sources\install.wim"
@@ -53,9 +53,9 @@ $wimFilePath = "$($env:SystemDrive)\tiny11\sources\install.wim"
 & icacls $wimFilePath "/grant" "Administrators:(F)"
 Set-ItemProperty -Path $wimFilePath -Name IsReadOnly -Value $false
 New-Item -ItemType Directory -Force -Path "$mainOSDrive\scratchdir"
-& dism "/mount-image" "/imagefile:$($env:SystemDrive)\tiny11\sources\install.wim" "/index:$index" "/mountdir:$($env:SystemDrive)\scratchdir"
+& dism /English "/mount-image" "/imagefile:$($env:SystemDrive)\tiny11\sources\install.wim" "/index:$index" "/mountdir:$($env:SystemDrive)\scratchdir"
 
-$imageIntl = & dism /Get-Intl "/Image:$($env:SystemDrive)\scratchdir"
+$imageIntl = & dism /English /Get-Intl "/Image:$($env:SystemDrive)\scratchdir"
 $languageLine = $imageIntl -split '\n' | Where-Object { $_ -match 'Default system UI language : ([a-zA-Z]{2}-[a-zA-Z]{2})' }
 
 if ($languageLine) {
@@ -65,7 +65,7 @@ if ($languageLine) {
     Write-Host "Default system UI language code not found."
 }
 
-$imageInfo = & 'dism' '/Get-WimInfo' "/wimFile:$($env:SystemDrive)\tiny11\sources\install.wim" "/index:$index"
+$imageInfo = & 'dism' '/English' '/Get-WimInfo' "/wimFile:$($env:SystemDrive)\tiny11\sources\install.wim" "/index:$index"
 $lines = $imageInfo -split '\r?\n'
 
 foreach ($line in $lines) {
@@ -87,7 +87,7 @@ if (-not $architecture) {
 
 Write-Host "Mounting complete! Performing removal of applications..."
 
-$packages = & 'dism' "/image:$($env:SystemDrive)\scratchdir" '/Get-ProvisionedAppxPackages' |
+$packages = & 'dism' '/English' "/image:$($env:SystemDrive)\scratchdir" '/Get-ProvisionedAppxPackages' |
     ForEach-Object {
         if ($_ -match 'PackageName : (.*)') {
             $matches[1]
@@ -100,7 +100,7 @@ $packagesToRemove = $packages | Where-Object {
     $packagePrefixes -contains ($packagePrefixes | Where-Object { $packageName -like "$_*" })
 }
 foreach ($package in $packagesToRemove) {
-    & 'dism' "/image:$($env:SystemDrive)\scratchdir" '/Remove-ProvisionedAppxPackage' "/PackageName:$package"
+    & 'dism' '/English' "/image:$($env:SystemDrive)\scratchdir" '/Remove-ProvisionedAppxPackage' "/PackageName:$package"
 }
 
 
@@ -208,12 +208,12 @@ reg unload HKLM\zSCHEMA
 reg unload HKLM\zSOFTWARE
 reg unload HKLM\zSYSTEM
 Write-Host "Cleaning up image..."
-& 'dism' "/image:$mainOSDrive\scratchdir" '/Cleanup-Image' '/StartComponentCleanup' '/ResetBase'
+& 'dism' '/English' "/image:$mainOSDrive\scratchdir" '/Cleanup-Image' '/StartComponentCleanup' '/ResetBase'
 Write-Host "Cleanup complete."
 Write-Host "Unmounting image..."
-& 'dism' '/unmount-image' "/mountdir:$mainOSDrive\scratchdir" '/commit'
+& 'dism' '/English' '/unmount-image' "/mountdir:$mainOSDrive\scratchdir" '/commit'
 Write-Host "Exporting image..."
-& 'Dism' '/Export-Image' "/SourceImageFile:$mainOSDrive\tiny11\sources\install.wim" "/SourceIndex:$index" "/DestinationImageFile:$mainOSDrive\tiny11\sources\install2.wim" '/compress:max'
+& 'dism' '/English' '/Export-Image' "/SourceImageFile:$mainOSDrive\tiny11\sources\install.wim" "/SourceIndex:$index" "/DestinationImageFile:$mainOSDrive\tiny11\sources\install2.wim" '/compress:max'
 Remove-Item -Path "$mainOSDrive\tiny11\sources\install.wim" -Force
 Rename-Item -Path "$mainOSDrive\tiny11\sources\install2.wim" -NewName "install.wim"
 Write-Host "Windows image completed. Continuing with boot.wim."
@@ -224,7 +224,7 @@ $wimFilePath = "$($env:SystemDrive)\tiny11\sources\boot.wim"
 & takeown "/F" $wimFilePath
 & icacls $wimFilePath "/grant" "Administrators:(F)"
 Set-ItemProperty -Path $wimFilePath -Name IsReadOnly -Value $false
-& 'dism' '/mount-image' "/imagefile:$mainOSDrive\tiny11\sources\boot.wim" '/index:2' "/mountdir:$mainOSDrive\scratchdir"
+& 'dism' '/English' '/mount-image' "/imagefile:$mainOSDrive\tiny11\sources\boot.wim" '/index:2' "/mountdir:$mainOSDrive\scratchdir"
 Write-Host "Loading registry..."
 reg load HKLM\zCOMPONENTS $mainOSDrive\scratchdir\Windows\System32\config\COMPONENTS
 reg load HKLM\zDEFAULT $mainOSDrive\scratchdir\Windows\System32\config\default
@@ -252,7 +252,7 @@ reg unload HKLM\zSCHEMA
 reg unload HKLM\zSOFTWARE
 reg unload HKLM\zSYSTEM
 Write-Host "Unmounting image..."
-& 'dism' '/unmount-image' "/mountdir:$mainOSDrive\scratchdir" '/commit'
+& 'dism' '/English' '/unmount-image' "/mountdir:$mainOSDrive\scratchdir" '/commit'
 Clear-Host
 Write-Host "The tiny11 image is now completed. Proceeding with the making of the ISO..."
 Write-Host "Copying unattended file for bypassing MS account on OOBE..."
