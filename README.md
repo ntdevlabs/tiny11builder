@@ -58,7 +58,7 @@ Known issues:
 
 1. Although Edge is removed, there are some remnants in the Settings. But the app in itself is deleted. You can install any browser using WinGet (after you update the app using Microsoft Store). If you want Edge, Copilot and Web Search back, simply install Edge using Winget: `winget install edge`.
 <br>
-**Note**: You might have to update Winget first usimg Microsoft Store.
+**Note** : You might have to update Winget first usimg Microsoft Store.
 </br>
 3. Outlook and Dev Home might reappear after some time.
 4. If you are using this script on arm64, you might see a glimpse of an error while running the script. This is caused by the fact that the arm64 image doesn't have OneDriveSetup.exe included in the System32 folder.
