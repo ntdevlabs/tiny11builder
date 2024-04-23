@@ -62,6 +62,8 @@ Note: You might have to update Winget first usimg Microsoft Store.
 <br>
 </br>
 2. Outlook and Dev Home might reappear after some time.
+<br>
+</br>
 3. If you are using this script on arm64, you might see a glimpse of an error while running the script. This is caused by the fact that the arm64 image doesn't have OneDriveSetup.exe included in the System32 folder.
 
 Features to be implemented:
