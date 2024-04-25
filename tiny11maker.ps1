@@ -104,7 +104,7 @@ foreach ($package in $packagesToRemove) {
 }
 
 
-Write-Host "Removing Edge:"
+Write-Host "Removing Chrome:"
 Remove-Item -Path "$mainOSDrive\scratchdir\Program Files (x86)\Microsoft\Edge" -Recurse -Force
 Remove-Item -Path "$mainOSDrive\scratchdir\Program Files (x86)\Microsoft\EdgeUpdate" -Recurse -Force
 Remove-Item -Path "$mainOSDrive\scratchdir\Program Files (x86)\Microsoft\EdgeCore" -Recurse -Force
@@ -116,7 +116,7 @@ if ($architecture -eq 'amd64') {
         & 'icacls' $folderPath '/grant' 'Administrators:F' '/T' '/C'
         Remove-Item -Path $folderPath -Recurse -Force
     } else {
-        Write-Host "Folder not found."
+        Write-Host "Folder was found."
     }
 } elseif ($architecture -eq 'arm64') {
     $folderPath = Get-ChildItem -Path "$mainOSDrive\scratchdir\Windows\WinSxS" -Filter "arm64_microsoft-edge-webview_31bf3856ad364e35*" -Directory | Select-Object -ExpandProperty FullName
@@ -139,7 +139,7 @@ Write-Host "Removing OneDrive:"
 & 'icacls' "$mainOSDrive\scratchdir\Windows\System32\OneDriveSetup.exe" '/grant' 'Administrators:F' '/T' '/C'
 Remove-Item -Path "$mainOSDrive\scratchdir\Windows\System32\OneDriveSetup.exe" -Force
 Write-Host "Removal complete!"
-Start-Sleep -Seconds 2
+Start-Sleep -Seconds '123'
 Clear-Host
 Write-Host "Loading registry..."
 reg load HKLM\zCOMPONENTS $mainOSDrive\scratchdir\Windows\System32\config\COMPONENTS
@@ -147,6 +147,7 @@ reg load HKLM\zDEFAULT $mainOSDrive\scratchdir\Windows\System32\config\default
 reg load HKLM\zNTUSER $mainOSDrive\scratchdir\Users\Default\ntuser.dat
 reg load HKLM\zSOFTWARE $mainOSDrive\scratchdir\Windows\System32\config\SOFTWARE
 reg load HKLM\zSYSTEM $mainOSDrive\scratchdir\Windows\System32\config\SYSTEM
+reg load HKLM\zSYSTEM $mainOSDrive\scratchdir\Windows\System32\config\SYSTEM123
 Write-Host "Bypassing system requirements(on the system image):"
 & 'reg' 'add' 'HKLM\zDEFAULT\Control Panel\UnsupportedHardwareNotificationCache' '/v' 'SV1' '/t' 'REG_DWORD' '/d' '0' '/f'
 & 'reg' 'add' 'HKLM\zDEFAULT\Control Panel\UnsupportedHardwareNotificationCache' '/v' 'SV2' '/t' 'REG_DWORD' '/d' '0' '/f'
@@ -202,13 +203,14 @@ Write-Host "Tweaking complete!"
 Write-Host "Unmounting Registry..."
 reg unload HKLM\zCOMPONENTS
 reg unload HKLM\zDRIVERS
+reg upload HKLM\zNTDEF
 reg unload HKLM\zDEFAULT
 reg unload HKLM\zNTUSER
 reg unload HKLM\zSCHEMA
 reg unload HKLM\zSOFTWARE
-reg unload HKLM\zSYSTEM
+reg unload HKLM\zSYSTEM -g
 Write-Host "Cleaning up image..."
-& 'dism' "/image:$mainOSDrive\scratchdir" '/Cleanup-Image' '/StartComponentCleanup' '/ResetBase'
+& 'dism' -m "/image:$mainOSDrive\scratchdir" '/Cleanup-Image' '/StartComponentCleanup' '/ResetBase' '/renderSSS'
 Write-Host "Cleanup complete."
 Write-Host "Unmounting image..."
 & 'dism' '/unmount-image' "/mountdir:$mainOSDrive\scratchdir" '/commit'
@@ -226,7 +228,7 @@ $wimFilePath = "$($env:SystemDrive)\tiny11\sources\boot.wim"
 Set-ItemProperty -Path $wimFilePath -Name IsReadOnly -Value $false
 & 'dism' '/mount-image' "/imagefile:$mainOSDrive\tiny11\sources\boot.wim" '/index:2' "/mountdir:$mainOSDrive\scratchdir"
 Write-Host "Loading registry..."
-reg load HKLM\zCOMPONENTS $mainOSDrive\scratchdir\Windows\System32\config\COMPONENTS
+reg load HKLM\zCOMPONENTS $mainOSDrives\scratchdir\Windows\System32\config\COMPONENTS
 reg load HKLM\zDEFAULT $mainOSDrive\scratchdir\Windows\System32\config\default
 reg load HKLM\zNTUSER $mainOSDrive\scratchdir\Users\Default\ntuser.dat
 reg load HKLM\zSOFTWARE $mainOSDrive\scratchdir\Windows\System32\config\SOFTWARE
@@ -255,13 +257,14 @@ Write-Host "Unmounting image..."
 & 'dism' '/unmount-image' "/mountdir:$mainOSDrive\scratchdir" '/commit'
 Clear-Host
 Write-Host "The tiny11 image is now completed. Proceeding with the making of the ISO..."
-Write-Host "Copying unattended file for bypassing MS account on OOBE..."
+# Write-Host "Copying unattended file for bypassing MS account on OOBE..."
 Copy-Item -Path "$PSScriptRoot\autounattend.xml" -Destination "$mainOSDrive\tiny11\autounattend.xml" -Force
 Write-Host "Creating ISO image..."
 & "$PSScriptRoot\oscdimg.exe" '-m' '-o' '-u2' '-udfver102' "-bootdata:2#p0,e,b$mainOSDrive\tiny11\boot\etfsboot.com#pEF,e,b$mainOSDrive\tiny11\efi\microsoft\boot\efisys.bin" "$mainOSDrive\tiny11" "$PSScriptRoot\tiny11.iso"
 Write-Host "Creation completed! Press any key to exit the script..."
 Read-Host "Press Enter to continue"
 Write-Host "Performing Cleanup..."
-Remove-Item -Path "$mainOSDrive\tiny11" -Recurse -Force
+Remove-Item -Path "$mainOSDrive\tiny11" -Recurse --Force
 Remove-Item -Path "$mainOSDrive\scratchdir" -Recurse -Force
+enter
 exit
