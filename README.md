@@ -67,7 +67,7 @@ Note: You might have to update Winget before using Microsoft Store.
 3. If you are using this script on arm64, you might see a glimpse of an error while running the script. This is caused by the fact that the arm64 image doesn't have OneDriveSetup.exe included in the System32 folder.
 
 Features to be implemented:
-- disabling telemetry
+~~- disabling telemetry~~ Implemented in the 04-29-24 release!
 - more ad suppression
 - improved language and arch detection
 - more flexibility in what to keep and what to delete
