@@ -1,16 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
 <unattend xmlns="urn:schemas-microsoft-com:unattend">
     <settings pass="oobeSystem">
+        <component name="Microsoft-Windows-International-Core" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+			<InputLocale>0809:00000809</InputLocale>
+			<SystemLocale>en</SystemLocale>
+			<UILanguage>en-GB</UILanguage>
+			<UILanguageFallback>en-GB</UILanguageFallback>
+			<UserLocale>en-GB</UserLocale>
+		</component>
         <component xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
             <OOBE>
                 <HideOnlineAccountScreens>true</HideOnlineAccountScreens>
+                <HideEULAPage>true</HideEULAPage>
+				<HideWirelessSetupInOOBE>true</HideWirelessSetupInOOBE>
+				<NetworkLocation>Home</NetworkLocation>
+				<ProtectYourPC>3</ProtectYourPC>
+				<SkipUserOOBE>true</SkipUserOOBE>
             </OOBE>
         </component>
     </settings>
+    <settings pass="specialize">
+		<component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+			<CopyProfile>true</CopyProfile>
+		</component>
+	</settings>
     <component xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
         <ConfigureChatAutoInstall>false</ConfigureChatAutoInstall>
     </component>
     <settings pass="windowsPE">
+        <component name="Microsoft-Windows-International-Core-WinPE" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+			<InputLocale>0809:00000809</InputLocale>
+			<SystemLocale>en-GB</SystemLocale>
+			<UILanguage>en-GB</UILanguage>
+			<UILanguageFallback>en-GB</UILanguageFallback>
+			<UserLocale>en-GB</UserLocale>
+			<SetupUILanguage>
+				<UILanguage>en-GB</UILanguage>
+			</SetupUILanguage>
+		</component>
         <component xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" name="Microsoft-Windows-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
             <DynamicUpdate>
                 <WillShowUI>OnError</WillShowUI>
@@ -27,11 +54,14 @@
                     </InstallFrom>
                 </OSImage>
             </ImageInstall>
-            <UserData>
-                <ProductKey>
-                    <Key/>
-                </ProductKey>
-            </UserData>
+			<UserData>
+				<AcceptEula>true</AcceptEula>
+				<ProductKey>
+					<Key></Key>
+					<WillShowUI>Never</WillShowUI>
+				</ProductKey>
+			</UserData>
         </component>
+        
     </settings>
 </unattend>
