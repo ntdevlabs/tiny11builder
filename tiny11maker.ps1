@@ -1,4 +1,6 @@
 # Enable debugging
+# For full debug log set screen buffer to 7550+ lines
+# Also comment-out all Clear-Host calls
 #Set-PSDebug -Trace 1
 
 # Check if PowerShell execution is restricted
@@ -28,7 +30,7 @@ if (! $myWindowsPrincipal.IsInRole($adminRole))
 }
 
 # Start the transcript and prepare the window
-Start-Transcript -Path "$PSScriptRoot\tiny11.log" -UseMinimalHeader
+Start-Transcript -Path "$PSScriptRoot\tiny11.log"
 
 $Host.UI.RawUI.WindowTitle = "Tiny11 image creator"
 Clear-Host
