@@ -66,9 +66,11 @@ Write-Host "Getting image information:"
 &  'dism' '/English' "/Get-WimInfo" "/wimfile:$mainOSDrive\tiny11\sources\install.wim"
 $index = Read-Host "Please enter the image index"
 Write-Host "Mounting Windows image. This may take a while."
+$adminSID = New-Object System.Security.Principal.SecurityIdentifier("S-1-5-32-544")
+$adminGroup = $adminSID.Translate([System.Security.Principal.NTAccount])
 $wimFilePath = "$($env:SystemDrive)\tiny11\sources\install.wim" 
 & takeown "/F" $wimFilePath 
-& icacls $wimFilePath "/grant" "Administrators:(F)" 
+& icacls $wimFilePath "/grant" "$($adminGroup.Value):(F)"
 try {
     Set-ItemProperty -Path $wimFilePath -Name IsReadOnly -Value $false -ErrorAction Stop
 } catch {
@@ -134,7 +136,7 @@ if ($architecture -eq 'amd64') {
 
     if ($folderPath) {
         & 'takeown' '/f' $folderPath '/r' >null
-        & 'icacls' $folderPath '/grant' 'Administrators:F' '/T' '/C' >null
+        & icacls $folderPath  "/grant" "$($adminGroup.Value):(F)" '/T' '/C' >null
         Remove-Item -Path $folderPath -Recurse -Force >null
     } else {
         Write-Host "Folder not found."
@@ -144,7 +146,7 @@ if ($architecture -eq 'amd64') {
 
     if ($folderPath) {
         & 'takeown' '/f' $folderPath '/r'>null
-        & 'icacls' $folderPath '/grant' 'Administrators:F' '/T' '/C' >null
+        & icacls $folderPath  "/grant" "$($adminGroup.Value):(F)" '/T' '/C' >null
         Remove-Item -Path $folderPath -Recurse -Force >null
     } else {
         Write-Host "Folder not found."
@@ -153,11 +155,11 @@ if ($architecture -eq 'amd64') {
     Write-Host "Unknown architecture: $architecture"
 }
 & 'takeown' '/f' "$mainOSDrive\scratchdir\Windows\System32\Microsoft-Edge-Webview" '/r' >null
-& 'icacls' "$mainOSDrive\scratchdir\Windows\System32\Microsoft-Edge-Webview" '/grant' 'Administrators:F' '/T' '/C' >null
+& 'icacls' "$mainOSDrive\scratchdir\Windows\System32\Microsoft-Edge-Webview" '/grant' "$($adminGroup.Value):(F)" '/T' '/C' >null
 Remove-Item -Path "$mainOSDrive\scratchdir\Windows\System32\Microsoft-Edge-Webview" -Recurse -Force >null
 Write-Host "Removing OneDrive:"
 & 'takeown' '/f' "$mainOSDrive\scratchdir\Windows\System32\OneDriveSetup.exe" >null
-& 'icacls' "$mainOSDrive\scratchdir\Windows\System32\OneDriveSetup.exe" '/grant' 'Administrators:F' '/T' '/C' >null
+& 'icacls' "$mainOSDrive\scratchdir\Windows\System32\OneDriveSetup.exe" '/grant' "$($adminGroup.Value):(F)" '/T' '/C' >null
 Remove-Item -Path "$mainOSDrive\scratchdir\Windows\System32\OneDriveSetup.exe" -Force >null
 Write-Host "Removal complete!"
 Start-Sleep -Seconds 2
@@ -364,7 +366,7 @@ Clear-Host
 Write-Host "Mounting boot image:"
 $wimFilePath = "$($env:SystemDrive)\tiny11\sources\boot.wim" 
 & takeown "/F" $wimFilePath >null
-& icacls $wimFilePath "/grant" "Administrators:(F)" >null
+& icacls $wimFilePath "/grant" "$($adminGroup.Value):(F)"
 Set-ItemProperty -Path $wimFilePath -Name IsReadOnly -Value $false
 & 'dism' '/English' '/mount-image' "/imagefile:$mainOSDrive\tiny11\sources\boot.wim" '/index:2' "/mountdir:$mainOSDrive\scratchdir"
 Write-Host "Loading registry..."
