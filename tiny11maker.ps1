@@ -116,7 +116,7 @@ $packages = & 'dism' '/English' "/image:$($env:SystemDrive)\scratchdir" '/Get-Pr
             $matches[1]
         }
     }
-$packagePrefixes = 'Clipchamp.Clipchamp_', 'Microsoft.BingNews_', 'Microsoft.BingWeather_', 'Microsoft.GamingApp_', 'Microsoft.GetHelp_', 'Microsoft.Getstarted_', 'Microsoft.MicrosoftOfficeHub_', 'Microsoft.MicrosoftSolitaireCollection_', 'Microsoft.People_', 'Microsoft.PowerAutomateDesktop_', 'Microsoft.Todos_', 'Microsoft.WindowsAlarms_', 'microsoft.windowscommunicationsapps_', 'Microsoft.WindowsFeedbackHub_', 'Microsoft.WindowsMaps_', 'Microsoft.WindowsSoundRecorder_', 'Microsoft.Xbox.TCUI_', 'Microsoft.XboxGamingOverlay_', 'Microsoft.XboxGameOverlay_', 'Microsoft.XboxSpeechToTextOverlay_', 'Microsoft.YourPhone_', 'Microsoft.ZuneMusic_', 'Microsoft.ZuneVideo_', 'MicrosoftCorporationII.MicrosoftFamily_', 'MicrosoftCorporationII.QuickAssist_', 'MicrosoftTeams_', 'Microsoft.549981C3F5F10_'
+$packagePrefixes = 'Clipchamp.Clipchamp_', 'Microsoft.BingNews_', 'Microsoft.BingWeather_', 'Microsoft.GamingApp_', 'Microsoft.GetHelp_', 'Microsoft.Getstarted_', 'Microsoft.MicrosoftOfficeHub_', 'Microsoft.MicrosoftSolitaireCollection_', 'Microsoft.People_', 'Microsoft.PowerAutomateDesktop_', 'Microsoft.Todos_', 'Microsoft.WindowsAlarms_', 'microsoft.windowscommunicationsapps_', 'Microsoft.WindowsFeedbackHub_', 'Microsoft.WindowsMaps_', 'Microsoft.WindowsSoundRecorder_', 'Microsoft.Xbox.TCUI_', 'Microsoft.XboxGamingOverlay_', 'Microsoft.XboxGameOverlay_', 'Microsoft.XboxSpeechToTextOverlay_', 'Microsoft.YourPhone_', 'Microsoft.ZuneMusic_', 'Microsoft.ZuneVideo_', 'MicrosoftCorporationII.MicrosoftFamily_', 'MicrosoftCorporationII.QuickAssist_', 'MicrosoftTeams_', 'Microsoft.549981C3F5F10_', 'Microsoft.Windows.DevHome_', 'Microsoft.OutlookForWindows_', 'MSTeams_', 'Microsoft.MicrosoftStickyNotes_', 'Microsoft.BingSearch_', 'Microsoft.XboxIdentityProvider_'
 
 $packagesToRemove = $packages | Where-Object {
     $packageName = $_
@@ -170,6 +170,7 @@ reg load HKLM\zDEFAULT $mainOSDrive\scratchdir\Windows\System32\config\default >
 reg load HKLM\zNTUSER $mainOSDrive\scratchdir\Users\Default\ntuser.dat >null
 reg load HKLM\zSOFTWARE $mainOSDrive\scratchdir\Windows\System32\config\SOFTWARE >null
 reg load HKLM\zSYSTEM $mainOSDrive\scratchdir\Windows\System32\config\SYSTEM >null
+reg load HKU\zUSER $mainOSDrive\scratchdir\Users\Default\ntuser.dat >null
 Write-Host "Bypassing system requirements(on the system image):"
 & 'reg' 'add' 'HKLM\zDEFAULT\Control Panel\UnsupportedHardwareNotificationCache' '/v' 'SV1' '/t' 'REG_DWORD' '/d' '0' '/f' >null
 & 'reg' 'add' 'HKLM\zDEFAULT\Control Panel\UnsupportedHardwareNotificationCache' '/v' 'SV2' '/t' 'REG_DWORD' '/d' '0' '/f' >null
@@ -237,6 +238,16 @@ Write-Host "Disabling bing in Start Menu:"
 & 'reg' 'add' 'HKLM\zNTUSER\Software\Policies\Microsoft\Windows\Explorer'
 & 'reg' 'add' 'HKLM\zNTUSER\Software\Policies\Microsoft\Windows\Explorer' '/v' 'ShowRunAsDifferentUserInStart' '/t' 'REG_DWORD' '/d' '1' '/f'
 & 'reg' 'add' 'HKLM\zNTUSER\Software\Policies\Microsoft\Windows\Explorer' '/v' 'DisableSearchBoxSuggestions' '/t' 'REG_DWORD' '/d' '1' '/f'
+Write-Host "Disabling widgets in Taskbar:"
+& 'reg' 'add' 'HKLM\zSOFTWARE\Policies\Microsoft\Dsh' '/v' 'AllowNewsAndInterests' '/t' 'REG_DWORD' '/d' '0' '/f'
+Write-Host "Disabling the cloud backup offer and stop OneDrive from moving folders:"
+& 'reg' 'add' 'HKLM\zSOFTWARE\Policies\Microsoft\OneDrive' '/v' 'KFMBlockOptIn' '/t' 'REG_DWORD' '/d' '2' '/f'
+Write-Host "Disabling OneDrive automatic setup:"
+& 'reg' 'add' 'HKLM\zSOFTWARE\Policies\Microsoft\Windows\OneDrive' '/v' 'DisableFileSyncNGSC' '/t' 'REG_DWORD' '/d' '1' '/f'
+& 'reg' 'delete' 'HKU\default\software\Microsoft\Windows\CurrentVersion\Run' '/v' 'OneDriveSetup' '/f'
+Write-Host "Prevent automatic installation of Dev Home and new Outlook:"
+& 'reg' 'delete' 'HKLM\zSOFTWARE\Microsoft\WindowsUpdate\Orchestrator\UScheduler_Oobe\OutlookUpdate' '/f'
+& 'reg' 'delete' 'HKLM\zSOFTWARE\Microsoft\WindowsUpdate\Orchestrator\UScheduler_Oobe\DevHomeUpdate' '/f'
 ## this function allows PowerShell to take ownership of the Scheduled Tasks registry key from TrustedInstaller. Based on Jose Espitia's script.
 function Enable-Privilege {
  param(
@@ -353,6 +364,7 @@ reg unload HKLM\zNTUSER >null
 reg unload HKLM\zSCHEMA >null
 reg unload HKLM\zSOFTWARE
 reg unload HKLM\zSYSTEM >null
+reg unload HKU\zUSER >null
 Write-Host "Cleaning up image..."
 & 'dism' '/English' "/image:$mainOSDrive\scratchdir" '/Cleanup-Image' '/StartComponentCleanup' '/ResetBase' >null
 Write-Host "Cleanup complete."
