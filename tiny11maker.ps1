@@ -45,11 +45,11 @@ $DriveLetter = $DriveLetter + ":"
 if ((Test-Path "$DriveLetter\sources\boot.wim") -eq $false -or (Test-Path "$DriveLetter\sources\install.wim") -eq $false) {
     if ((Test-Path "$DriveLetter\sources\install.esd") -eq $true) {
         Write-Host "Found install.esd, converting to install.wim..."
-        &  'dism' '/English' "/Get-WimInfo" "/wimfile:$DriveLetter\sources\install.esd"
+        Get-WindowsImage -ImagePath "$DriveLetter\sources\install.esd"
         $index = Read-Host "Please enter the image index"
         Write-Host ' '
         Write-Host 'Converting install.esd to install.wim. This may take a while...'
-        & 'DISM' /Export-Image /SourceImageFile:"$DriveLetter\sources\install.esd" /SourceIndex:$index /DestinationImageFile:"$mainOSDrive\tiny11\sources\install.wim" /Compress:max /CheckIntegrity
+        Export-WindowsImage -SourceImagePath "$DriveLetter\sources\install.esd" -SourceIndex $index -DestinationImagePath "$mainOSDrive\tiny11\sources\install.wim" -CompressionType 'max' -CheckIntegrity
     } else {
         Write-Host "Can't find Windows OS Installation files in the specified Drive Letter.."
         Write-Host "Please enter the correct DVD Drive Letter.."
@@ -65,7 +65,7 @@ Write-Host "Copy complete!"
 Start-Sleep -Seconds 2
 Clear-Host
 Write-Host "Getting image information:"
-&  'dism' '/English' "/Get-WimInfo" "/wimfile:$mainOSDrive\tiny11\sources\install.wim"
+Get-WindowsImage -ImagePath "$mainOSDrive\tiny11\sources\install.wim"
 $index = Read-Host "Please enter the image index"
 Write-Host "Mounting Windows image. This may take a while."
 $wimFilePath = "$($env:SystemDrive)\tiny11\sources\install.wim" 
@@ -77,54 +77,42 @@ try {
     # This block will catch the error and suppress it.
 }
 New-Item -ItemType Directory -Force -Path "$mainOSDrive\scratchdir" > $null
-& dism /English "/mount-image" "/imagefile:$($env:SystemDrive)\tiny11\sources\install.wim" "/index:$index" "/mountdir:$($env:SystemDrive)\scratchdir"
+Mount-WindowsImage -ImagePath $wimFilePath -Index $index -Path "$($env:SystemDrive)\scratchdir"
 
-$imageIntl = & dism /English /Get-Intl "/Image:$($env:SystemDrive)\scratchdir"
-$languageLine = $imageIntl -split '\n' | Where-Object { $_ -match 'Default system UI language : ([a-zA-Z]{2}-[a-zA-Z]{2})' }
+$imageInfo = Get-WindowsImage -ImagePath $wimFilePath -Index $index
 
-if ($languageLine) {
-    $languageCode = $Matches[1]
-    Write-Host "Default system UI language code: $languageCode"
-} else {
-    Write-Host "Default system UI language code not found."
+$languageCode = $imageInfo.Languages[$imageInfo.DefaultLanguageIndex]
+Write-Host "Default system UI language code: $languageCode"
+
+# Architecture enumeration found at https://github.com/jeffkl/ManagedDism/blob/94cf084528f4a986089335327ea67ff747a1dc6d/src/Microsoft.Dism/NativeEnums.cs#L275
+switch ($imageInfo.Architecture) {
+    0  { $architecture = 'x86'}
+    9  { $architecture = 'amd64'}
+    5  { $architecture = 'arm'}
+    12 { $architecture = 'arm64'}
+    6  { $architecture = 'ia64'}
+    11 { $architecture = 'neutral'}
+    Default { $architecture = 'unknown' }
 }
-
-$imageInfo = & 'dism' '/English' '/Get-WimInfo' "/wimFile:$($env:SystemDrive)\tiny11\sources\install.wim" "/index:$index"
-$lines = $imageInfo -split '\r?\n'
-
-foreach ($line in $lines) {
-    if ($line -like '*Architecture : *') {
-        $architecture = $line -replace 'Architecture : ',''
-        # If the architecture is x64, replace it with amd64
-        if ($architecture -eq 'x64') {
-            $architecture = 'amd64'
-        }
-        Write-Host "Architecture: $architecture"
-        break
-    }
-}
-
-if (-not $architecture) {
-    Write-Host "Architecture information not found."
-}
+Write-Host "Architecture: $architecture"
 
 Write-Host "Mounting complete! Performing removal of applications..."
 
-$packages = & 'dism' '/English' "/image:$($env:SystemDrive)\scratchdir" '/Get-ProvisionedAppxPackages' |
-    ForEach-Object {
-        if ($_ -match 'PackageName : (.*)') {
-            $matches[1]
-        }
-    }
-$packagePrefixes = 'Clipchamp.Clipchamp_', 'Microsoft.BingNews_', 'Microsoft.BingWeather_', 'Microsoft.GamingApp_', 'Microsoft.GetHelp_', 'Microsoft.Getstarted_', 'Microsoft.MicrosoftOfficeHub_', 'Microsoft.MicrosoftSolitaireCollection_', 'Microsoft.People_', 'Microsoft.PowerAutomateDesktop_', 'Microsoft.Todos_', 'Microsoft.WindowsAlarms_', 'microsoft.windowscommunicationsapps_', 'Microsoft.WindowsFeedbackHub_', 'Microsoft.WindowsMaps_', 'Microsoft.WindowsSoundRecorder_', 'Microsoft.Xbox.TCUI_', 'Microsoft.XboxGamingOverlay_', 'Microsoft.XboxGameOverlay_', 'Microsoft.XboxSpeechToTextOverlay_', 'Microsoft.YourPhone_', 'Microsoft.ZuneMusic_', 'Microsoft.ZuneVideo_', 'MicrosoftCorporationII.MicrosoftFamily_', 'MicrosoftCorporationII.QuickAssist_', 'MicrosoftTeams_', 'Microsoft.549981C3F5F10_'
-
-$packagesToRemove = $packages | Where-Object {
-    $packageName = $_
-    $packagePrefixes -contains ($packagePrefixes | Where-Object { $packageName -like "$_*" })
-}
-foreach ($package in $packagesToRemove) {
-    & 'dism' '/English' "/image:$($env:SystemDrive)\scratchdir" '/Remove-ProvisionedAppxPackage' "/PackageName:$package"
-}
+$packagesToRemove = @(
+    'Clipchamp.Clipchamp', 'Microsoft.BingNews', 'Microsoft.BingWeather', 
+    'Microsoft.GamingApp', 'Microsoft.GetHelp', 'Microsoft.Getstarted', 
+    'Microsoft.MicrosoftOfficeHub', 'Microsoft.MicrosoftSolitaireCollection', 
+    'Microsoft.People', 'Microsoft.PowerAutomateDesktop', 'Microsoft.Todos', 
+    'Microsoft.WindowsAlarms', 'microsoft.windowscommunicationsapps', 
+    'Microsoft.WindowsFeedbackHub', 'Microsoft.WindowsMaps', 
+    'Microsoft.WindowsSoundRecorder', 'Microsoft.Xbox.TCUI', 
+    'Microsoft.XboxGamingOverlay', 'Microsoft.XboxGameOverlay', 
+    'Microsoft.XboxSpeechToTextOverlay', 'Microsoft.YourPhone', 
+    'Microsoft.ZuneMusic', 'Microsoft.ZuneVideo', 
+    'MicrosoftCorporationII.MicrosoftFamily', 'MicrosoftCorporationII.QuickAssist', 
+    'MicrosoftTeams', 'Microsoft.549981C3F5F10'
+)
+Get-AppxProvisionedPackage -Path "$($env:SystemDrive)\scratchdir"  | Where-Object { $_.DisplayName -In $packagesToRemove } | Remove-AppxProvisionedPackage -Path "$($env:SystemDrive)\scratchdir"
 
 
 Write-Host "Removing Edge:"
@@ -354,13 +342,13 @@ reg unload HKLM\zSCHEMA >null
 reg unload HKLM\zSOFTWARE
 reg unload HKLM\zSYSTEM >null
 Write-Host "Cleaning up image..."
-& 'dism' '/English' "/image:$mainOSDrive\scratchdir" '/Cleanup-Image' '/StartComponentCleanup' '/ResetBase' >null
+Repair-WindowsImage -Path "$mainOSDrive\scratchdir" -StartComponentCleanup -ResetBase
 Write-Host "Cleanup complete."
 Write-Host ' '
 Write-Host "Unmounting image..."
-& 'dism' '/English' '/unmount-image' "/mountdir:$mainOSDrive\scratchdir" '/commit'
+Dismount-WindowsImage -Path "$mainOSDrive\scratchdir" -Save
 Write-Host "Exporting image..."
-& 'dism' '/English' '/Export-Image' "/SourceImageFile:$mainOSDrive\tiny11\sources\install.wim" "/SourceIndex:$index" "/DestinationImageFile:$mainOSDrive\tiny11\sources\install2.wim" '/compress:max'
+Export-WindowsImage -SourceImagePath "$mainOSDrive\tiny11\sources\install.wim" -SourceIndex $index -DestinationImagePath "$mainOSDrive\tiny11\sources\install2.wim" -CompressionType 'max'
 Remove-Item -Path "$mainOSDrive\tiny11\sources\install.wim" -Force >null
 Rename-Item -Path "$mainOSDrive\tiny11\sources\install2.wim" -NewName "install.wim" >null
 Write-Host "Windows image completed. Continuing with boot.wim."
@@ -371,7 +359,7 @@ $wimFilePath = "$($env:SystemDrive)\tiny11\sources\boot.wim"
 & takeown "/F" $wimFilePath >null
 & icacls $wimFilePath "/grant" "$($adminGroup.Value):(F)"
 Set-ItemProperty -Path $wimFilePath -Name IsReadOnly -Value $false
-& 'dism' '/English' '/mount-image' "/imagefile:$mainOSDrive\tiny11\sources\boot.wim" '/index:2' "/mountdir:$mainOSDrive\scratchdir"
+Mount-WindowsImage -ImagePath $wimFilePath -Index 2 -Path "$mainOSDrive\scratchdir"
 Write-Host "Loading registry..."
 reg load HKLM\zCOMPONENTS $mainOSDrive\scratchdir\Windows\System32\config\COMPONENTS
 reg load HKLM\zDEFAULT $mainOSDrive\scratchdir\Windows\System32\config\default
@@ -401,7 +389,7 @@ $regKey.Close()
 reg unload HKLM\zSOFTWARE
 reg unload HKLM\zSYSTEM >null
 Write-Host "Unmounting image..."
-& 'dism' '/English' '/unmount-image' "/mountdir:$mainOSDrive\scratchdir" '/commit'
+Dismount-WindowsImage -Path "$mainOSDrive\scratchdir" -Save
 Clear-Host
 Write-Host "The tiny11 image is now completed. Proceeding with the making of the ISO..."
 Write-Host "Copying unattended file for bypassing MS account on OOBE..."
