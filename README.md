@@ -62,7 +62,9 @@ For tiny11 core:
 - Windows Defender (only disabled, can be enabled back if needed)
 - Windows Update (Windows Update wouldn't work anyway without WinSxS, so enabling it would only put the system in a state where it would try to update but fail spectacularily)
 - WinRE
-Keep in mind that **you cannot add back features in tiny11 core**! 
+<br>
+Keep in mind that **you cannot add back features in tiny11 core**!
+</br>
 <br>
 You will be asked during iamge creation if you want to enable .net 3.5 support!
 </br>
