@@ -18,7 +18,7 @@ My main goal is to use only Microsoft utilities like DISM, and no utilities from
 Also included is an unattended answer file, which is used to bypass the Microsoft Account on OOBE and to deploy the image with the `/compact` flag.
 It's open-source, **so feel free to add or remove anything you want!** Feedback is also much appreciated.
 
-Also, for the very first time, **introducing tiny11 core builder**! A more powerful script, designed for a quick and dirty development testbed. Just the bare minimun, none of the fluff. 
+Also, for the very first time, **introducing tiny11 core builder**! A more powerful script, designed for a quick and dirty development tested. Just the bare minimun, none of the fluff. 
 This script generates a significantly reduced Windows 11 image. However, it's not suitable for regular use due to its lack of serviceability - you can't add languages, updates, or features post-creation. tiny11 Core is not a full Windows 11 substitute but a rapid testing or development tool, potentially useful for VM environments.
 
 Instructions:
