@@ -66,7 +66,7 @@ For tiny11 core:
 Keep in mind that **you cannot add back features in tiny11 core**!
 </br>
 <br>
-You will be asked during iamge creation if you want to enable .net 3.5 support!
+You will be asked during image creation if you want to enable .net 3.5 support!
 </br>
 Known issues:
 
