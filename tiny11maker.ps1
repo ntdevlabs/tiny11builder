@@ -409,14 +409,40 @@ Write-Host "The tiny11 image is now completed. Proceeding with the making of the
 Write-Host "Copying unattended file for bypassing MS account on OOBE..."
 Copy-Item -Path "$PSScriptRoot\autounattend.xml" -Destination "$ScratchDisk\tiny11\autounattend.xml" -Force >null
 Write-Host "Creating ISO image..."
+# Define the path to the ADK Deployment Tools folder
 $ADKDepTools = "C:\Program Files (x86)\Windows Kits\10\Assessment and Deployment Kit\Deployment Tools\$hostarchitecture\Oscdimg"
+$localOSCDIMGPath = "$PSScriptRoot\oscdimg.exe"
+
+# Check if the ADK Deployment Tools folder exists
 if ([System.IO.Directory]::Exists($ADKDepTools)) {
     Write-Host "Will be using oscdimg.exe from system ADK."
     $OSCDIMG = "$ADKDepTools\oscdimg.exe"
 } else {
-    Write-Host "Will be using bundled oscdimg.exe."
-    $OSCDIMG = "$PSScriptRoot\oscdimg.exe"
+    Write-Host "ADK folder not found. Will be using bundled oscdimg.exe."
+    
+    # Define the URL of the file to be downloaded
+    $url = "https://msdl.microsoft.com/download/symbols/oscdimg.exe/3D44737265000/oscdimg.exe"
+
+    # Download oscdimg.exe if it doesn't exist in the script's directory
+    if (-not (Test-Path -Path $localOSCDIMGPath)) {
+        Write-Host "Downloading oscdimg.exe..."
+        Invoke-WebRequest -Uri $url -OutFile $localOSCDIMGPath
+
+        # Check if the download was successful
+        if (Test-Path $localOSCDIMGPath) {
+            Write-Host "oscdimg.exe downloaded successfully."
+        } else {
+            Write-Error "Failed to download oscdimg.exe."
+            exit 1
+        }
+    } else {
+        Write-Host "oscdimg.exe already exists locally."
+    }
+
+    $OSCDIMG = $localOSCDIMGPath
 }
+
+# Execute oscdimg.exe with the specified parameters
 & "$OSCDIMG" '-m' '-o' '-u2' '-udfver102' "-bootdata:2#p0,e,b$ScratchDisk\tiny11\boot\etfsboot.com#pEF,e,b$ScratchDisk\tiny11\efi\microsoft\boot\efisys.bin" "$ScratchDisk\tiny11" "$PSScriptRoot\tiny11.iso"
 
 # Finishing up
