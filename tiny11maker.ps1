@@ -362,7 +362,7 @@ Write-Host ' '
 Write-Host "Unmounting image..."
 & 'dism' '/English' '/unmount-image' "/mountdir:$ScratchDisk\scratchdir" '/commit'
 Write-Host "Exporting image..."
-& 'dism' '/English' '/Export-Image' "/SourceImageFile:$ScratchDisk\tiny11\sources\install.wim" "/SourceIndex:$index" "/DestinationImageFile:$ScratchDisk\tiny11\sources\install2.wim" '/compress:max'
+& 'dism' '/English' '/Export-Image' "/SourceImageFile:$ScratchDisk\tiny11\sources\install.wim" "/SourceIndex:$index" "/DestinationImageFile:$ScratchDisk\tiny11\sources\install2.wim" '/compress:recovery'
 Remove-Item -Path "$ScratchDisk\tiny11\sources\install.wim" -Force >null
 Rename-Item -Path "$ScratchDisk\tiny11\sources\install2.wim" -NewName "install.wim" >null
 Write-Host "Windows image completed. Continuing with boot.wim."
