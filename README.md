@@ -24,11 +24,10 @@ This script generates a significantly reduced Windows 11 image. However, it's no
 Instructions:
 
 1. Download Windows 11 from the Microsoft website (<https://www.microsoft.com/software-download/windows11>)
-2. Mount the downloaded ISO image using Windows Explorer.
-3. Select the drive letter where the image is mounted (only the letter, no colon (:))
-4. Select the SKU that you want the image to be based.
-5. Sit back and relax :)
-6. When the image is completed, you will see it in the folder where the script was extracted, with the name tiny11.iso
+2. Enter the path where the image is located
+3. Select the SKU that you want the image to be based.
+4. Sit back and relax :)
+5. When the image is completed, you will see it in the folder where the script was extracted, with the name tiny11.iso
 
 What is removed:
 
