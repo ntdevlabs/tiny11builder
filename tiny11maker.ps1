@@ -1,5 +1,15 @@
-# Enable debugging
-#Set-PSDebug -Trace 1
+# Enable debugging (uncomment if needed)
+# Set-PSDebug -Trace 1
+
+# Define script parameters at the top
+param (
+    [string]$ScratchDisk
+)
+
+# If ScratchDisk is not provided, use the system drive
+if ($Null -eq $ScratchDisk) {
+    $ScratchDisk = $env:SystemDrive
+}
 
 # Check if PowerShell execution is restricted
 if ((Get-ExecutionPolicy) -eq 'Restricted') {
@@ -19,8 +29,7 @@ $adminGroup = $adminSID.Translate([System.Security.Principal.NTAccount])
 $myWindowsID=[System.Security.Principal.WindowsIdentity]::GetCurrent()
 $myWindowsPrincipal=new-object System.Security.Principal.WindowsPrincipal($myWindowsID)
 $adminRole=[System.Security.Principal.WindowsBuiltInRole]::Administrator
-if (! $myWindowsPrincipal.IsInRole($adminRole))
-{
+if (! $myWindowsPrincipal.IsInRole($adminRole)) {
     Write-Host "Restarting Tiny11 image creator as admin in a new window, you can close this one."
     $newProcess = new-object System.Diagnostics.ProcessStartInfo "PowerShell";
     $newProcess.Arguments = $myInvocation.MyCommand.Definition;
@@ -29,15 +38,14 @@ if (! $myWindowsPrincipal.IsInRole($adminRole))
     exit
 }
 
-param ($ScratchDisk)
-if ($Null -eq $ScratchDisk) {
-    $ScratchDisk = $env:SystemDrive
-}
-
 # Start the transcript and prepare the window
-Start-Transcript -Path "$PSScriptRoot\tiny11.log" 
+
+# Generate a unique log file name with the date and time
+$timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
+$logFile = "$PSScriptRoot\tiny11_$timestamp.log"
 
 $Host.UI.RawUI.WindowTitle = "Tiny11 image creator"
+
 Clear-Host
 Write-Host "Welcome to the tiny11 image creator! Release: 05-06-24"
 
