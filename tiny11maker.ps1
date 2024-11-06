@@ -358,7 +358,7 @@ reg unload HKLM\zSCHEMA >null
 reg unload HKLM\zSOFTWARE
 reg unload HKLM\zSYSTEM >null
 Write-Host "Cleaning up image..."
-Repair-WindowsImage -ScratchDirecory $ScratchDisk\scratchdir -StartComponentCleanup -ResetBase
+Repair-WindowsImage -ScratchDirectory $ScratchDisk\scratchdir -StartComponentCleanup -ResetBase
 Write-Host "Cleanup complete."
 Write-Host ' '
 Write-Host "Unmounting image..."
