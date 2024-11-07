@@ -29,10 +29,18 @@ if (! $myWindowsPrincipal.IsInRole($adminRole))
     exit
 }
 
-param ($ScratchDisk)
-if ($Null -eq $ScratchDisk) {
-    $ScratchDisk = $env:SystemDrive
+param (
+    [ValidatePattern('^[c-zC-Z]$')]
+    [string]$ScratchDisk
+)
+
+if (-not $ScratchDisk) {
+    $ScratchDisk = $PSScriptRoot -replace '[\\]+$', ''
+} else {
+    $ScratchDisk = $ScratchDisk + ":"
 }
+
+Write-Output "Scratch disk set to $ScratchDisk"
 
 # Start the transcript and prepare the window
 Start-Transcript -Path "$PSScriptRoot\tiny11.log" 
