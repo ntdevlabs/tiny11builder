@@ -43,8 +43,16 @@ Write-Host "Welcome to the tiny11 image creator! Release: 05-06-24"
 
 $hostArchitecture = $Env:PROCESSOR_ARCHITECTURE
 New-Item -ItemType Directory -Force -Path "$ScratchDisk\tiny11\sources" >null
-$DriveLetter = Read-Host "Please enter the drive letter for the Windows 11 image"
-$DriveLetter = $DriveLetter + ":"
+do {
+    $DriveLetter = Read-Host "Please enter the drive letter for the Windows 11 image"
+    if ($DriveLetter -match '^[c-zC-Z]$') {
+        $DriveLetter = $DriveLetter + ":"
+        Write-Output "Drive letter set to $DriveLetter"
+    } else {
+        Write-Output "Invalid drive letter. Please enter a letter between C and Z."
+    }
+} while ($DriveLetter -notmatch '^[c-zC-Z]:$')
+
 
 if ((Test-Path "$DriveLetter\sources\boot.wim") -eq $false -or (Test-Path "$DriveLetter\sources\install.wim") -eq $false) {
     if ((Test-Path "$DriveLetter\sources\install.esd") -eq $true) {
