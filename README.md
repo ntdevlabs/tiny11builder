@@ -55,6 +55,12 @@ What is removed:
 - Tablet PC Math
 - Edge
 - OneDrive
+- Teams
+- Outlook
+- DevHome
+- Widgets
+- Sticky Notes
+- Bing Search
 
 For tiny11 core:
 - all of the above +
