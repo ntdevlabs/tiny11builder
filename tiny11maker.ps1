@@ -242,9 +242,9 @@ Write-Host "Disabling Telemetry:"
 & 'reg' 'add' 'HKLM\zSOFTWARE\Policies\Microsoft\Windows\DataCollection' '/v' 'AllowTelemetry' '/t' 'REG_DWORD' '/d' '0' '/f' >null
 & 'reg' 'add' 'HKLM\zSYSTEM\ControlSet001\Services\dmwappushservice' '/v' 'Start' '/t' 'REG_DWORD' '/d' '4' '/f' >null
 
-$response = Read-Host "Disable automatic driver installation? (Y/n)"
+$response = Read-Host "Prevent Windows from automatically installing device drivers? (Y/n)"
 if ($response.ToLower() -eq 'y'){
-    & 'reg' 'add' 'HKLM\zSOFTWARE\Microsoft\Windows\CurrentVersion\DriverSearching' '/v' 'SearchOrderConfig' '/t' 'REG_DWORD' '/d' '0' '/f' >null
+    & 'reg' 'add' 'HKLM\zSOFTWARE\Microsoft\Windows\CurrentVersion\DriverSearching' '/v' 'SearchOrderConfig' '/t' 'REG_DWORD' '/d' '0' '/f' | Out-Null
 }
 
 ## this function allows PowerShell to take ownership of the Scheduled Tasks registry key from TrustedInstaller. Based on Jose Espitia's script.
