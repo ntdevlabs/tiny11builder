@@ -5,6 +5,8 @@
 param (
     [string]$ScratchDisk
 )
+# Seting the release date/version
+$releaseDate = "05-06-24"
 
 # If ScratchDisk is not provided, use the system drive
 if ($Null -eq $ScratchDisk) {
@@ -44,10 +46,13 @@ if (! $myWindowsPrincipal.IsInRole($adminRole)) {
 $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
 $logFile = "$PSScriptRoot\tiny11_$timestamp.log"
 
+# Start transcript
+Start-Transcript -Path "$logFile" > $null 2>&1
+
 $Host.UI.RawUI.WindowTitle = "Tiny11 image creator"
 
 Clear-Host
-Write-Host "Welcome to the tiny11 image creator! Release: 05-06-24"
+Write-Host "Welcome to the tiny11 image creator! Release: $releaseDate"
 
 $hostArchitecture = $Env:PROCESSOR_ARCHITECTURE
 New-Item -ItemType Directory -Force -Path "$ScratchDisk\tiny11\sources" >null
