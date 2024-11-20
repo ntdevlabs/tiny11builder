@@ -123,8 +123,6 @@ $MountButton.Add_Click({
         # Enable related controls
         $DriveLabel.Enabled = $true
         $DriveComboBox.Enabled = $true
-        $ImageIndexLabel.Enabled = $true
-        $ImageIndexComboBox.Enabled = $true
         $StartButton.Enabled = $true
     }
     catch {
@@ -158,7 +156,6 @@ $ImageIndexLabel.Enabled = $false
 $ImageIndexComboBox = New-Object System.Windows.Forms.ComboBox
 $ImageIndexComboBox.Width = 150
 $ImageIndexComboBox.Location = New-Object System.Drawing.Point(200, 135)
-$ImageIndexComboBox.Items.AddRange((1..10)) # Placeholder for indexes
 $ImageIndexComboBox.Enabled = $false
 
 # Start Button
@@ -171,7 +168,6 @@ $StartButton.Add_Click({
     $StartButton.Enabled = $false
 	Add-Log "Starting..."
 	Add-Log "Drive: $($DriveComboBox.SelectedItem)"
-	Add-Log "SKU: $($ImageIndexComboBox.SelectedItem)"
 	Add-Log "Scratch disk: $ScratchDisk"
 	
 	$hostArchitecture = $Env:PROCESSOR_ARCHITECTURE
@@ -188,7 +184,7 @@ $StartButton.Add_Click({
 if ((Test-Path "$DriveLetter\sources\boot.wim") -eq $false -or (Test-Path "$DriveLetter\sources\install.wim") -eq $false) {
     if ((Test-Path "$DriveLetter\sources\install.esd") -eq $true) {
         Add-Log "Found install.esd, converting to install.wim..."
-        $ImageIndexComboBox.Items = Get-WindowsImage -ImagePath $DriveLetter\sources\install.esd
+        Get-WindowsImage -ImagePath $DriveLetter\sources\install.esd
         Add-Log "Please select the image index"
         Add-Log ' '
         Add-Log 'Converting install.esd to install.wim. This may take a while...'
@@ -206,8 +202,16 @@ Remove-Item "$ScratchDisk\tiny11\sources\install.esd" > $null 2>&1
 Add-Log "Copy complete!"
 Start-Sleep -Seconds 2
 Add-Log "Getting image information:"
+# Showing information about the image, then prompting the user to select the index
 Get-WindowsImage -ImagePath $ScratchDisk\tiny11\sources\install.wim
-$index = $ImageIndexComboBox.SelectedItem
+# add the image index to the combobox based on Get-WindowsImage -ImagePath $ScratchDisk\tiny11\sources\install.wim
+$ImageIndexComboBox.Items.AddRange((Get-WindowsImage -ImagePath $ScratchDisk\tiny11\sources\install.wim).ImageIndex)
+$ImageIndexLabel.Enabled = $true
+$ImageIndexComboBox.Enabled = $true
+Add-Log "Please select the image index in 'SKU'"
+Add-Log ' '
+$ImageIndexComboBox.Add_SelectedIndexChanged({
+    $index = $ImageIndexComboBox.SelectedItem
 Add-Log "Mounting Windows image. This may take a while."
 $wimFilePath = "$ScratchDisk\tiny11\sources\install.wim"
 & takeown "/F" $wimFilePath 
@@ -587,14 +591,12 @@ if ([System.IO.Directory]::Exists($ADKDepTools)) {
 & "$OSCDIMG" '-m' '-o' '-u2' '-udfver102' "-bootdata:2#p0,e,b$ScratchDisk\tiny11\boot\etfsboot.com#pEF,e,b$ScratchDisk\tiny11\efi\microsoft\boot\efisys.bin" "$ScratchDisk\tiny11" "$PSScriptRoot\tiny11.iso"
 
 # Finishing up
-Add-Log "Creation completed! Press any key to exit the script..."
 [System.Windows.Forms.MessageBox]::Show("Process completed successfully.", "Completion", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)
 Add-Log "Performing Cleanup..."
 Remove-Item -Path "$ScratchDisk\tiny11" -Recurse -Force | Out-Null
 Remove-Item -Path "$ScratchDisk\scratchdir" -Recurse -Force | Out-Null
 Add-Log "Cleanup complete!"
-
-exit
+})
 })
 
 # Logs Label
