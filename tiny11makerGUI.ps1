@@ -1,3 +1,7 @@
+$t = '[DllImport("user32.dll")] public static extern bool ShowWindow(int handle, int state);'
+add-type -name win -member $t -namespace native
+[native.win]::ShowWindow(([System.Diagnostics.Process]::GetCurrentProcess() | Get-Process).MainWindowHandle, 0) # by Andy Lowry found at : https://stackoverflow.com/questions/1802127/how-to-run-a-powershell-script-without-displaying-a-window
+
 # Enable debugging
 #Set-PSDebug -Trace 1
 
@@ -45,7 +49,7 @@ if (! $myWindowsPrincipal.IsInRole($adminRole))
 Add-Type -assembly System.Windows.Forms
 Add-Type -assembly System.Drawing
 
-# Fonction pour ajouter des logs
+# Log function
 function Add-Log {
     param (
         [string]$message
@@ -58,7 +62,7 @@ function Add-Log {
 # Main Form
 $main_form = New-Object System.Windows.Forms.Form
 $main_form.Text = 'Tiny11makerGUI'
-$main_form.Width = 600
+$main_form.Width = 485
 $main_form.Height = 450
 $main_form.StartPosition = 'CenterScreen'
 
@@ -80,14 +84,14 @@ $TitleLabel.Location = New-Object System.Drawing.Point(
 # ISO Selection TextBox
 $IsoTextBox = New-Object System.Windows.Forms.TextBox
 $IsoTextBox.Text = "Select an .iso to mount"
-$IsoTextBox.Width = 360
+$IsoTextBox.Width = 250
 $IsoTextBox.Location = New-Object System.Drawing.Point(20, 65)
 $IsoTextBox.Enabled = $false
 
 # Choose Button
 $ChooseButton = New-Object System.Windows.Forms.Button
 $ChooseButton.Text = "Choose"
-$ChooseButton.Location = New-Object System.Drawing.Point(400, 60)
+$ChooseButton.Location = New-Object System.Drawing.Point(280, 60)
 $ChooseButton.Size = New-Object System.Drawing.Size(80, 30)
 $ChooseButton.Add_Click({
     # Placeholder logic to simulate file selection
@@ -103,11 +107,13 @@ $ChooseButton.Add_Click({
 # Mount Button
 $MountButton = New-Object System.Windows.Forms.Button
 $MountButton.Text = "Mount"
-$MountButton.Location = New-Object System.Drawing.Point(490, 60)
+$MountButton.Location = New-Object System.Drawing.Point(370, 60)
 $MountButton.Size = New-Object System.Drawing.Size(80, 30)
 $MountButton.Enabled = $false
 $MountButton.Add_Click({
     Add-Log "Mounting: $($IsoTextBox.Text)"
+    $ChooseButton.Enabled = $false
+    $MountButton.Enabled = $false
     
     try {
         Mount-DiskImage -ImagePath $IsoTextBox.Text
@@ -140,7 +146,7 @@ $DriveLabel.Enabled = $false
 
 # Drive Letter ComboBox
 $DriveComboBox = New-Object System.Windows.Forms.ComboBox
-$DriveComboBox.Width = 150
+$DriveComboBox.Width = 120
 $DriveComboBox.Location = New-Object System.Drawing.Point(20, 135)
 $DriveComboBox.Enabled = $false
 
@@ -148,24 +154,26 @@ $DriveComboBox.Enabled = $false
 $ImageIndexLabel = New-Object System.Windows.Forms.Label
 $ImageIndexLabel.Text = "SKU:"
 $ImageIndexLabel.Font = New-Object System.Drawing.Font('Consolas', 10)
-$ImageIndexLabel.Location = New-Object System.Drawing.Point(200, 110)
+$ImageIndexLabel.Location = New-Object System.Drawing.Point(150, 110)
 $ImageIndexLabel.AutoSize = $true
-$ImageIndexLabel.Enabled = $false
+$ImageIndexLabel.Enabled = $false   
 
 # SKU Index ComboBox
 $ImageIndexComboBox = New-Object System.Windows.Forms.ComboBox
-$ImageIndexComboBox.Width = 150
-$ImageIndexComboBox.Location = New-Object System.Drawing.Point(200, 135)
+$ImageIndexComboBox.Width = 120
+$ImageIndexComboBox.Location = New-Object System.Drawing.Point(150, 135)
 $ImageIndexComboBox.Enabled = $false
 
 # Start Button
 $StartButton = New-Object System.Windows.Forms.Button
 $StartButton.Text = "Start"
-$StartButton.Location = New-Object System.Drawing.Point(400, 135)
+$StartButton.Location = New-Object System.Drawing.Point(280, 130)
 $StartButton.Size = New-Object System.Drawing.Size(170, 30)
 $StartButton.Enabled = $false
 $StartButton.Add_Click({
     $StartButton.Enabled = $false
+    $DriveComboBox.Enabled = $false
+    $DriveLabel.Enabled = $false
 	Add-Log "Starting..."
 	Add-Log "Drive: $($DriveComboBox.SelectedItem)"
 	Add-Log "Scratch disk: $ScratchDisk"
@@ -208,6 +216,7 @@ Get-WindowsImage -ImagePath $ScratchDisk\tiny11\sources\install.wim
 $ImageIndexComboBox.Items.AddRange((Get-WindowsImage -ImagePath $ScratchDisk\tiny11\sources\install.wim).ImageIndex)
 $ImageIndexLabel.Enabled = $true
 $ImageIndexComboBox.Enabled = $true
+[System.Windows.Forms.MessageBox]::Show("Please select the image under ""SKU"".", "Image selection", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)
 Add-Log "Please select the image index in 'SKU'"
 Add-Log ' '
 $ImageIndexComboBox.Add_SelectedIndexChanged({
@@ -596,6 +605,10 @@ Add-Log "Performing Cleanup..."
 Remove-Item -Path "$ScratchDisk\tiny11" -Recurse -Force | Out-Null
 Remove-Item -Path "$ScratchDisk\scratchdir" -Recurse -Force | Out-Null
 Add-Log "Cleanup complete!"
+Add-Log "Dismount used images..."
+Get-Volume -DriveLetter $DriveComboBox.SelectedItem | Get-DiskImage | Dismount-DiskImage # by 790 at https://rcmtech.wordpress.com/2012/12/07/powershell-mounting-and-dismounting-iso-images-on-windows-server-2012-and-windows-8/
+Add-Log "Dismount complete!"
+Add-Log "All done !"
 })
 })
 
@@ -611,7 +624,7 @@ $LogsTextBox = New-Object System.Windows.Forms.TextBox
 $LogsTextBox.Multiline = $true
 $LogsTextBox.ScrollBars = 'Vertical'
 $LogsTextBox.Location = New-Object System.Drawing.Point(20, 210)
-$LogsTextBox.Width = 550
+$LogsTextBox.Width = 430
 $LogsTextBox.Height = 180
 $LogsTextBox.ReadOnly = $true
 Add-Log "main_form.Controls loaded..."
