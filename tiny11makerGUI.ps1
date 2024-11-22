@@ -152,7 +152,7 @@ $DriveComboBox.Enabled = $false
 
 # SKU Index Label
 $ImageIndexLabel = New-Object System.Windows.Forms.Label
-$ImageIndexLabel.Text = "SKU:"
+$ImageIndexLabel.Text = "SKU index:"
 $ImageIndexLabel.Font = New-Object System.Drawing.Font('Consolas', 10)
 $ImageIndexLabel.Location = New-Object System.Drawing.Point(150, 110)
 $ImageIndexLabel.AutoSize = $true
@@ -210,15 +210,16 @@ Remove-Item "$ScratchDisk\tiny11\sources\install.esd" > $null 2>&1
 Add-Log "Copy complete!"
 Start-Sleep -Seconds 2
 Add-Log "Getting image information:"
-# Showing information about the image, then prompting the user to select the index
-Get-WindowsImage -ImagePath $ScratchDisk\tiny11\sources\install.wim
+# save information about the image
+$SKUInfo = & dism /English /Get-WimInfo "/wimFile:$($ScratchDisk)\tiny11\sources\install.wim" | Out-String
 # add the image index to the combobox based on Get-WindowsImage -ImagePath $ScratchDisk\tiny11\sources\install.wim
 $ImageIndexComboBox.Items.AddRange((Get-WindowsImage -ImagePath $ScratchDisk\tiny11\sources\install.wim).ImageIndex)
 $ImageIndexLabel.Enabled = $true
 $ImageIndexComboBox.Enabled = $true
-[System.Windows.Forms.MessageBox]::Show("Please select the image under ""SKU"".", "Image selection", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)
+[System.Windows.Forms.MessageBox]::Show("Please select the image under ""SKU"" look in logs to find desired edition.", "Image selection", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)
 Add-Log "Please select the image index in 'SKU'"
 Add-Log ' '
+Add-Log $SKUInfo
 $ImageIndexComboBox.Add_SelectedIndexChanged({
     $index = $ImageIndexComboBox.SelectedItem
 Add-Log "Mounting Windows image. This may take a while."
