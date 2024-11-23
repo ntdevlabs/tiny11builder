@@ -102,33 +102,28 @@ function Remove-RegistryValue {
 $main_form = New-Object System.Windows.Forms.Form
 $main_form.Text = 'Tiny11makerGUI'
 $main_form.Width = 485
-$main_form.Height = 450
+$main_form.Height = 400
 $main_form.StartPosition = 'CenterScreen'
+$main_form.BackColor = [System.Drawing.Color]::FromArgb(30, 30, 30)
+$main_form.ForeColor = [System.Drawing.Color]::White 
 $main_form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedDialog
 $main_form.MaximizeBox = $false
 $main_form.MinimizeBox = $false
 
-# Title Label (Centered)
-$TitleLabel = New-Object System.Windows.Forms.Label
-$TitleLabel.Text = "Tiny11 image creator"
-$TitleLabel.Font = New-Object System.Drawing.Font('Consolas', 20, [System.Drawing.FontStyle]::Bold)
-$TitleLabel.AutoSize = $true
-$TitleLabel.Location = New-Object System.Drawing.Point(
-    ($main_form.Width / 2) - 100, # Dynamically center
-    10
-)
-
 # ISO Selection TextBox
 $IsoTextBox = New-Object System.Windows.Forms.TextBox
-$IsoTextBox.Text = "Select an .iso to mount"
+$IsoTextBox.Text = "Select/an/.iso/to/mount"
 $IsoTextBox.Width = 250
-$IsoTextBox.Location = New-Object System.Drawing.Point(20, 65)
+$IsoTextBox.BackColor = [System.Drawing.Color]::FromArgb(200, 200, 200)
+$IsoTextBox.Location = New-Object System.Drawing.Point(20, 25)
 $IsoTextBox.Enabled = $false
 
 # Choose Button
 $ChooseButton = New-Object System.Windows.Forms.Button
 $ChooseButton.Text = "Choose"
-$ChooseButton.Location = New-Object System.Drawing.Point(280, 60)
+$ChooseButton.BackColor = [System.Drawing.Color]::FromArgb(70, 70, 70) 
+$ChooseButton.ForeColor = [System.Drawing.Color]::White
+$ChooseButton.Location = New-Object System.Drawing.Point(280, 20)
 $ChooseButton.Size = New-Object System.Drawing.Size(80, 30)
 $ChooseButton.Add_Click({
     # Placeholder logic to simulate file selection
@@ -138,13 +133,17 @@ $ChooseButton.Add_Click({
         $IsoTextBox.Text = $FileDialog.FileName
         $MountButton.Enabled = $true
         Add-Log "Selected: $($FileDialog.FileName)"
+        Add-Log " "
+        Add-Log "...Press on 'mount'..."
     }
 })
 
 # Mount Button
 $MountButton = New-Object System.Windows.Forms.Button
 $MountButton.Text = "Mount"
-$MountButton.Location = New-Object System.Drawing.Point(370, 60)
+$MountButton.BackColor = [System.Drawing.Color]::FromArgb(70, 70, 70) 
+$MountButton.ForeColor = [System.Drawing.Color]::White
+$MountButton.Location = New-Object System.Drawing.Point(370, 20)
 $MountButton.Size = New-Object System.Drawing.Size(80, 30)
 $MountButton.Enabled = $false
 $MountButton.Add_Click({
@@ -169,40 +168,48 @@ $MountButton.Add_Click({
     $DriveLabel.Enabled = $true
     $DriveComboBox.Enabled = $true
     $StartButton.Enabled = $true
+    Add-Log " "
+    Add-Log "...Select the right drive then press start..."
 })
 
 # Drive Letter Label
 $DriveLabel = New-Object System.Windows.Forms.Label
 $DriveLabel.Text = "Drive Letter:"
 $DriveLabel.Font = New-Object System.Drawing.Font('Consolas', 10)
-$DriveLabel.Location = New-Object System.Drawing.Point(20, 110)
+$DriveLabel.ForeColor = [System.Drawing.Color]::White
+$DriveLabel.Location = New-Object System.Drawing.Point(20, 70)
 $DriveLabel.AutoSize = $true
 $DriveLabel.Enabled = $false
 
 # Drive Letter ComboBox
 $DriveComboBox = New-Object System.Windows.Forms.ComboBox
 $DriveComboBox.Width = 120
-$DriveComboBox.Location = New-Object System.Drawing.Point(20, 135)
+$DriveComboBox.BackColor = [System.Drawing.Color]::FromArgb(200, 200, 200)
+$DriveComboBox.Location = New-Object System.Drawing.Point(20, 95)
 $DriveComboBox.Enabled = $false
 
 # SKU Index Label
 $ImageIndexLabel = New-Object System.Windows.Forms.Label
 $ImageIndexLabel.Text = "SKU index:"
 $ImageIndexLabel.Font = New-Object System.Drawing.Font('Consolas', 10)
-$ImageIndexLabel.Location = New-Object System.Drawing.Point(150, 110)
+$ImageIndexLabel.ForeColor = [System.Drawing.Color]::White
+$ImageIndexLabel.Location = New-Object System.Drawing.Point(150, 70)
 $ImageIndexLabel.AutoSize = $true
-$ImageIndexLabel.Enabled = $false   
+$ImageIndexLabel.Enabled = $false
 
 # SKU Index ComboBox
 $ImageIndexComboBox = New-Object System.Windows.Forms.ComboBox
 $ImageIndexComboBox.Width = 120
-$ImageIndexComboBox.Location = New-Object System.Drawing.Point(150, 135)
+$ImageIndexComboBox.BackColor = [System.Drawing.Color]::FromArgb(200, 200, 200)
+$ImageIndexComboBox.Location = New-Object System.Drawing.Point(150, 95)
 $ImageIndexComboBox.Enabled = $false
 
 # Start Button
 $StartButton = New-Object System.Windows.Forms.Button
 $StartButton.Text = "Start"
-$StartButton.Location = New-Object System.Drawing.Point(280, 130)
+$StartButton.BackColor = [System.Drawing.Color]::FromArgb(70, 70, 70)  # Gris clair
+$StartButton.ForeColor = [System.Drawing.Color]::White
+$StartButton.Location = New-Object System.Drawing.Point(280, 90)
 $StartButton.Size = New-Object System.Drawing.Size(170, 30)
 $StartButton.Enabled = $false
 $StartButton.Add_Click({
@@ -247,9 +254,9 @@ Start-Sleep -Seconds 2
 Add-Log "Getting image information:"
 $SKUInfo = & dism /English /Get-WimInfo "/wimFile:$($ScratchDisk)\tiny11\sources\install.wim" | Out-String
 $ImageIndexComboBox.Items.AddRange((Get-WindowsImage -ImagePath $ScratchDisk\tiny11\sources\install.wim).ImageIndex)
+[System.Windows.Forms.MessageBox]::Show("Please select the image under ""SKU"" look in logs to find desired edition.", "Image selection", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)
 $ImageIndexLabel.Enabled = $true
 $ImageIndexComboBox.Enabled = $true
-[System.Windows.Forms.MessageBox]::Show("Please select the image under ""SKU"" look in logs to find desired edition.", "Image selection", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)
 Add-Log "Please select the image index in 'SKU'"
 Add-Log ' '
 Add-Log $SKUInfo
@@ -645,7 +652,7 @@ Add-Log "Cleanup complete!"
 Add-Log "Dismount used images..."
 Get-Volume -DriveLetter $DriveComboBox.SelectedItem | Get-DiskImage | Dismount-DiskImage # by 790 at https://rcmtech.wordpress.com/2012/12/07/powershell-mounting-and-dismounting-iso-images-on-windows-server-2012-and-windows-8/
 Add-Log "Dismount complete!"
-Add-Log " "
+Add-Log " " 
 Add-Log "You can close the app now."
 [System.Windows.Forms.MessageBox]::Show("Process completed successfully.", "Completion", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)
 })
@@ -655,18 +662,21 @@ Add-Log "You can close the app now."
 $LogsLabel = New-Object System.Windows.Forms.Label
 $LogsLabel.Text = "Logs:"
 $LogsLabel.Font = New-Object System.Drawing.Font('Consolas', 12)
-$LogsLabel.Location = New-Object System.Drawing.Point(20, 180)
+$LogsLabel.Location = New-Object System.Drawing.Point(20, 130)
 $LogsLabel.AutoSize = $true
 
 # Logs TextBox
 $LogsTextBox = New-Object System.Windows.Forms.TextBox
 $LogsTextBox.Multiline = $true
 $LogsTextBox.ScrollBars = 'Vertical'
-$LogsTextBox.Location = New-Object System.Drawing.Point(20, 210)
+$LogsTextBox.BackColor = [System.Drawing.Color]::FromArgb(200, 200, 200)
+$LogsTextBox.Location = New-Object System.Drawing.Point(20, 160)
 $LogsTextBox.Width = 430
 $LogsTextBox.Height = 180
 $LogsTextBox.ReadOnly = $true
 Add-Log "main_form.Controls loaded..."
+Add-Log " "
+Add-Log "...Please select à Windows ISO file..."
 
 # Adding Controls to Form
 $main_form.Controls.Add($TitleLabel)
