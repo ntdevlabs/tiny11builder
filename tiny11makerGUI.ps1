@@ -1,9 +1,7 @@
+# Hide powershell window
 $t = '[DllImport("user32.dll")] public static extern bool ShowWindow(int handle, int state);'
 add-type -name win -member $t -namespace native
 [native.win]::ShowWindow(([System.Diagnostics.Process]::GetCurrentProcess() | Get-Process).MainWindowHandle, 0) # by Andy Lowry found at : https://stackoverflow.com/questions/1802127/how-to-run-a-powershell-script-without-displaying-a-window
-
-# Enable debugging
-#Set-PSDebug -Trace 1
 
 param (
     [ValidatePattern('^[c-zC-Z]$')]
@@ -106,8 +104,6 @@ $main_form.Text = 'Tiny11makerGUI'
 $main_form.Width = 485
 $main_form.Height = 450
 $main_form.StartPosition = 'CenterScreen'
-
-# Disable Minimize, Maximize, and Resize
 $main_form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedDialog
 $main_form.MaximizeBox = $false
 $main_form.MinimizeBox = $false
@@ -164,14 +160,12 @@ $MountButton.Add_Click({
         return
     }
             
-    # Retrieve drive letters
     $DriveLetters = Get-PSDrive -PSProvider FileSystem
     foreach ($Letter in $DriveLetters) {
         $DriveComboBox.Items.Add($Letter.Name)
         Add-Log "Drive found: $($Letter.Name)"
     }
         
-    # Enable related controls
     $DriveLabel.Enabled = $true
     $DriveComboBox.Enabled = $true
     $StartButton.Enabled = $true
@@ -251,9 +245,7 @@ Remove-Item "$ScratchDisk\tiny11\sources\install.esd" > $null 2>&1
 Add-Log "Copy complete!"
 Start-Sleep -Seconds 2
 Add-Log "Getting image information:"
-# save information about the image
 $SKUInfo = & dism /English /Get-WimInfo "/wimFile:$($ScratchDisk)\tiny11\sources\install.wim" | Out-String
-# add the image index to the combobox based on Get-WindowsImage -ImagePath $ScratchDisk\tiny11\sources\install.wim
 $ImageIndexComboBox.Items.AddRange((Get-WindowsImage -ImagePath $ScratchDisk\tiny11\sources\install.wim).ImageIndex)
 $ImageIndexLabel.Enabled = $true
 $ImageIndexComboBox.Enabled = $true
@@ -262,6 +254,7 @@ Add-Log "Please select the image index in 'SKU'"
 Add-Log ' '
 Add-Log $SKUInfo
 $ImageIndexComboBox.Add_SelectedIndexChanged({
+    $ImageIndexComboBox.Enabled = $false
     $index = $ImageIndexComboBox.SelectedItem
 Add-Log "Mounting Windows image. This may take a while."
 Add-Log "The GUI will freeze multiple times during process, please be patient and do not close the window."
@@ -645,7 +638,6 @@ if ([System.IO.Directory]::Exists($ADKDepTools)) {
 & "$OSCDIMG" '-m' '-o' '-u2' '-udfver102' "-bootdata:2#p0,e,b$ScratchDisk\tiny11\boot\etfsboot.com#pEF,e,b$ScratchDisk\tiny11\efi\microsoft\boot\efisys.bin" "$ScratchDisk\tiny11" "$PSScriptRoot\tiny11.iso"
 
 # Finishing up
-[System.Windows.Forms.MessageBox]::Show("Process completed successfully.", "Completion", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)
 Add-Log "Performing Cleanup..."
 Remove-Item -Path "$ScratchDisk\tiny11" -Recurse -Force | Out-Null
 Remove-Item -Path "$ScratchDisk\scratchdir" -Recurse -Force | Out-Null
@@ -655,6 +647,7 @@ Get-Volume -DriveLetter $DriveComboBox.SelectedItem | Get-DiskImage | Dismount-D
 Add-Log "Dismount complete!"
 Add-Log " "
 Add-Log "You can close the app now."
+[System.Windows.Forms.MessageBox]::Show("Process completed successfully.", "Completion", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)
 })
 })
 
