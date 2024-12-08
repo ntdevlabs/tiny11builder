@@ -373,7 +373,6 @@ Write-Host 'Deleting QueueReporting'
 reg delete "HKEY_LOCAL_MACHINE\zSOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tasks\{E3176A65-4E44-4ED3-AA73-3283660ACB9C}" /f | Out-Null
 Write-Host "Tweaking complete!"
 Write-Host "Unmounting Registry..."
-$regKey.Close()
 reg unload HKLM\zCOMPONENTS | Out-Null
 reg unload HKLM\zDRIVERS | Out-Null
 reg unload HKLM\zDEFAULT | Out-Null
@@ -420,13 +419,11 @@ Write-Host "Bypassing system requirements(on the setup image):"
 & 'reg' 'add' 'HKLM\zSYSTEM\Setup\MoSetup' '/v' 'AllowUpgradesWithUnsupportedTPMOrCPU' '/t' 'REG_DWORD' '/d' '1' '/f' | Out-Null
 Write-Host "Tweaking complete!"
 Write-Host "Unmounting Registry..."
-$regKey.Close()
 reg unload HKLM\zCOMPONENTS | Out-Null
 reg unload HKLM\zDRIVERS | Out-Null
 reg unload HKLM\zDEFAULT | Out-Null
 reg unload HKLM\zNTUSER | Out-Null
 reg unload HKLM\zSCHEMA | Out-Null
-$regKey.Close()
 reg unload HKLM\zSOFTWARE
 reg unload HKLM\zSYSTEM | Out-Null
 Write-Host "Unmounting image..."
