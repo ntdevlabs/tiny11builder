@@ -21,7 +21,7 @@ It's open-source, **so feel free to add or remove anything you want!** Feedback 
 Also, for the very first time, **introducing tiny11 core builder**! A more powerful script, designed for a quick and dirty development testbed. Just the bare minimun, none of the fluff. 
 This script generates a significantly reduced Windows 11 image. However, it's not suitable for regular use due to its lack of serviceability - you can't add languages, updates, or features post-creation. tiny11 Core is not a full Windows 11 substitute but a rapid testing or development tool, potentially useful for VM environments.
 
-Instructions:
+# Instructions
 
 1. Download Windows 11 from the Microsoft website (<https://www.microsoft.com/software-download/windows11>)
 2. Mount the downloaded ISO image using Windows Explorer.
@@ -30,7 +30,7 @@ Instructions:
 5. Sit back and relax :)
 6. When the image is completed, you will see it in the folder where the script was extracted, with the name tiny11.iso
 
-What is removed:
+# What is removed
 
 - Clipchamp
 - News
@@ -68,7 +68,8 @@ Keep in mind that **you cannot add back features in tiny11 core**!
 <br>
 You will be asked during image creation if you want to enable .net 3.5 support!
 </br>
-Known issues:
+
+# Known issues
 
 1. Although Edge is removed, there are some remnants in the Settings. But the app in itself is deleted. You can install any browser using WinGet (after you update the app using Microsoft Store). If you want Edge, Copilot and Web Search back, simply install Edge using Winget: `winget install edge`.
 <br>
@@ -80,7 +81,7 @@ Note: You might have to update Winget before being able to install any apps, usi
 </br>
 3. If you are using this script on arm64, you might see a glimpse of an error while running the script. This is caused by the fact that the arm64 image doesn't have OneDriveSetup.exe included in the System32 folder.
 
-Features to be implemented:
+# Features to be implemented
 - ~~disabling telemetry~~ (Implemented in the 04-29-24 release!)
 - more ad suppression
 - improved language and arch detection
