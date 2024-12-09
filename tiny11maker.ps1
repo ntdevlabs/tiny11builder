@@ -186,7 +186,6 @@ Write-Host "Removal complete!"
 Start-Sleep -Seconds 2
 Clear-Host
 Write-Host "Loading registry..."
-reg load HKLM\zCOMPONENTS $ScratchDisk\scratchdir\Windows\System32\config\COMPONENTS | Out-Null
 reg load HKLM\zDEFAULT $ScratchDisk\scratchdir\Windows\System32\config\default | Out-Null
 reg load HKLM\zNTUSER $ScratchDisk\scratchdir\Users\Default\ntuser.dat | Out-Null
 reg load HKLM\zSOFTWARE $ScratchDisk\scratchdir\Windows\System32\config\SOFTWARE | Out-Null
@@ -373,13 +372,9 @@ Write-Host 'Deleting QueueReporting'
 reg delete "HKEY_LOCAL_MACHINE\zSOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tasks\{E3176A65-4E44-4ED3-AA73-3283660ACB9C}" /f | Out-Null
 Write-Host "Tweaking complete!"
 Write-Host "Unmounting Registry..."
-$regKey.Close()
-reg unload HKLM\zCOMPONENTS | Out-Null
-reg unload HKLM\zDRIVERS | Out-Null
 reg unload HKLM\zDEFAULT | Out-Null
 reg unload HKLM\zNTUSER | Out-Null
-reg unload HKLM\zSCHEMA | Out-Null
-reg unload HKLM\zSOFTWARE
+reg unload HKLM\zSOFTWARE | Out-Null
 reg unload HKLM\zSYSTEM | Out-Null
 Write-Host "Cleaning up image..."
 Repair-WindowsImage -Path $ScratchDisk\scratchdir -StartComponentCleanup -ResetBase
@@ -402,10 +397,8 @@ $wimFilePath = "$ScratchDisk\tiny11\sources\boot.wim"
 Set-ItemProperty -Path $wimFilePath -Name IsReadOnly -Value $false
 Mount-WindowsImage -ImagePath $ScratchDisk\tiny11\sources\boot.wim -Index 2 -Path $ScratchDisk\scratchdir
 Write-Host "Loading registry..."
-reg load HKLM\zCOMPONENTS $ScratchDisk\scratchdir\Windows\System32\config\COMPONENTS
 reg load HKLM\zDEFAULT $ScratchDisk\scratchdir\Windows\System32\config\default
 reg load HKLM\zNTUSER $ScratchDisk\scratchdir\Users\Default\ntuser.dat
-reg load HKLM\zSOFTWARE $ScratchDisk\scratchdir\Windows\System32\config\SOFTWARE
 reg load HKLM\zSYSTEM $ScratchDisk\scratchdir\Windows\System32\config\SYSTEM
 Write-Host "Bypassing system requirements(on the setup image):"
 & 'reg' 'add' 'HKLM\zDEFAULT\Control Panel\UnsupportedHardwareNotificationCache' '/v' 'SV1' '/t' 'REG_DWORD' '/d' '0' '/f' | Out-Null
@@ -420,14 +413,8 @@ Write-Host "Bypassing system requirements(on the setup image):"
 & 'reg' 'add' 'HKLM\zSYSTEM\Setup\MoSetup' '/v' 'AllowUpgradesWithUnsupportedTPMOrCPU' '/t' 'REG_DWORD' '/d' '1' '/f' | Out-Null
 Write-Host "Tweaking complete!"
 Write-Host "Unmounting Registry..."
-$regKey.Close()
-reg unload HKLM\zCOMPONENTS | Out-Null
-reg unload HKLM\zDRIVERS | Out-Null
 reg unload HKLM\zDEFAULT | Out-Null
 reg unload HKLM\zNTUSER | Out-Null
-reg unload HKLM\zSCHEMA | Out-Null
-$regKey.Close()
-reg unload HKLM\zSOFTWARE
 reg unload HKLM\zSYSTEM | Out-Null
 Write-Host "Unmounting image..."
 Dismount-WindowsImage -Path $ScratchDisk\scratchdir -Save

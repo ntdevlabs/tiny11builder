@@ -341,7 +341,6 @@ Rename-Item -Path $mainOSDrive\scratchdir\Windows\WinSxS_edit -NewName $mainOSDr
 Write-Host "Complete!"
 
 Write-Host "Loading registry..."
-reg load HKLM\zCOMPONENTS $mainOSDrive\scratchdir\Windows\System32\config\COMPONENTS >null
 reg load HKLM\zDEFAULT $mainOSDrive\scratchdir\Windows\System32\config\default >null
 reg load HKLM\zNTUSER $mainOSDrive\scratchdir\Users\Default\ntuser.dat >null
 reg load HKLM\zSOFTWARE $mainOSDrive\scratchdir\Windows\System32\config\SOFTWARE >null
@@ -670,8 +669,6 @@ foreach ($path in $servicePaths) {
 & 'reg' 'add' 'HKLM\zSOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer' '/v' 'SettingsPageVisibility' '/t' 'REG_SZ' '/d' 'hide:virus;windowsupdate' '/f' 
 Write-Host "Tweaking complete!"
 Write-Host "Unmounting Registry..."
-$regKey.Close()
-reg unload HKLM\zCOMPONENTS >null
 reg unload HKLM\zDEFAULT >null
 reg unload HKLM\zNTUSER >null
 reg unload HKLM\zSOFTWARE
@@ -696,10 +693,8 @@ $wimFilePath = "$($env:SystemDrive)\tiny11\sources\boot.wim"
 Set-ItemProperty -Path $wimFilePath -Name IsReadOnly -Value $false
 & 'dism' '/English' '/mount-image' "/imagefile:$mainOSDrive\tiny11\sources\boot.wim" '/index:2' "/mountdir:$mainOSDrive\scratchdir"
 Write-Host "Loading registry..."
-reg load HKLM\zCOMPONENTS $mainOSDrive\scratchdir\Windows\System32\config\COMPONENTS
 reg load HKLM\zDEFAULT $mainOSDrive\scratchdir\Windows\System32\config\default
 reg load HKLM\zNTUSER $mainOSDrive\scratchdir\Users\Default\ntuser.dat
-reg load HKLM\zSOFTWARE $mainOSDrive\scratchdir\Windows\System32\config\SOFTWARE
 reg load HKLM\zSYSTEM $mainOSDrive\scratchdir\Windows\System32\config\SYSTEM
 Write-Host "Bypassing system requirements(on the setup image):"
 & 'reg' 'add' 'HKLM\zDEFAULT\Control Panel\UnsupportedHardwareNotificationCache' '/v' 'SV1' '/t' 'REG_DWORD' '/d' '0' '/f' >null
@@ -715,12 +710,8 @@ Write-Host "Bypassing system requirements(on the setup image):"
 & 'reg' 'add' 'HKEY_LOCAL_MACHINE\zSYSTEM\Setup' '/v' 'CmdLine' '/t' 'REG_SZ' '/d' 'X:\sources\setup.exe' '/f' >null
 Write-Host "Tweaking complete!"
 Write-Host "Unmounting Registry..."
-$regKey.Close()
-reg unload HKLM\zCOMPONENTS >null
 reg unload HKLM\zDEFAULT >null
 reg unload HKLM\zNTUSER >null
-$regKey.Close()
-reg unload HKLM\zSOFTWARE
 reg unload HKLM\zSYSTEM >null
 Write-Host "Unmounting image..."
 & 'dism' '/English' '/unmount-image' "/mountdir:$mainOSDrive\scratchdir" '/commit'
