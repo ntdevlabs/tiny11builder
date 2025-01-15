@@ -732,9 +732,11 @@ Write-Host "Exporting ESD. This may take a while..."
 Remove-Item "$mainOSDrive\tiny11\sources\install.wim" > $null 2>&1
 Write-Host "The tiny11 image is now completed. Proceeding with the making of the ISO..."
 Write-Host "Creating ISO image..."
-# Get Windows ADK path from registry(following Visual Studio's winsdk.bat approach), trim the following backslash for path concatenation.
-$WinSDKPath = [Microsoft.Win32.Registry]::GetValue("HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots", "KitsRoot10", $null).TrimEnd('\')
+# Get Windows ADK path from registry(following Visual Studio's winsdk.bat approach).
+$WinSDKPath = [Microsoft.Win32.Registry]::GetValue("HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots", "KitsRoot10", $null)
 if ($null -ne $WinSDKPath) {
+    # Trim the following backslash for path concatenation.
+    $WinSDKPath = $WinSDKPath.TrimEnd('\')
     $ADKDepTools = "$WinSDKPath\Assessment and Deployment Kit\Deployment Tools\$hostarchitecture\Oscdimg"
 }
 $localOSCDIMGPath = "$PSScriptRoot\oscdimg.exe"

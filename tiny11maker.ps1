@@ -438,9 +438,11 @@ Write-Host "The tiny11 image is now completed. Proceeding with the making of the
 Write-Host "Copying unattended file for bypassing MS account on OOBE..."
 Copy-Item -Path "$PSScriptRoot\autounattend.xml" -Destination "$ScratchDisk\tiny11\autounattend.xml" -Force | Out-Null
 Write-Host "Creating ISO image..."
-# Get Windows ADK path from registry(following Visual Studio's winsdk.bat approach), trim the following backslash for path concatenation.
-$WinSDKPath = [Microsoft.Win32.Registry]::GetValue("HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots", "KitsRoot10", $null).TrimEnd('\')
+# Get Windows ADK path from registry(following Visual Studio's winsdk.bat approach).
+$WinSDKPath = [Microsoft.Win32.Registry]::GetValue("HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots", "KitsRoot10", $null)
 if ($null -ne $WinSDKPath) {
+    # Trim the following backslash for path concatenation.
+    $WinSDKPath = $WinSDKPath.TrimEnd('\')
     $ADKDepTools = "$WinSDKPath\Assessment and Deployment Kit\Deployment Tools\$hostarchitecture\Oscdimg"
 }
 $localOSCDIMGPath = "$PSScriptRoot\oscdimg.exe"
