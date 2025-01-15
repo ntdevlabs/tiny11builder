@@ -119,7 +119,7 @@ switch ((Get-WindowsImage -ImagePath $wimFilePath -Index $index).Architecture)
 {
     0 { $architecture = "x86" }
     9 { $architecture = "amd64" }
-    12 {$architecture = "arm64" }
+    12 { $architecture = "arm64" }
 }
 
 if (Test-Path variable:architecture) {
@@ -444,7 +444,7 @@ if ($null -ne $WinSDKPath) {
 }
 $localOSCDIMGPath = "$PSScriptRoot\oscdimg.exe"
 
-if ((Test-Path variable:ADKDepTools) -and (Test-Path "$ADKDepTools\oscdimg.exe" -PathType leaf)) {
+if ((Test-Path variable:ADKDepTools) -and (Test-Path -Path "$ADKDepTools\oscdimg.exe" -PathType Leaf)) {
     Write-Host "Will be using oscdimg.exe from system ADK."
     $OSCDIMG = "$ADKDepTools\oscdimg.exe"
 } else {
@@ -452,11 +452,11 @@ if ((Test-Path variable:ADKDepTools) -and (Test-Path "$ADKDepTools\oscdimg.exe" 
     
     $url = "https://msdl.microsoft.com/download/symbols/oscdimg.exe/3D44737265000/oscdimg.exe"
 
-    if (-not (Test-Path -Path $localOSCDIMGPath)) {
+    if (-not (Test-Path -Path $localOSCDIMGPath -PathType Leaf)) {
         Write-Host "Downloading oscdimg.exe..."
         Invoke-WebRequest -Uri $url -OutFile $localOSCDIMGPath
 
-        if (Test-Path $localOSCDIMGPath) {
+        if (Test-Path -Path $localOSCDIMGPath -PathType Leaf) {
             Write-Host "oscdimg.exe downloaded successfully."
         } else {
             Write-Error "Failed to download oscdimg.exe."
