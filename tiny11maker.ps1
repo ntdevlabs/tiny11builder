@@ -436,14 +436,18 @@ Write-Host "The tiny11 image is now completed. Proceeding with the making of the
 Write-Host "Copying unattended file for bypassing MS account on OOBE..."
 Copy-Item -Path "$PSScriptRoot\autounattend.xml" -Destination "$ScratchDisk\tiny11\autounattend.xml" -Force | Out-Null
 Write-Host "Creating ISO image..."
-$ADKDepTools = "C:\Program Files (x86)\Windows Kits\10\Assessment and Deployment Kit\Deployment Tools\$hostarchitecture\Oscdimg"
+# Get Windows ADK path from registry(following Visual Studio's winsdk.bat approach), trim the following backslash for path concatenation.
+$WinSDKPath = [Microsoft.Win32.Registry]::GetValue("HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots", "KitsRoot10", $null).TrimEnd('\')
+if ($null -ne $WinSDKPath) {
+    $ADKDepTools = "$WinSDKPath\Assessment and Deployment Kit\Deployment Tools\$hostarchitecture\Oscdimg"
+}
 $localOSCDIMGPath = "$PSScriptRoot\oscdimg.exe"
 
-if ([System.IO.Directory]::Exists($ADKDepTools)) {
+if ((Test-Path variable:ADKDepTools) -and (Test-Path "$ADKDepTools\oscdimg.exe" -PathType leaf)) {
     Write-Host "Will be using oscdimg.exe from system ADK."
     $OSCDIMG = "$ADKDepTools\oscdimg.exe"
 } else {
-    Write-Host "ADK folder not found. Will be using bundled oscdimg.exe."
+    Write-Host "oscdimg.exe from system ADK not found. Will be using bundled oscdimg.exe."
     
     $url = "https://msdl.microsoft.com/download/symbols/oscdimg.exe/3D44737265000/oscdimg.exe"
 

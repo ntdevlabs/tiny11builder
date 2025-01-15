@@ -10,7 +10,7 @@ You can now use it on ANY Windows 11 release (not just a specific build), as wel
 This is made possible thanks to the much-improved scripting capabilities of PowerShell, compared to the older Batch release.
 </br>
 Since it is written in PowerShell, you need to set the execution policy to  `Unrestricted`, so that you could run the script.
-If you haven't done this before, make sure to run `Set-ExecutionPolicy unrestricted` as administrator in PowerShell before running the script, otherwise it would just crash.
+If you haven't done this before, make sure to run `Set-ExecutionPolicy -Scope Process unrestricted` as administrator in PowerShell before running the script, otherwise it would just crash.
 
 
 This is a script created to automate the build of a streamlined Windows 11 image, similar to tiny11.
