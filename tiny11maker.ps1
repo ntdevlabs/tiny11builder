@@ -14,12 +14,14 @@ if (-not $ScratchDisk) {
 
 Write-Output "Scratch disk set to $ScratchDisk"
 
-# Check if PowerShell execution is restricted
-if ((Get-ExecutionPolicy) -eq 'Restricted') {
-    Write-Host "Your current PowerShell Execution Policy is set to Restricted, which prevents scripts from running. Do you want to change it to RemoteSigned? (yes/no)"
+# Check if PowerShell execution is Restricted or AllSigned or Undefined
+$needchange = @("AllSigned", "Restricted", "Undefined")
+$curpolicy = Get-ExecutionPolicy
+if ($curpolicy -in $needchange) {
+    Write-Host "Your current PowerShell Execution Policy is set to $curpolicy, which prevents scripts from running. Do you want to change it to RemoteSigned? (yes/no)"
     $response = Read-Host
     if ($response -eq 'yes') {
-        Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Confirm:$false
+        Set-ExecutionPolicy RemoteSigned -Scope Process -Confirm:$false
     } else {
         Write-Host "The script cannot be run without changing the execution policy. Exiting..."
         exit
