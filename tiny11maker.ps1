@@ -436,7 +436,11 @@ Write-Host "Copying unattended file for bypassing MS account on OOBE..."
 Copy-Item -Path "$PSScriptRoot\autounattend.xml" -Destination "$ScratchDisk\tiny11\autounattend.xml" -Force | Out-Null
 Write-Host "Creating ISO image..."
 # Get Windows ADK path from registry(following Visual Studio's winsdk.bat approach).
-$WinSDKPath = [Microsoft.Win32.Registry]::GetValue("HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots", "KitsRoot10", $null)
+$WinSDKPath = [Microsoft.Win32.Registry]::GetValue("HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Windows Kits\Installed Roots", "KitsRoot10", $null)
+if ($null -eq $WinSDKPath) {
+    $WinSDKPath = [Microsoft.Win32.Registry]::GetValue("HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots", "KitsRoot10", $null)
+}
+
 if ($null -ne $WinSDKPath) {
     # Trim the following backslash for path concatenation.
     $WinSDKPath = $WinSDKPath.TrimEnd('\')

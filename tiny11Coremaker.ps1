@@ -733,7 +733,11 @@ Remove-Item "$mainOSDrive\tiny11\sources\install.wim" > $null 2>&1
 Write-Host "The tiny11 image is now completed. Proceeding with the making of the ISO..."
 Write-Host "Creating ISO image..."
 # Get Windows ADK path from registry(following Visual Studio's winsdk.bat approach).
-$WinSDKPath = [Microsoft.Win32.Registry]::GetValue("HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots", "KitsRoot10", $null)
+$WinSDKPath = [Microsoft.Win32.Registry]::GetValue("HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Windows Kits\Installed Roots", "KitsRoot10", $null)
+if ($null -eq $WinSDKPath) {
+    $WinSDKPath = [Microsoft.Win32.Registry]::GetValue("HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots", "KitsRoot10", $null)
+}
+
 if ($null -ne $WinSDKPath) {
     # Trim the following backslash for path concatenation.
     $WinSDKPath = $WinSDKPath.TrimEnd('\')
