@@ -3,16 +3,15 @@
 
 param (
     [ValidatePattern('^[c-zC-Z]$')]
-    [string]$ScratchDisk
+    [string]$p_ScratchDisk,
+    [string]$p_IsoDisk
 )
 
-if (-not $ScratchDisk) {
+if (-not $p_ScratchDisk) {
     $ScratchDisk = $PSScriptRoot -replace '[\\]+$', ''
 } else {
-    $ScratchDisk = $ScratchDisk + ":"
+    $ScratchDisk = $p_ScratchDisk + ":"
 }
-
-Write-Output "Scratch disk set to $ScratchDisk"
 
 # Check if PowerShell execution is restricted
 if ((Get-ExecutionPolicy) -eq 'Restricted') {
@@ -42,8 +41,6 @@ if (! $myWindowsPrincipal.IsInRole($adminRole))
     exit
 }
 
-
-
 # Start the transcript and prepare the window
 Start-Transcript -Path "$ScratchDisk\tiny11.log" 
 
@@ -54,7 +51,11 @@ Write-Host "Welcome to the tiny11 image creator! Release: 05-06-24"
 $hostArchitecture = $Env:PROCESSOR_ARCHITECTURE
 New-Item -ItemType Directory -Force -Path "$ScratchDisk\tiny11\sources" | Out-Null
 do {
-    $DriveLetter = Read-Host "Please enter the drive letter for the Windows 11 image"
+    if (-not $p_IsoDisk) {
+        $DriveLetter = Read-Host "Please enter the drive letter for the Windows 11 image"
+    } else {
+        $DriveLetter = $p_IsoDisk
+    }
     if ($DriveLetter -match '^[c-zC-Z]$') {
         $DriveLetter = $DriveLetter + ":"
         Write-Output "Drive letter set to $DriveLetter"
