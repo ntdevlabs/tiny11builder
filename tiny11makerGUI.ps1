@@ -3,18 +3,7 @@ $t = '[DllImport("user32.dll")] public static extern bool ShowWindow(int handle,
 add-type -name win -member $t -namespace native
 [native.win]::ShowWindow(([System.Diagnostics.Process]::GetCurrentProcess() | Get-Process).MainWindowHandle, 0) # by Andy Lowry found at : https://stackoverflow.com/questions/1802127/how-to-run-a-powershell-script-without-displaying-a-window
 
-param (
-    [ValidatePattern('^[c-zC-Z]$')]
-    [string]$ScratchDisk
-)
-
-if (-not $ScratchDisk) {
-    $ScratchDisk = $PSScriptRoot -replace '[\\]+$', ''
-} else {
-    $ScratchDisk = $ScratchDisk + ":"
-}
-
-Write-Output "Scratch disk set to $ScratchDisk"
+$ScratchDisk = $PSScriptRoot -replace '[\\]+$', ''
 
 # Check if PowerShell execution is restricted
 if ((Get-ExecutionPolicy) -eq 'Restricted') {
@@ -676,7 +665,7 @@ $LogsTextBox.Height = 180
 $LogsTextBox.ReadOnly = $true
 Add-Log "main_form.Controls loaded..."
 Add-Log " "
-Add-Log "...Please select à Windows ISO file..."
+Add-Log "...Please select Ã  Windows ISO file..."
 
 # Adding Controls to Form
 $main_form.Controls.Add($TitleLabel)
