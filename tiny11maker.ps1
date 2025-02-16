@@ -1,16 +1,44 @@
 # Enable debugging
 #Set-PSDebug -Trace 1
 
+<#
+.SYNOPSIS
+    Scripts to build a trimmed-down Windows 11 image. 
+
+.DESCRIPTION
+    This is a script created to automate the build of a streamlined Windows 11 image, similar to tiny10. 
+    My main goal is to use only Microsoft utilities like DISM, and no utilities from external sources. 
+    The only executable included is oscdimg.exe, which is provided in the Windows ADK and it is used to create bootable ISO images.
+
+.PARAMETER Scratch
+    Drive letter of the desired scratch disk (eg: D)
+
+.PARAMETER Iso
+    Drive letter given to the mounted iso (eg: E)
+
+.VALIDE CALL
+    .\tiny11maker.ps1 E D
+    .\tiny11maker.ps1 -ISO E -SCRATCH D
+    .\tiny11maker.ps1 -SCRATCH D -ISO E
+    .\tiny11maker.ps1
+
+    *If you put only the value in parameters the first one must be the iso mounted. The second is the scratch drive.
+    prefer the use of "-ISO" as you can put in the order you want.
+
+.NOTES
+    Auteur: ntdevlabs
+    Date: 05-06-24
+#>
+
 param (
-    [ValidatePattern('^[c-zC-Z]$')]
-    [string]$p_ScratchDisk,
-    [string]$p_IsoDisk
+    [ValidatePattern('^[c-zC-Z]$')][string]$ISO,
+    [ValidatePattern('^[c-zC-Z]$')][string]$SCRATCH
 )
 
-if (-not $p_ScratchDisk) {
+if (-not $SCRATCH) {
     $ScratchDisk = $PSScriptRoot -replace '[\\]+$', ''
 } else {
-    $ScratchDisk = $p_ScratchDisk + ":"
+    $ScratchDisk = $SCRATCH + ":"
 }
 
 # Check if PowerShell execution is restricted
@@ -51,10 +79,10 @@ Write-Host "Welcome to the tiny11 image creator! Release: 05-06-24"
 $hostArchitecture = $Env:PROCESSOR_ARCHITECTURE
 New-Item -ItemType Directory -Force -Path "$ScratchDisk\tiny11\sources" | Out-Null
 do {
-    if (-not $p_IsoDisk) {
+    if (-not $ISO) {
         $DriveLetter = Read-Host "Please enter the drive letter for the Windows 11 image"
     } else {
-        $DriveLetter = $p_IsoDisk
+        $DriveLetter = $ISO
     }
     if ($DriveLetter -match '^[c-zC-Z]$') {
         $DriveLetter = $DriveLetter + ":"
