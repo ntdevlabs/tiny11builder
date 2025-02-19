@@ -87,7 +87,13 @@ Start-Sleep -Seconds 2
 Clear-Host
 Write-Host "Getting image information:"
 Get-WindowsImage -ImagePath $ScratchDisk\tiny11\sources\install.wim
-$index = Read-Host "Please enter the image index"
+
+$index = Read-Host "Please enter the image index : "
+$ImagesIndex = (Get-WindowsImage -ImagePath $ScratchDisk\tiny11\sources\install.wim).ImageIndex
+while ($ImagesIndex -notcontains $index) {
+    $index = Read-Host "Please enter a valide image index : "
+}
+
 Write-Host "Mounting Windows image. This may take a while."
 $wimFilePath = "$ScratchDisk\tiny11\sources\install.wim"
 & takeown "/F" $wimFilePath 
