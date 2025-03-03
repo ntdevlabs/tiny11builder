@@ -53,15 +53,17 @@ Write-Host "Welcome to the tiny11 image creator! Release: 05-06-24"
 
 $hostArchitecture = $Env:PROCESSOR_ARCHITECTURE
 New-Item -ItemType Directory -Force -Path "$ScratchDisk\tiny11\sources" | Out-Null
+
 do {
-    $DriveLetter = Read-Host "Please enter the drive letter for the Windows 11 image"
-    if ($DriveLetter -match '^[c-zC-Z]$') {
-        $DriveLetter = $DriveLetter + ":"
-        Write-Output "Drive letter set to $DriveLetter"
+    $ImagePath = Read-Host "Please enter a path to the Windows 11 ISO image"
+    $ImagePath = $ImagePath -replace '"', ''
+    if ((Test-Path $ImagePath -PathType Leaf) -And ($ImagePath -match '\.iso$')) {
+        $DriveLetter = (Mount-DiskImage -ImagePath $ImagePath -Access ReadOnly | Get-Volume | Select-Object -ExpandProperty DriveLetter) + ":"
+        Write-Output "Selected ${ImagePath} (mounted with drive letter $DriveLetter). The script will now extract the image."
     } else {
-        Write-Output "Invalid drive letter. Please enter a letter between C and Z."
+        Write-Output "File doesn't exist. Please specify a correct path"
     }
-} while ($DriveLetter -notmatch '^[c-zC-Z]:$')
+} while (!(Test-Path $ImagePath -PathType Leaf) -And !($ImagePath -match '\.iso$'))
 
 if ((Test-Path "$DriveLetter\sources\boot.wim") -eq $false -or (Test-Path "$DriveLetter\sources\install.wim") -eq $false) {
     if ((Test-Path "$DriveLetter\sources\install.esd") -eq $true) {
@@ -80,6 +82,7 @@ if ((Test-Path "$DriveLetter\sources\boot.wim") -eq $false -or (Test-Path "$Driv
 
 Write-Host "Copying Windows image..."
 Copy-Item -Path "$DriveLetter\*" -Destination "$ScratchDisk\tiny11" -Recurse -Force | Out-Null
+Dismount-DiskImage -ImagePath $ImagePath # unmount because it's not going to be used ever again
 Set-ItemProperty -Path "$ScratchDisk\tiny11\sources\install.esd" -Name IsReadOnly -Value $false > $null 2>&1
 Remove-Item "$ScratchDisk\tiny11\sources\install.esd" > $null 2>&1
 Write-Host "Copy complete!"
