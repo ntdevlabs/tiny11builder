@@ -2,12 +2,12 @@
 #Set-PSDebug -Trace 1
 
 param (
-    [ValidatePattern('^[c-zC-Z]$')]
+    [ValidatePattern('^[c-zC-Z]:$')]
     [string]$ScratchDisk
 )
 
 if (-not $ScratchDisk) {
-    $ScratchDisk = $PSScriptRoot -replace '[\\]+$', ''
+    $ScratchDisk = ((Get-Location).Drive.Name) + ":"
 } else {
     $ScratchDisk = $ScratchDisk + ":"
 }
@@ -43,8 +43,6 @@ if (! $myWindowsPrincipal.IsInRole($adminRole))
     [System.Diagnostics.Process]::Start($newProcess);
     exit
 }
-
-
 
 # Start the transcript and prepare the window
 Start-Transcript -Path "$ScratchDisk\tiny11.log" 
@@ -122,7 +120,7 @@ switch ((Get-WindowsImage -ImagePath $wimFilePath -Index $index).Architecture)
     12 { $architecture = "arm64" }
 }
 
-if (Test-Path variable:architecture) {
+if ($architecture) {
     Write-Host "Architecture: $architecture"
 } else {
     Write-Host "Architecture information not found."
@@ -388,9 +386,9 @@ Write-Host ' '
 Write-Host "Unmounting image..."
 Dismount-WindowsImage -Path $ScratchDisk\scratchdir -Save
 Write-Host "Exporting image..."
-# Compressiontype Recovery is not supported with PShell https://learn.microsoft.com/en-us/powershell/module/dism/export-windowsimage?-ps#-compressiontype
-& dism /English /Export-Image "/SourceImageFile:$ScratchDisk\tiny11\sources\install.wim" "/SourceIndex:$index" "/DestinationImageFile:$ScratchDisk\tiny11\sources\install.esd" /Compress:recovery
-Remove-Item -Path "$ScratchDisk\tiny11\sources\install.wim" -Force | Out-Null
+# Run `Export-WindowsImage` with undocumented CompressionType "LZMS" (which is the same compression used for Recovery from dism.exe)
+Export-WindowsImage -SourceImagePath "$ScratchDisk\tiny11\sources\install.wim" -SourceIndex "$index" -DestinationImagePath "$ScratchDisk\tiny11\sources\install2.wim" -CompressionType "LZMS"
+Move-Item -Path "$ScratchDisk\tiny11\sources\install2.wim" -Destination "$ScratchDisk\tiny11\sources\install.wim" -Force | Out-Null
 Write-Host "Windows image completed. Continuing with boot.wim."
 Start-Sleep -Seconds 2
 Clear-Host
@@ -437,18 +435,18 @@ Copy-Item -Path "$PSScriptRoot\autounattend.xml" -Destination "$ScratchDisk\tiny
 Write-Host "Creating ISO image..."
 # Get Windows ADK path from registry(following Visual Studio's winsdk.bat approach).
 $WinSDKPath = [Microsoft.Win32.Registry]::GetValue("HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Windows Kits\Installed Roots", "KitsRoot10", $null)
-if ($null -eq $WinSDKPath) {
+if (!$WinSDKPath) {
     $WinSDKPath = [Microsoft.Win32.Registry]::GetValue("HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots", "KitsRoot10", $null)
 }
 
-if ($null -ne $WinSDKPath) {
+if ($WinSDKPath) {
     # Trim the following backslash for path concatenation.
     $WinSDKPath = $WinSDKPath.TrimEnd('\')
     $ADKDepTools = "$WinSDKPath\Assessment and Deployment Kit\Deployment Tools\$hostarchitecture\Oscdimg"
 }
 $localOSCDIMGPath = "$PSScriptRoot\oscdimg.exe"
 
-if ((Test-Path variable:ADKDepTools) -and (Test-Path -Path "$ADKDepTools\oscdimg.exe" -PathType Leaf)) {
+if ($ADKDepTools -and [System.IO.File]::Exists("$ADKDepTools\oscdimg.exe")) {
     Write-Host "Will be using oscdimg.exe from system ADK."
     $OSCDIMG = "$ADKDepTools\oscdimg.exe"
 } else {
@@ -456,11 +454,11 @@ if ((Test-Path variable:ADKDepTools) -and (Test-Path -Path "$ADKDepTools\oscdimg
     
     $url = "https://msdl.microsoft.com/download/symbols/oscdimg.exe/3D44737265000/oscdimg.exe"
 
-    if (-not (Test-Path -Path $localOSCDIMGPath -PathType Leaf)) {
+    if (![System.IO.File]::Exists($localOSCDIMGPath)) {
         Write-Host "Downloading oscdimg.exe..."
         Invoke-WebRequest -Uri $url -OutFile $localOSCDIMGPath
 
-        if (Test-Path -Path $localOSCDIMGPath -PathType Leaf) {
+        if ([System.IO.File]::Exists($localOSCDIMGPath)) {
             Write-Host "oscdimg.exe downloaded successfully."
         } else {
             Write-Error "Failed to download oscdimg.exe."
