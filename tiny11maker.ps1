@@ -426,18 +426,18 @@ Write-Host "Registry key permissions successfully updated."
 $regKey.Close()
 
 Write-Host 'Deleting Application Compatibility Appraiser'
-Remove-RegistryKey 'HKEY_LOCAL_MACHINE\zSOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tasks\{0600DD45-FAF2-4131-A006-0B17509B9F78}'
+Remove-RegistryValue 'HKEY_LOCAL_MACHINE\zSOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tasks\{0600DD45-FAF2-4131-A006-0B17509B9F78}'
 Write-Host 'Deleting Customer Experience Improvement Program'
-Remove-RegistryKey 'HKEY_LOCAL_MACHINE\zSOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tasks\{4738DE7A-BCC1-4E2D-B1B0-CADB044BFA81}'
-Remove-RegistryKey 'HKEY_LOCAL_MACHINE\zSOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tasks\{6FAC31FA-4A85-4E64-BFD5-2154FF4594B3}'
-Remove-RegistryKey 'HKEY_LOCAL_MACHINE\zSOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tasks\{FC931F16-B50A-472E-B061-B6F79A71EF59}'
+Remove-RegistryValue 'HKEY_LOCAL_MACHINE\zSOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tasks\{4738DE7A-BCC1-4E2D-B1B0-CADB044BFA81}'
+Remove-RegistryValue 'HKEY_LOCAL_MACHINE\zSOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tasks\{6FAC31FA-4A85-4E64-BFD5-2154FF4594B3}'
+Remove-RegistryValue 'HKEY_LOCAL_MACHINE\zSOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tasks\{FC931F16-B50A-472E-B061-B6F79A71EF59}'
 Write-Host 'Deleting Program Data Updater'
-Remove-RegistryKey 'HKEY_LOCAL_MACHINE\zSOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tasks\{0671EB05-7D95-4153-A32B-1426B9FE61DB}'
+Remove-RegistryValue 'HKEY_LOCAL_MACHINE\zSOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tasks\{0671EB05-7D95-4153-A32B-1426B9FE61DB}'
 Write-Host 'Deleting autochk proxy'
-Remove-RegistryKey 'HKEY_LOCAL_MACHINE\zSOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tasks\{87BF85F4-2CE1-4160-96EA-52F554AA28A2}'
-Remove-RegistryKey 'HKEY_LOCAL_MACHINE\zSOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tasks\{8A9C643C-3D74-4099-B6BD-9C6D170898B1}'
+Remove-RegistryValue 'HKEY_LOCAL_MACHINE\zSOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tasks\{87BF85F4-2CE1-4160-96EA-52F554AA28A2}'
+Remove-RegistryValue 'HKEY_LOCAL_MACHINE\zSOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tasks\{8A9C643C-3D74-4099-B6BD-9C6D170898B1}'
 Write-Host 'Deleting QueueReporting'
-Remove-RegistryKey 'HKEY_LOCAL_MACHINE\zSOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tasks\{E3176A65-4E44-4ED3-AA73-3283660ACB9C}'
+Remove-RegistryValue 'HKEY_LOCAL_MACHINE\zSOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tasks\{E3176A65-4E44-4ED3-AA73-3283660ACB9C}'
 Write-Host "Tweaking complete!"
 Write-Host "Unmounting Registry..."
 $regKey.Close()
@@ -541,7 +541,57 @@ Remove-Item -Path "$ScratchDisk\tiny11" -Recurse -Force | Out-Null
 Remove-Item -Path "$ScratchDisk\scratchdir" -Recurse -Force | Out-Null
 Write-Output "Ejecting Iso drive"
 Get-Volume -DriveLetter $DriveLetter[0] | Get-DiskImage | Dismount-DiskImage
-Write-Output "Cleanup complete!"
+Write-Output "Iso drive ejected"
+Write-Output "Removing oscdimg.exe..."
+Remove-Item -Path "$PSScriptRoot\oscdimg.exe" -Force -ErrorAction SilentlyContinue
+Write-Output "Removing autounattend.xml..."
+Remove-Item -Path "$PSScriptRoot\autounattend.xml" -Force -ErrorAction SilentlyContinue
+
+Write-Output "Cleanup check :"
+if (Test-Path -Path "$ScratchDisk\tiny11") {
+    Write-Output "tiny11 folder still exists. Attempting to remove it again..."
+    Remove-Item -Path "$ScratchDisk\tiny11" -Recurse -Force -ErrorAction SilentlyContinue
+    if (Test-Path -Path "$ScratchDisk\tiny11") {
+        Write-Output "Failed to remove tiny11 folder."
+    } else {
+        Write-Output "tiny11 folder removed successfully."
+    }
+} else {
+    Write-Output "tiny11 folder does not exist. No action needed."
+}
+if (Test-Path -Path "$ScratchDisk\scratchdir") {
+    Write-Output "scratchdir folder still exists. Attempting to remove it again..."
+    Remove-Item -Path "$ScratchDisk\scratchdir" -Recurse -Force -ErrorAction SilentlyContinue
+    if (Test-Path -Path "$ScratchDisk\scratchdir") {
+        Write-Output "Failed to remove scratchdir folder."
+    } else {
+        Write-Output "scratchdir folder removed successfully."
+    }
+} else {
+    Write-Output "scratchdir folder does not exist. No action needed."
+}
+if (Test-Path -Path "$PSScriptRoot\oscdimg.exe") {
+    Write-Output "oscdimg.exe still exists. Attempting to remove it again..."
+    Remove-Item -Path "$PSScriptRoot\oscdimg.exe" -Force -ErrorAction SilentlyContinue
+    if (Test-Path -Path "$PSScriptRoot\oscdimg.exe") {
+        Write-Output "Failed to remove oscdimg.exe."
+    } else {
+        Write-Output "oscdimg.exe removed successfully."
+    }
+} else {
+    Write-Output "oscdimg.exe does not exist. No action needed."
+}
+if (Test-Path -Path "$PSScriptRoot\autounattend.xml") {
+    Write-Output "autounattend.xml still exists. Attempting to remove it again..."
+    Remove-Item -Path "$PSScriptRoot\autounattend.xml" -Force -ErrorAction SilentlyContinue
+    if (Test-Path -Path "$PSScriptRoot\autounattend.xml") {
+        Write-Output "Failed to remove autounattend.xml."
+    } else {
+        Write-Output "autounattend.xml removed successfully."
+    }
+} else {
+    Write-Output "autounattend.xml does not exist. No action needed."
+}
 
 # Stop the transcript
 Stop-Transcript
