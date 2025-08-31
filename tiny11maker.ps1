@@ -203,11 +203,62 @@ $packages = & 'dism' '/English' "/image:$($ScratchDisk)\scratchdir" '/Get-Provis
             $matches[1]
         }
     }
-$packagePrefixes = 'Clipchamp.Clipchamp_', 'Microsoft.BingNews_', 'Microsoft.BingWeather_', 'Microsoft.GamingApp_', 'Microsoft.GetHelp_', 'Microsoft.Getstarted_', 'Microsoft.MicrosoftOfficeHub_', 'Microsoft.MicrosoftSolitaireCollection_', 'Microsoft.People_', 'Microsoft.PowerAutomateDesktop_', 'Microsoft.Todos_', 'Microsoft.WindowsAlarms_', 'microsoft.windowscommunicationsapps_', 'Microsoft.WindowsFeedbackHub_', 'Microsoft.WindowsMaps_', 'Microsoft.WindowsSoundRecorder_', 'Microsoft.Xbox.TCUI_', 'Microsoft.XboxGamingOverlay_', 'Microsoft.XboxGameOverlay_', 'Microsoft.XboxSpeechToTextOverlay_', 'Microsoft.YourPhone_', 'Microsoft.ZuneMusic_', 'Microsoft.ZuneVideo_', 'MicrosoftCorporationII.MicrosoftFamily_', 'MicrosoftCorporationII.QuickAssist_', 'MicrosoftTeams_', 'Microsoft.549981C3F5F10_'
+	
+$packagePrefixes = 'AppUp.IntelManagementandSecurityStatus',
+'Clipchamp.Clipchamp', 
+'DolbyLaboratories.DolbyAccess',
+'DolbyLaboratories.DolbyDigitalPlusDecoderOEM',
+'Microsoft.BingNews',
+'Microsoft.BingSearch',
+'Microsoft.BingWeather',
+'Microsoft.Copilot',
+'Microsoft.Windows.CrossDevice',
+'Microsoft.GamingApp',
+'Microsoft.GetHelp',
+'Microsoft.Getstarted',
+'Microsoft.Microsoft3DViewer',
+'Microsoft.MicrosoftOfficeHub',
+'Microsoft.MicrosoftSolitaireCollection',
+'Microsoft.MicrosoftStickyNotes',
+'Microsoft.MixedReality.Portal',
+'Microsoft.MSPaint',
+'Microsoft.Office.OneNote',
+'Microsoft.OfficePushNotificationUtility',
+'Microsoft.OutlookForWindows',
+'Microsoft.Paint',
+'Microsoft.People',
+'Microsoft.PowerAutomateDesktop',
+'Microsoft.SkypeApp',
+'Microsoft.StartExperiencesApp',
+'Microsoft.Todos',
+'Microsoft.Wallet',
+'Microsoft.Windows.DevHome',
+'Microsoft.WindowsAlarms',
+'Microsoft.WindowsCamera',
+'microsoft.windowscommunicationsapps',
+'Microsoft.WindowsFeedbackHub',
+'Microsoft.WindowsMaps',
+'Microsoft.WindowsSoundRecorder',
+'Microsoft.WindowsTerminal',
+'Microsoft.Xbox.TCUI',
+'Microsoft.XboxApp',
+'Microsoft.XboxGameOverlay',
+'Microsoft.XboxGamingOverlay',
+'Microsoft.XboxIdentityProvider',
+'Microsoft.XboxSpeechToTextOverlay',
+'Microsoft.YourPhone',
+'Microsoft.ZuneMusic',
+'Microsoft.ZuneVideo',
+'MicrosoftCorporationII.MicrosoftFamily',
+'MicrosoftCorporationII.QuickAssist',
+'MSTeams',
+'MicrosoftTeams', 
+'Microsoft.WindowsTerminal',
+'Microsoft.549981C3F5F10'
 
 $packagesToRemove = $packages | Where-Object {
     $packageName = $_
-    $packagePrefixes -contains ($packagePrefixes | Where-Object { $packageName -like "$_*" })
+    $packagePrefixes -contains ($packagePrefixes | Where-Object { $packageName -like "*$_*" })
 }
 foreach ($package in $packagesToRemove) {
     & 'dism' '/English' "/image:$($ScratchDisk)\scratchdir" '/Remove-ProvisionedAppxPackage' "/PackageName:$package"
@@ -595,4 +646,5 @@ if (Test-Path -Path "$PSScriptRoot\autounattend.xml") {
 
 # Stop the transcript
 Stop-Transcript
+
 exit
