@@ -99,7 +99,9 @@ if (! $myWindowsPrincipal.IsInRole($adminRole))
     exit
 }
 
-
+if (-not (Test-Path -Path "$PSScriptRoot/autounattend.xml")) {
+    Invoke-RestMethod "https://raw.githubusercontent.com/ntdevlabs/tiny11builder/refs/heads/main/autounattend.xml" -OutFile "$PSScriptRoot/autounattend.xml"
+}
 
 # Start the transcript and prepare the window
 Start-Transcript -Path "$ScratchDisk\tiny11.log" 
