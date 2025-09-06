@@ -19,12 +19,12 @@
     .\tiny11maker.ps1 -SCRATCH D -ISO E
     .\tiny11maker.ps1
 
-    *If you put only the value in parameters the first one must be the iso mounted. The second is the scratch drive.
-    prefer the use of "-ISO" as you can put in the order you want.
+    *If you ordinal parameters the first one must be the mounted iso. The second is the scratch drive.
+    prefer the use of full named parameter (eg: "-ISO") as you can put in the order you want.
 
 .NOTES
     Auteur: ntdevlabs
-    Date: 05-06-24
+    Date: 06-09-25
 #>
 
 #---------[ Parameters ]---------#
@@ -101,7 +101,7 @@ if (-not (Test-Path -Path "$PSScriptRoot/autounattend.xml")) {
 }
 
 # Start the transcript and prepare the window
-Start-Transcript -Path "$ScratchDisk\tiny11.log"
+Start-Transcript -Path "$PSScriptRoot\tiny11_$(get-date -f yyyyMMdd_HHmms).log"
 
 $Host.UI.RawUI.WindowTitle = "Tiny11 image creator"
 Clear-Host
@@ -538,4 +538,5 @@ if (Test-Path -Path "$PSScriptRoot\autounattend.xml") {
 Stop-Transcript
 
 exit
+
 
