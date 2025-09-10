@@ -113,4 +113,10 @@ You will be asked during image creation if you want to enable .net 3.5 support!
 - maybe a GUI???
 
 And that's pretty much it for now!
+## ❤️ Support the Project
+
+If this project has helped you, please consider showing your support! A small donation helps me dedicate more time to projects like this.
+Thank you!
+
+**[Patreon](http://patreon.com/ntdev) | [PayPal](http://paypal.me/ntdev2) | [Ko-fi](http://ko-fi.com/ntdev)**
 Thanks for trying it and let me know how you like it!
