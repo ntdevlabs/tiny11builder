@@ -12,7 +12,7 @@ The script has also been updated to use DISM's recovery compression, resulting i
 Also included is an unattended answer file, which is used to bypass the Microsoft Account on OOBE and to deploy the image with the `/compact` flag.
 It's open-source, **so feel free to add or remove anything you want!** Feedback is also much appreciated.
 
-Also, for the very first time, **introducing tiny11 core builder**! A more powerful script, designed for a quick and dirty development testbed. Just the bare minimum, none of the fluff. 
+Also, for the very first time, **introducing tiny11 core builder**! A more powerful script, designed for a quick and dirty development testbed. Just the bare minimum, none of the fluff.
 This script generates a significantly reduced Windows 11 image. However, **it's not suitable for regular use due to its lack of serviceability - you can't add languages, updates, or features post-creation**. tiny11 Core is not a full Windows 11 substitute but a rapid testing or development tool, potentially useful for VM environments.
 
 ---
@@ -24,18 +24,18 @@ This script generates a significantly reduced Windows 11 image. However, **it's 
 ## Instructions:
 1. Download Windows 11 from the [Microsoft website](https://www.microsoft.com/software-download/windows11) or [Rufus](https://github.com/pbatard/rufus)
 2. Mount the downloaded ISO image using Windows Explorer.
-3. Open **PowerShell 5.1** as Administrator. 
-5. Change the script execution policy :
+3. Open **PowerShell 5.1** as Administrator.
+4. Change the script execution policy :
 ```powershell
 Set-ExecutionPolicy Bypass -Scope Process
 ```
-> Using `-Scope Process` you keep your original policy intact as this change only lasts for the current PowerShell session. 
+> Using `-Scope Process` you keep your original policy intact as this change only lasts for the current PowerShell session.
 
-6. Start the script :
+5. Start the script :
 ```powershell
 C:/path/to/your/tiny11/script.ps1 -ISO <letter> -SCRATCH <letter>
 ``` 
-> You can see of the script by running the `get-help` command.
+> You can see the description of the script by running the `get-help` command.
 
 6. Select the drive letter where the image is mounted (only the letter, no colon (:))
 7. Select the SKU that you want the image to be based.
