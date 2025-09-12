@@ -76,6 +76,12 @@ try {
 } catch {
     # This block will catch the error and suppress it.
 }
+# Clean and recreate scratchdir to ensure it's empty
+if (Test-Path "$mainOSDrive\scratchdir") {
+    Write-Host "Cleaning existing scratchdir..."
+    Remove-Item -Path "$mainOSDrive\scratchdir" -Recurse -Force -ErrorAction SilentlyContinue
+    Start-Sleep -Seconds 2
+}
 New-Item -ItemType Directory -Force -Path "$mainOSDrive\scratchdir" > $null
 & dism /English "/mount-image" "/imagefile:$($env:SystemDrive)\tiny11\sources\install.wim" "/index:$index" "/mountdir:$($env:SystemDrive)\scratchdir"
 
@@ -156,12 +162,25 @@ foreach ($packagePattern in $packagePatterns) {
     # Filter the packages to remove
     $packagesToRemove = $allPackages | Where-Object { $_ -like "$packagePattern*" }
 
+    if ($packagesToRemove.Count -eq 0) {
+        Write-Host "No packages found matching pattern: $packagePattern (this is normal for some Windows editions)"
+        continue
+    }
+
     foreach ($package in $packagesToRemove) {
         # Extract the package identity
         $packageIdentity = ($package -split "\s+")[0]
+        
+        if ([string]::IsNullOrWhiteSpace($packageIdentity)) {
+            continue
+        }
 
         Write-Host "Removing $packageIdentity..."
-        & dism /image:$scratchDir /Remove-Package /PackageName:$packageIdentity 
+        $result = & dism /image:$scratchDir /Remove-Package /PackageName:$packageIdentity 2>&1
+        
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "Warning: Failed to remove $packageIdentity (Error code: $LASTEXITCODE). This may be normal for this Windows edition."
+        }
     }
 }
 
@@ -483,8 +502,51 @@ Write-Host "Unmounting image..."
 & 'dism' '/English' '/unmount-image' "/mountdir:$mainOSDrive\scratchdir" '/commit'
 Write-Host "Exporting image..."
 & 'dism' '/English' '/Export-Image' "/SourceImageFile:$mainOSDrive\tiny11\sources\install.wim" "/SourceIndex:$index" "/DestinationImageFile:$mainOSDrive\tiny11\sources\install2.wim" '/compress:max'
-Remove-Item -Path "$mainOSDrive\tiny11\sources\install.wim" -Force >null
-Rename-Item -Path "$mainOSDrive\tiny11\sources\install2.wim" -NewName "install.wim" >null
+# Wait for any file handles to be released
+Start-Sleep -Seconds 3
+
+# Try to remove install.wim with retries
+$retryCount = 0
+$maxRetries = 5
+do {
+    try {
+        if (Test-Path "$mainOSDrive\tiny11\sources\install.wim") {
+            Remove-Item -Path "$mainOSDrive\tiny11\sources\install.wim" -Force -ErrorAction Stop
+            Write-Host "Successfully removed install.wim"
+            break
+        }
+    } catch {
+        $retryCount++
+        if ($retryCount -lt $maxRetries) {
+            Write-Host "Attempt $retryCount failed to remove install.wim, retrying in 2 seconds..."
+            Start-Sleep -Seconds 2
+        } else {
+            Write-Host "Warning: Could not remove install.wim after $maxRetries attempts. Continuing anyway..."
+            break
+        }
+    }
+} while ($retryCount -lt $maxRetries)
+
+# Try to rename install2.wim with retries
+$retryCount = 0
+do {
+    try {
+        if (Test-Path "$mainOSDrive\tiny11\sources\install2.wim") {
+            Rename-Item -Path "$mainOSDrive\tiny11\sources\install2.wim" -NewName "install.wim" -ErrorAction Stop
+            Write-Host "Successfully renamed install2.wim to install.wim"
+            break
+        }
+    } catch {
+        $retryCount++
+        if ($retryCount -lt $maxRetries) {
+            Write-Host "Attempt $retryCount failed to rename install2.wim, retrying in 2 seconds..."
+            Start-Sleep -Seconds 2
+        } else {
+            Write-Host "Warning: Could not rename install2.wim after $maxRetries attempts."
+            break
+        }
+    }
+} while ($retryCount -lt $maxRetries)
 Write-Host "Windows image completed. Continuing with boot.wim."
 Start-Sleep -Seconds 2
 Clear-Host
@@ -493,6 +555,13 @@ $wimFilePath = "$($env:SystemDrive)\tiny11\sources\boot.wim"
 & takeown "/F" $wimFilePath >null
 & icacls $wimFilePath "/grant" "$($adminGroup.Value):(F)"
 Set-ItemProperty -Path $wimFilePath -Name IsReadOnly -Value $false
+# Clean and recreate scratchdir to ensure it's empty for boot.wim mounting
+if (Test-Path "$mainOSDrive\scratchdir") {
+    Write-Host "Cleaning existing scratchdir for boot.wim..."
+    Remove-Item -Path "$mainOSDrive\scratchdir" -Recurse -Force -ErrorAction SilentlyContinue
+    Start-Sleep -Seconds 2
+}
+New-Item -ItemType Directory -Force -Path "$mainOSDrive\scratchdir" > $null
 & 'dism' '/English' '/mount-image' "/imagefile:$mainOSDrive\tiny11\sources\boot.wim" '/index:2' "/mountdir:$mainOSDrive\scratchdir"
 Write-Host "Loading registry..."
 reg load HKLM\zCOMPONENTS $mainOSDrive\scratchdir\Windows\System32\config\COMPONENTS
