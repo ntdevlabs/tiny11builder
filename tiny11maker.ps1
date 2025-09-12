@@ -387,7 +387,7 @@ reg unload HKLM\zNTUSER | Out-Null
 reg unload HKLM\zSOFTWARE | Out-Null
 reg unload HKLM\zSYSTEM | Out-Null
 Write-Output "Cleaning up image..."
-Repair-WindowsImage -Path $ScratchDisk\scratchdir -StartComponentCleanup -ResetBase
+dism.exe /Image:$ScratchDisk\scratchdir /Cleanup-Image /StartComponentCleanup /ResetBase
 Write-Output "Cleanup complete."
 Write-Output ' '
 Write-Output "Unmounting image..."
