@@ -39,7 +39,65 @@ if (-not $SCRATCH) {
     $ScratchDisk = $SCRATCH + ":"
 }
 
+#---------[ Initial Checks and Setup ]---------#
+
+# Check if PowerShell execution is restricted
+if ((Get-ExecutionPolicy) -eq 'Restricted') {
+    Write-Output "Your current PowerShell Execution Policy is set to Restricted, which prevents scripts from running. Do you want to change it to RemoteSigned? (yes/no)"
+    $response = Read-Host
+    if ($response.ToLower() -eq 'yes') {
+        Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Confirm:$false
+    } else {
+        Write-Output "The script cannot be run without changing the execution policy. Exiting..."
+        exit
+    }
+}
+
+# Check and run the script as admin if required
+$myWindowsID = [System.Security.Principal.WindowsIdentity]::GetCurrent()
+$myWindowsPrincipal = New-Object System.Security.Principal.WindowsPrincipal($myWindowsID)
+if (-not $myWindowsPrincipal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    Write-Output "Restarting Tiny11 image creator as admin in a new window, you can close this one."
+    $newProcess = New-Object System.Diagnostics.ProcessStartInfo "PowerShell"
+    $newProcess.Arguments = "-File `"$($myInvocation.MyCommand.Definition)`""
+    $newProcess.Verb = "runas"
+    [System.Diagnostics.Process]::Start($newProcess)
+    exit
+}
+
+# Get the Administrators group in a language-independent way via its well-known SID
+$adminGroupSid = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid, $null)
+$adminGroup = $adminGroupSid.Translate([System.Security.Principal.NTAccount])
+
 #---------[ Functions ]---------#
+
+# FIX: Language-independent function to take ownership and set permissions
+function Set-ItemOwnershipAndAccess {
+    param(
+        [string]$Path,
+        [switch]$Recurse
+    )
+    if (-not (Test-Path $Path)) {
+        Write-Warning "Path not found: $Path"
+        return
+    }
+    Write-Host "Taking ownership and setting permissions for: $Path"
+    try {
+        $acl = Get-Acl $Path
+        $acl.SetOwner($adminGroup)
+        if ($Recurse) {
+            $rule = New-Object System.Security.AccessControl.FileSystemAccessRule($adminGroup, [System.Security.AccessControl.FileSystemRights]::FullControl, "ContainerInherit, ObjectInherit", "None", "Allow")
+        } else {
+            $rule = New-Object System.Security.AccessControl.FileSystemAccessRule($adminGroup, [System.Security.AccessControl.FileSystemRights]::FullControl, "Allow")
+        }
+        $acl.AddAccessRule($rule)
+        Set-Acl -Path $Path -AclObject $acl
+        Write-Host "  - Success."
+    } catch {
+        Write-Error "Error processing '$Path': $_"
+    }
+}
+
 function Set-RegistryValue {
     param (
         [string]$path,
@@ -68,33 +126,6 @@ function Remove-RegistryValue {
 }
 
 #---------[ Execution ]---------#
-# Check if PowerShell execution is restricted
-if ((Get-ExecutionPolicy) -eq 'Restricted') {
-    Write-Output "Your current PowerShell Execution Policy is set to Restricted, which prevents scripts from running. Do you want to change it to RemoteSigned? (yes/no)"
-    $response = Read-Host
-    if ($response -eq 'yes') {
-        Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Confirm:$false
-    } else {
-        Write-Output "The script cannot be run without changing the execution policy. Exiting..."
-        exit
-    }
-}
-
-# Check and run the script as admin if required
-$adminSID = New-Object System.Security.Principal.SecurityIdentifier("S-1-5-32-544")
-$adminGroup = $adminSID.Translate([System.Security.Principal.NTAccount])
-$myWindowsID=[System.Security.Principal.WindowsIdentity]::GetCurrent()
-$myWindowsPrincipal=new-object System.Security.Principal.WindowsPrincipal($myWindowsID)
-$adminRole=[System.Security.Principal.WindowsBuiltInRole]::Administrator
-if (! $myWindowsPrincipal.IsInRole($adminRole))
-{
-    Write-Output "Restarting Tiny11 image creator as admin in a new window, you can close this one."
-    $newProcess = new-object System.Diagnostics.ProcessStartInfo "PowerShell";
-    $newProcess.Arguments = $myInvocation.MyCommand.Definition;
-    $newProcess.Verb = "runas";
-    [System.Diagnostics.Process]::Start($newProcess);
-    exit
-}
 
 if (-not (Test-Path -Path "$PSScriptRoot/autounattend.xml")) {
     Invoke-RestMethod "https://raw.githubusercontent.com/ntdevlabs/tiny11builder/refs/heads/main/autounattend.xml" -OutFile "$PSScriptRoot/autounattend.xml"
@@ -153,12 +184,13 @@ while ($ImagesIndex -notcontains $index) {
 }
 Write-Output "Mounting Windows image. This may take a while."
 $wimFilePath = "$ScratchDisk\tiny11\sources\install.wim"
-& takeown "/F" $wimFilePath
-& icacls $wimFilePath "/grant" "$($adminGroup.Value):(F)"
+
+# FIX: Use robust function to take ownership
+Set-ItemOwnershipAndAccess -Path $wimFilePath
+
 try {
     Set-ItemProperty -Path $wimFilePath -Name IsReadOnly -Value $false -ErrorAction Stop
 } catch {
-    # This block will catch the error and suppress it.
 	Write-Error "$wimFilePath not found"
 }
 New-Item -ItemType Directory -Force -Path "$ScratchDisk\scratchdir" > $null
@@ -180,7 +212,6 @@ $lines = $imageInfo -split '\r?\n'
 foreach ($line in $lines) {
     if ($line -like '*Architecture : *') {
         $architecture = $line -replace 'Architecture : ',''
-        # If the architecture is x64, replace it with amd64
         if ($architecture -eq 'x64') {
             $architecture = 'amd64'
         }
@@ -265,16 +296,27 @@ foreach ($package in $packagesToRemove) {
 }
 
 Write-Output "Removing Edge:"
-Remove-Item -Path "$ScratchDisk\scratchdir\Program Files (x86)\Microsoft\Edge" -Recurse -Force | Out-Null
-Remove-Item -Path "$ScratchDisk\scratchdir\Program Files (x86)\Microsoft\EdgeUpdate" -Recurse -Force | Out-Null
-Remove-Item -Path "$ScratchDisk\scratchdir\Program Files (x86)\Microsoft\EdgeCore" -Recurse -Force | Out-Null
-& 'takeown' '/f' "$ScratchDisk\scratchdir\Windows\System32\Microsoft-Edge-Webview" '/r' | Out-Null
-& 'icacls' "$ScratchDisk\scratchdir\Windows\System32\Microsoft-Edge-Webview" '/grant' "$($adminGroup.Value):(F)" '/T' '/C' | Out-Null
-Remove-Item -Path "$ScratchDisk\scratchdir\Windows\System32\Microsoft-Edge-Webview" -Recurse -Force | Out-Null
+Remove-Item -Path "$ScratchDisk\scratchdir\Program Files (x86)\Microsoft\Edge" -Recurse -Force -ErrorAction SilentlyContinue
+Remove-Item -Path "$ScratchDisk\scratchdir\Program Files (x86)\Microsoft\EdgeUpdate" -Recurse -Force -ErrorAction SilentlyContinue
+Remove-Item -Path "$ScratchDisk\scratchdir\Program Files (x86)\Microsoft\EdgeCore" -Recurse -Force -ErrorAction SilentlyContinue
+
+# FIX: Use robust robocopy method to delete protected Edge WebView folder
+$edgeWebViewPath = "$ScratchDisk\scratchdir\Windows\System32\Microsoft-Edge-Webview"
+if (Test-Path $edgeWebViewPath) {
+    Write-Host "Force-deleting Edge WebView folder..."
+    Set-ItemOwnershipAndAccess -Path $edgeWebViewPath -Recurse
+    $emptyDirForEdge = Join-Path -Path $ScratchDisk -ChildPath "empty_edge_delete"
+    New-Item -Path $emptyDirForEdge -ItemType Directory -Force | Out-Null
+    & robocopy $emptyDirForEdge $edgeWebViewPath /MIR /R:0 /W:0 | Out-Null
+    Remove-Item -Path $edgeWebViewPath -Recurse -Force
+    Remove-Item -Path $emptyDirForEdge -Recurse -Force
+}
+
 Write-Output "Removing OneDrive:"
-& 'takeown' '/f' "$ScratchDisk\scratchdir\Windows\System32\OneDriveSetup.exe" | Out-Null
-& 'icacls' "$ScratchDisk\scratchdir\Windows\System32\OneDriveSetup.exe" '/grant' "$($adminGroup.Value):(F)" '/T' '/C' | Out-Null
-Remove-Item -Path "$ScratchDisk\scratchdir\Windows\System32\OneDriveSetup.exe" -Force | Out-Null
+$oneDriveSetupPath = "$ScratchDisk\scratchdir\Windows\System32\OneDriveSetup.exe"
+Set-ItemOwnershipAndAccess -Path $oneDriveSetupPath
+Remove-Item -Path $oneDriveSetupPath -Force | Out-Null
+
 Write-Output "Removal complete!"
 Start-Sleep -Seconds 2
 Clear-Host
@@ -401,16 +443,18 @@ Start-Sleep -Seconds 2
 Clear-Host
 Write-Output "Mounting boot image:"
 $wimFilePath = "$ScratchDisk\tiny11\sources\boot.wim"
-& takeown "/F" $wimFilePath | Out-Null
-& icacls $wimFilePath "/grant" "$($adminGroup.Value):(F)"
+
+# FIX: Use robust function to take ownership
+Set-ItemOwnershipAndAccess -Path $wimFilePath
 Set-ItemProperty -Path $wimFilePath -Name IsReadOnly -Value $false
+
 Mount-WindowsImage -ImagePath $ScratchDisk\tiny11\sources\boot.wim -Index 2 -Path $ScratchDisk\scratchdir
 Write-Output "Loading registry..."
-reg load HKLM\zCOMPONENTS $ScratchDisk\scratchdir\Windows\System32\config\COMPONENTS
-reg load HKLM\zDEFAULT $ScratchDisk\scratchdir\Windows\System32\config\default
-reg load HKLM\zNTUSER $ScratchDisk\scratchdir\Users\Default\ntuser.dat
-reg load HKLM\zSOFTWARE $ScratchDisk\scratchdir\Windows\System32\config\SOFTWARE
-reg load HKLM\zSYSTEM $ScratchDisk\scratchdir\Windows\System32\config\SYSTEM
+reg load HKLM\zCOMPONENTS $ScratchDisk\scratchdir\Windows\System32\config\COMPONENTS | Out-Null
+reg load HKLM\zDEFAULT $ScratchDisk\scratchdir\Windows\System32\config\default | Out-Null
+reg load HKLM\zNTUSER $ScratchDisk\scratchdir\Users\Default\ntuser.dat | Out-Null
+reg load HKLM\zSOFTWARE $ScratchDisk\scratchdir\Windows\System32\config\SOFTWARE | Out-Null
+reg load HKLM\zSYSTEM $ScratchDisk\scratchdir\Windows\System32\config\SYSTEM | Out-Null
 
 Write-Output "Bypassing system requirements(on the setup image):"
 Set-RegistryValue 'HKLM\zDEFAULT\Control Panel\UnsupportedHardwareNotificationCache' 'SV1' 'REG_DWORD' '0'
@@ -530,6 +574,3 @@ if (Test-Path -Path "$PSScriptRoot\autounattend.xml") {
 
 # Stop the transcript
 Stop-Transcript
-
-exit
-
