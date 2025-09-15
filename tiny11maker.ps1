@@ -202,65 +202,21 @@ $packages = & 'dism' '/English' "/image:$($ScratchDisk)\scratchdir" '/Get-Provis
         }
     }
 
-$packagePrefixes = 'AppUp.IntelManagementandSecurityStatus',
-'Clipchamp.Clipchamp', 
-'DolbyLaboratories.DolbyAccess',
-'DolbyLaboratories.DolbyDigitalPlusDecoderOEM',
-'Microsoft.BingNews',
-'Microsoft.BingSearch',
-'Microsoft.BingWeather',
-'Microsoft.Copilot',
-'Microsoft.Windows.CrossDevice',
-'Microsoft.GamingApp',
-'Microsoft.GetHelp',
-'Microsoft.Getstarted',
-'Microsoft.Microsoft3DViewer',
-'Microsoft.MicrosoftOfficeHub',
-'Microsoft.MicrosoftSolitaireCollection',
-'Microsoft.MicrosoftStickyNotes',
-'Microsoft.MixedReality.Portal',
-'Microsoft.MSPaint',
-'Microsoft.Office.OneNote',
-'Microsoft.OfficePushNotificationUtility',
-'Microsoft.OutlookForWindows',
-'Microsoft.Paint',
-'Microsoft.People',
-'Microsoft.PowerAutomateDesktop',
-'Microsoft.SkypeApp',
-'Microsoft.StartExperiencesApp',
-'Microsoft.Todos',
-'Microsoft.Wallet',
-'Microsoft.Windows.DevHome',
-'Microsoft.Windows.Copilot',
-'Microsoft.Windows.Teams',
-'Microsoft.WindowsAlarms',
-'Microsoft.WindowsCamera',
-'microsoft.windowscommunicationsapps',
-'Microsoft.WindowsFeedbackHub',
-'Microsoft.WindowsMaps',
-'Microsoft.WindowsSoundRecorder',
-'Microsoft.WindowsTerminal',
-'Microsoft.Xbox.TCUI',
-'Microsoft.XboxApp',
-'Microsoft.XboxGameOverlay',
-'Microsoft.XboxGamingOverlay',
-'Microsoft.XboxIdentityProvider',
-'Microsoft.XboxSpeechToTextOverlay',
-'Microsoft.YourPhone',
-'Microsoft.ZuneMusic',
-'Microsoft.ZuneVideo',
-'MicrosoftCorporationII.MicrosoftFamily',
-'MicrosoftCorporationII.QuickAssist',
-'MSTeams',
-'MicrosoftTeams', 
-'Microsoft.WindowsTerminal',
-'Microsoft.549981C3F5F10'
+# Path to the list of packages to remove
+$packageFile = "$PSScriptRoot\removePackage.txt"
+
+# Read all lines into an array
+$packagePrefixes = Get-Content -Path $packageFile
+
+# Remove blank lines or leading/trailing spaces
+$packagePrefixes = $packagePrefixes | Where-Object { $_.Trim() -ne "" } | ForEach-Object { $_.Trim() }
 
 $packagesToRemove = $packages | Where-Object {
     $packageName = $_
     $packagePrefixes -contains ($packagePrefixes | Where-Object { $packageName -like "*$_*" })
 }
 foreach ($package in $packagesToRemove) {
+    write-host "Removing $package :"
     & 'dism' '/English' "/image:$($ScratchDisk)\scratchdir" '/Remove-ProvisionedAppxPackage' "/PackageName:$package"
 }
 
@@ -532,4 +488,5 @@ if (Test-Path -Path "$PSScriptRoot\autounattend.xml") {
 Stop-Transcript
 
 exit
+
 
