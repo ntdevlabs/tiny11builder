@@ -20,8 +20,11 @@ This script generates a significantly reduced Windows 11 image. However, **it's 
 ## ⚠️ Script versions:
 - **tiny11maker.ps1** : The regular script, which removes a lot of bloat but keeps the system serviceable. You can add languages, updates, and features post-creation. This is the recommended script for regular use.
 - ⚠️ **tiny11coremaker.ps1** : The core script, which removes even more bloat but also removes the ability to service the image. You cannot add languages, updates, or features post-creation. This is recommended for quick testing or development use.
+- **Invoke-Tiny11Cleanup.ps1** : NEW! Applies tiny11 modifications to an existing Windows installation without requiring a reinstallation or WIM image manipulation. Perfect for cleaning up an already installed Windows 11 system.
 
 ## Instructions:
+
+### For creating a tiny11 ISO image (tiny11maker.ps1 or tiny11coremaker.ps1):
 1. Download Windows 11 from the [Microsoft website](https://www.microsoft.com/software-download/windows11) or [Rufus](https://github.com/pbatard/rufus)
 2. Mount the downloaded ISO image using Windows Explorer.
 3. Open **PowerShell 5.1** as Administrator. 
@@ -41,6 +44,22 @@ C:/path/to/your/tiny11/script.ps1 -ISO <letter> -SCRATCH <letter>
 7. Select the SKU that you want the image to be based.
 8. Sit back and relax :)
 9. When the image is completed, you will see it in the folder where the script was extracted, with the name tiny11.iso
+
+### For cleaning up an existing Windows installation (Invoke-Tiny11Cleanup.ps1):
+1. Open **PowerShell 5.1** as Administrator.
+2. Change the script execution policy :
+```powershell
+Set-ExecutionPolicy Bypass -Scope Process
+```
+3. Run the cleanup script :
+```powershell
+C:/path/to/Invoke-Tiny11Cleanup.ps1
+```
+4. Confirm when prompted to proceed with the cleanup.
+5. The script will remove bloatware, disable telemetry, and apply optimizations to your current Windows installation.
+6. Restart your computer when prompted (recommended).
+
+> ⚠️ **Note**: This script modifies your existing Windows installation. Make sure you have a system restore point or backup before running it.
 
 ---
 
