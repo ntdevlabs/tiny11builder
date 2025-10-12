@@ -25,15 +25,48 @@ function Set-RegistryValue {
     param (
         [string]$path,
         [string]$name,
-        [string]$type,
-        [string]$value
+        [ValidateSet('REG_SZ','REG_DWORD','REG_BINARY','REG_MULTI_SZ','REG_EXPAND_SZ','REG_QWORD')] [string]$type,
+        [object]$value
     )
     try {
         # Ensure the registry path exists
         if (-not (Test-Path $path)) {
             New-Item -Path $path -Force | Out-Null
         }
-        & 'reg' 'add' $path '/v' $name '/t' $type '/d' $value '/f' | Out-Null
+        # Convert value to appropriate string for reg.exe
+        $valueString = $value
+        switch ($type) {
+            'REG_DWORD' {
+                if ($value -isnot [int] -and $value -isnot [uint32]) {
+                    throw "Value for REG_DWORD must be an integer."
+                }
+                $valueString = [string]$value
+            }
+            'REG_QWORD' {
+                if ($value -isnot [int64] -and $value -isnot [uint64]) {
+                    throw "Value for REG_QWORD must be a 64-bit integer."
+                }
+                $valueString = [string]$value
+            }
+            'REG_BINARY' {
+                if ($value -isnot [byte[]]) {
+                    throw "Value for REG_BINARY must be a byte array."
+                }
+                $valueString = ($value | ForEach-Object { $_.ToString("X2") }) -join ''
+            }
+            'REG_MULTI_SZ' {
+                if ($value -isnot [string[]]) {
+                    throw "Value for REG_MULTI_SZ must be a string array."
+                }
+                $valueString = $value -join '\0'
+            }
+            'REG_SZ' {}
+            'REG_EXPAND_SZ' {}
+            default {
+                throw "Unsupported registry type: $type"
+            }
+        }
+        & 'reg' 'add' $path '/v' $name '/t' $type '/d' $valueString '/f' | Out-Null
         Write-Output "Set registry value: $path\$name"
     } catch {
         Write-Output "Error setting registry value: $_"
