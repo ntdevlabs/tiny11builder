@@ -162,7 +162,6 @@ try {
     'MicrosoftCorporationII.QuickAssist',
     'MSTeams',
     'MicrosoftTeams', 
-    'Microsoft.WindowsTerminal',
     'Microsoft.549981C3F5F10'
     
     foreach ($prefix in $packagePrefixes) {
