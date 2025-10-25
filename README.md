@@ -35,7 +35,7 @@ Set-ExecutionPolicy Bypass -Scope Process
 ```powershell
 C:/path/to/your/tiny11/script.ps1 -ISO <letter> -SCRATCH <letter>
 ``` 
-> You can see of the script by running the `get-help` command.
+> You can see the help of the script by running the `get-help` command.
 
 6. Select the drive letter where the image is mounted (only the letter, no colon (:))
 7. Select the SKU that you want the image to be based.
