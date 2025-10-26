@@ -25,13 +25,13 @@ This script generates a significantly reduced Windows 11 image. However, **it's 
 1. Download Windows 11 from the [Microsoft website](https://www.microsoft.com/software-download/windows11) or [Rufus](https://github.com/pbatard/rufus)
 2. Mount the downloaded ISO image using Windows Explorer.
 3. Open **PowerShell 5.1** as Administrator. 
-5. Change the script execution policy :
+4. Change the script execution policy :
 ```powershell
 Set-ExecutionPolicy Bypass -Scope Process
 ```
 > Using `-Scope Process` you keep your original policy intact as this change only lasts for the current PowerShell session. 
 
-6. Start the script :
+5. Start the script :
 ```powershell
 C:/path/to/your/tiny11/script.ps1 -ISO <letter> -SCRATCH <letter>
 ``` 
