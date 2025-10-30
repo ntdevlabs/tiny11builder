@@ -82,7 +82,7 @@ jobs:
           
           # Wait for mount to complete and drive letter to be assigned
           Write-Host "Waiting for drive letter assignment..."
-          $maxWaitTime = 30  # 30 seconds max wait
+          $maxWaitTime = 15  # 15 seconds max wait
           $waitInterval = 1   # Check every second
           $elapsed = 0
           $driveLetter = $null
@@ -90,60 +90,58 @@ jobs:
           
           Write-Host "System drive: $systemDrive"
           
-          while ($elapsed -lt $maxWaitTime -and -not $driveLetter) {
-              Start-Sleep -Seconds $waitInterval
-              $elapsed += $waitInterval
+          # Wait a moment for mount to settle
+          Start-Sleep -Seconds 2
+          
+          # Simple approach: Find any drive (except system) with Windows files, accept it immediately
+          # This is safe because on GitHub runner, only one ISO is mounted at a time
+          Write-Host "Searching for Windows installation files..."
+          
+          $allDrives = Get-Volume | Where-Object { 
+              $_.DriveLetter -ne $null -and $_.DriveLetter -ne $systemDrive 
+          } | Select-Object -ExpandProperty DriveLetter
+          
+          Write-Host "Non-system drives found: $($allDrives -join ', ')"
+          
+          # Verify ISO is mounted
+          $diskImage = Get-DiskImage -ImagePath $isoPath -ErrorAction SilentlyContinue
+          if (-not ($diskImage -and $diskImage.Attached)) {
+              Write-Error "ISO is not mounted or not attached"
+              exit 1
+          }
+          
+          Write-Host "ISO is mounted (disk number: $($diskImage.Number))"
+          
+          # Find drive with Windows files
+          foreach ($letter in $allDrives) {
+              $bootPath = "$letter`:\sources\boot.wim"
+              $installPath = "$letter`:\sources\install.wim"
+              $esdPath = "$letter`:\sources\install.esd"
               
-              # Get disk image info
-              $diskImage = Get-DiskImage -ImagePath $isoPath -ErrorAction SilentlyContinue
-              
-              if ($diskImage -and $diskImage.Attached) {
-                  # Get disk number
-                  $diskNumber = $diskImage.Number
+              if ((Test-Path $bootPath) -or (Test-Path $installPath) -or (Test-Path $esdPath)) {
+                  Write-Host "Found Windows files on drive: $letter"
                   
-                  Write-Host "Mounted disk number: $diskNumber"
-                  
-                  # Get partitions on this disk
-                  $partitions = Get-Partition -DiskNumber $diskNumber -ErrorAction SilentlyContinue
-                  
-                  if ($partitions) {
-                      Write-Host "Found $($partitions.Count) partition(s) on mounted disk"
-                      # Get drive letter from partition, but exclude system drive
-                      foreach ($partition in $partitions) {
-                          if ($partition.DriveLetter) {
-                              Write-Host "Found partition with drive letter: $($partition.DriveLetter)"
-                              if ($partition.DriveLetter -ne $systemDrive) {
-                                  $potentialDrive = $partition.DriveLetter
-                                  Write-Host "Checking partition $potentialDrive for Windows files..."
-                                  
-                                  # Verify this drive has Windows installation files
-                                  if (Test-Path "$potentialDrive`:\sources\boot.wim" -or Test-Path "$potentialDrive`:\sources\install.wim" -or Test-Path "$potentialDrive`:\sources\install.esd") {
-                                      $driveLetter = $potentialDrive
-                                      Write-Host "Verified: Drive $driveLetter contains Windows installation files"
-                                      break
-                                  } else {
-                                      Write-Host "Warning: Drive $potentialDrive does not contain Windows files, continuing search..."
-                                  }
-                              } else {
-                                  Write-Host "Skipping system drive: $($partition.DriveLetter)"
-                              }
-                          } else {
-                              Write-Host "Found partition without drive letter (partition number: $($partition.PartitionNumber))"
-                          }
-                      }
+                  # Verify it's actually a Windows installation
+                  if (Test-Path $bootPath) {
+                      Write-Host "Confirmed: boot.wim found on drive $letter"
+                  } elseif (Test-Path $installPath) {
+                      Write-Host "Confirmed: install.wim found on drive $letter"
+                  } elseif (Test-Path $esdPath) {
+                      Write-Host "Confirmed: install.esd found on drive $letter"
                   }
+                  
+                  $driveLetter = $letter
+                  Write-Host "Accepting drive $driveLetter as ISO mount point"
+                  break
               }
-              
-              # Fallback: Check all drives for Windows installation files (excluding system drive)
-              if (-not $driveLetter) {
-                  $allDrives = Get-Volume | Where-Object { 
-                      $_.DriveLetter -ne $null -and $_.DriveLetter -ne $systemDrive 
-                  } | Select-Object -ExpandProperty DriveLetter
-                  
-                  Write-Host "Checking drives: $($allDrives -join ', ')"
-                  
-                  # Get mounted disk info once
-                  $mountedDiskInfo = Get-DiskImage -ImagePath $isoPath -ErrorAction SilentlyContinue
+          }
+          
+          # If still not found, wait a bit and retry
+          if (-not $driveLetter) {
+              Write-Host "Windows files not found yet, waiting up to $maxWaitTime seconds..."
+              while ($elapsed -lt $maxWaitTime -and -not $driveLetter) {
+                  Start-Sleep -Seconds $waitInterval
+                  $elapsed += $waitInterval
                   
                   foreach ($letter in $allDrives) {
                       $bootPath = "$letter`:\sources\boot.wim"
@@ -151,93 +149,18 @@ jobs:
                       $esdPath = "$letter`:\sources\install.esd"
                       
                       if ((Test-Path $bootPath) -or (Test-Path $installPath) -or (Test-Path $esdPath)) {
-                          Write-Host "Found Windows files on drive: $letter"
-                          
-                          # Method 1: Check if this partition belongs to mounted disk
-                          $testPartition = Get-Partition -DriveLetter $letter -ErrorAction SilentlyContinue
-                          if ($testPartition -and $mountedDiskInfo -and $testPartition.DiskNumber -eq $mountedDiskInfo.Number) {
-                              $driveLetter = $letter
-                              Write-Host "Verified: Drive $driveLetter belongs to mounted ISO disk (disk number: $($testPartition.DiskNumber))"
-                              break
-                          }
-                          
-                          # Method 2: Check if this drive's disk image matches our ISO
-                          $driveDiskImage = Get-DiskImage | Where-Object { 
-                              $_.Attached -eq $true -and 
-                              (Get-Partition -DiskNumber $_.Number -ErrorAction SilentlyContinue | Where-Object { $_.DriveLetter -eq $letter })
-                          } | Select-Object -First 1
-                          
-                          if ($driveDiskImage -and $mountedDiskInfo -and $driveDiskImage.ImagePath -eq $isoPath) {
-                              $driveLetter = $letter
-                              Write-Host "Verified: Drive $driveLetter matches mounted ISO by image path"
-                              break
-                          }
-                          
-                          # Method 3: If mounted disk has partitions, check if this letter matches a non-system partition
-                          if ($mountedDiskInfo -and $mountedDiskInfo.Number -ne $null) {
-                              $isoPartitions = Get-Partition -DiskNumber $mountedDiskInfo.Number -ErrorAction SilentlyContinue
-                              foreach ($isoPartition in $isoPartitions) {
-                                  if ($isoPartition.DriveLetter -eq $letter -and $letter -ne $systemDrive) {
-                                      $driveLetter = $letter
-                                      Write-Host "Verified: Drive $driveLetter is partition on mounted ISO disk"
-                                      break
-                                  }
-                              }
-                              if ($driveLetter) {
-                                  break
-                              }
-                          }
-                          
-                          # Method 4: If ISO is mounted and this is the only drive with Windows files (besides system), accept it
-                          # This is a safe fallback since on GitHub runner, only one ISO is typically mounted
-                          if (-not $driveLetter) {
-                              $otherDrivesWithWindows = @()
-                              foreach ($otherLetter in $allDrives) {
-                                  if ($otherLetter -ne $letter) {
-                                      $otherBootPath = "$otherLetter`:\sources\boot.wim"
-                                      $otherInstallPath = "$otherLetter`:\sources\install.wim"
-                                      $otherEsdPath = "$otherLetter`:\sources\install.esd"
-                                      if ((Test-Path $otherBootPath) -or (Test-Path $otherInstallPath) -or (Test-Path $otherEsdPath)) {
-                                          $otherDrivesWithWindows += $otherLetter
-                                      }
-                                  }
-                              }
-                              
-                              if ($otherDrivesWithWindows.Count -eq 0) {
-                                  $driveLetter = $letter
-                                  Write-Host "Accepted: Drive $driveLetter is the only non-system drive with Windows files (ISO is mounted)"
-                                  break
-                              }
-                          }
+                          $driveLetter = $letter
+                          Write-Host "Found Windows files on drive: $driveLetter"
+                          break
                       }
                   }
                   
-                  # Final fallback: If we found Windows files on a drive but couldn't verify, 
-                  # and it's the only non-system drive with Windows files, accept it
-                  if (-not $driveLetter) {
-                      $drivesWithWindowsFiles = @()
-                      foreach ($letter in $allDrives) {
-                          $bootPath = "$letter`:\sources\boot.wim"
-                          $installPath = "$letter`:\sources\install.wim"
-                          $esdPath = "$letter`:\sources\install.esd"
-                          if ((Test-Path $bootPath) -or (Test-Path $installPath) -or (Test-Path $esdPath)) {
-                              $drivesWithWindowsFiles += $letter
-                          }
-                      }
-                      
-                      if ($drivesWithWindowsFiles.Count -eq 1) {
-                          $driveLetter = $drivesWithWindowsFiles[0]
-                          Write-Host "Fallback: Accepting drive $driveLetter as it's the only non-system drive with Windows files"
-                          Write-Host "Note: ISO is mounted, this is likely the correct drive"
-                      }
+                  if ($driveLetter) {
+                      break
                   }
+                  
+                  Write-Host "Waiting for drive letter... ($elapsed seconds)"
               }
-              
-              if ($driveLetter) {
-                  break
-              }
-              
-              Write-Host "Waiting for drive letter... ($elapsed seconds)"
           }
           
           if (-not $driveLetter) {
@@ -284,54 +207,19 @@ jobs:
           Write-Host "ISO mounted successfully to drive: $driveLetter"
           Write-Host "ISO_DRIVE=$driveLetter" >> $env:GITHUB_ENV
           
-          # Verify Windows files exist
+          # Final verification
           $bootWim = "$driveLetter`:\sources\boot.wim"
           $installWim = "$driveLetter`:\sources\install.wim"
           $installEsd = "$driveLetter`:\sources\install.esd"
           
-          Write-Host "Checking for Windows installation files..."
+          Write-Host "Verifying Windows installation files..."
           Write-Host "boot.wim exists: $(Test-Path $bootWim)"
           Write-Host "install.wim exists: $(Test-Path $installWim)"
           Write-Host "install.esd exists: $(Test-Path $installEsd)"
           
           if (-not (Test-Path $bootWim) -and -not (Test-Path $installWim) -and -not (Test-Path $installEsd)) {
               Write-Error "Windows installation files not found in mounted ISO at drive $driveLetter"
-              Write-Host "Contents of $driveLetter`:\:"
-              Get-ChildItem "$driveLetter`:\" | Select-Object -First 10
-              if (Test-Path "$driveLetter`:\sources") {
-                  Write-Host "Contents of $driveLetter`:\sources:"
-                  Get-ChildItem "$driveLetter`:\sources" | Select-Object -First 10
-              } else {
-                  Write-Host "sources folder does not exist in $driveLetter`:\"
-              }
-              
-              # Check all drives to find where ISO actually mounted
-              Write-Host "Searching all drives for Windows installation files..."
-              $allDrives = Get-Volume | Where-Object { $_.DriveLetter -ne $null } | Select-Object -ExpandProperty DriveLetter
-              foreach ($letter in $allDrives) {
-                  if ($letter -ne $systemDrive) {
-                      $bootPath = "$letter`:\sources\boot.wim"
-                      $installPath = "$letter`:\sources\install.wim"
-                      $esdPath = "$letter`:\sources\install.esd"
-                      if ((Test-Path $bootPath) -or (Test-Path $installPath) -or (Test-Path $esdPath)) {
-                          Write-Host "Found Windows files on drive $letter`!"
-                          $testDiskImage = Get-DiskImage -ImagePath $isoPath -ErrorAction SilentlyContinue
-                          if ($testDiskImage) {
-                              $testPartition = Get-Partition -DriveLetter $letter -ErrorAction SilentlyContinue
-                              if ($testPartition -and $testPartition.DiskNumber -eq $testDiskImage.Number) {
-                                  Write-Host "This is the correct ISO drive! Updating drive letter..."
-                                  $driveLetter = $letter
-                                  Write-Host "ISO_DRIVE=$driveLetter" >> $env:GITHUB_ENV
-                                  break
-                              }
-                          }
-                      }
-                  }
-              }
-              
-              if (-not (Test-Path $bootWim) -and -not (Test-Path $installWim) -and -not (Test-Path $installEsd)) {
-                  exit 1
-              }
+              exit 1
           }
           
           Write-Host "Windows installation files verified successfully"
