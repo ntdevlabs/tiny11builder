@@ -1,0 +1,317 @@
+name: Build Tiny11 ISO
+
+on:
+  workflow_dispatch:
+    inputs:
+      iso_url:
+        description: 'Windows 11 ISO download URL'
+        required: true
+        type: string
+      script_type:
+        description: 'Script type to use'
+        required: true
+        type: choice
+        options:
+          - tiny11maker
+          - tiny11Coremaker
+      enable_dotnet35:
+        description: 'Enable .NET 3.5 (Core only)'
+        required: false
+        type: boolean
+        default: false
+      scratch_drive:
+        description: 'Scratch drive letter (C-Z, leave empty for script root)'
+        required: false
+        type: string
+        default: ''
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 180
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PowerShell
+        shell: pwsh
+        run: |
+          # Set execution policy for current process
+          Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
+          Write-Host "PowerShell execution policy set to Bypass for this session"
+
+      - name: Download Windows ISO
+        shell: pwsh
+        run: |
+          Write-Host "Downloading Windows ISO from: ${{ inputs.iso_url }}"
+          $isoPath = "$env:RUNNER_TEMP\windows11.iso"
+          Invoke-WebRequest -Uri "${{ inputs.iso_url }}" -OutFile $isoPath -UseBasicParsing
+          Write-Host "ISO downloaded successfully: $isoPath"
+          Write-Host "ISO_SIZE=$($(Get-Item $isoPath).Length)" >> $env:GITHUB_ENV
+
+      - name: Mount ISO and get drive letter
+        shell: pwsh
+        id: mount_iso
+        run: |
+          $isoPath = "$env:RUNNER_TEMP\windows11.iso"
+          Write-Host "Mounting ISO: $isoPath"
+          
+          # Verify ISO file exists
+          if (-not (Test-Path $isoPath)) {
+              Write-Error "ISO file not found: $isoPath"
+              exit 1
+          }
+          
+          Write-Host "ISO file size: $((Get-Item $isoPath).Length / 1GB) GB"
+          
+          # Mount ISO
+          Write-Host "Mounting disk image..."
+          try {
+              $mountResult = Mount-DiskImage -ImagePath $isoPath -PassThru -ErrorAction Stop
+              Write-Host "Mount command executed successfully"
+              Write-Host "Mount result: $mountResult"
+          } catch {
+              Write-Error "Failed to mount ISO: $_"
+              exit 1
+          }
+          
+          # Wait for mount to complete and drive letter to be assigned
+          Write-Host "Waiting for drive letter assignment..."
+          $maxWaitTime = 30  # 30 seconds max wait
+          $waitInterval = 1   # Check every second
+          $elapsed = 0
+          $driveLetter = $null
+          
+          while ($elapsed -lt $maxWaitTime -and -not $driveLetter) {
+              Start-Sleep -Seconds $waitInterval
+              $elapsed += $waitInterval
+              
+              # Get disk image info
+              $diskImage = Get-DiskImage -ImagePath $isoPath -ErrorAction SilentlyContinue
+              
+              if ($diskImage -and $diskImage.Attached) {
+                  # Get disk number
+                  $diskNumber = $diskImage.Number
+                  
+                  # Get partitions on this disk
+                  $partitions = Get-Partition -DiskNumber $diskNumber -ErrorAction SilentlyContinue
+                  
+                  if ($partitions) {
+                      # Get drive letter from partition
+                      foreach ($partition in $partitions) {
+                          if ($partition.DriveLetter) {
+                              $driveLetter = $partition.DriveLetter
+                              Write-Host "Found drive letter via partition: $driveLetter"
+                              break
+                          }
+                      }
+                  }
+              }
+              
+              # Fallback: Check all drives for Windows installation files
+              if (-not $driveLetter) {
+                  $allDrives = Get-Volume | Where-Object { $_.DriveLetter -ne $null } | Select-Object -ExpandProperty DriveLetter
+                  foreach ($letter in $allDrives) {
+                      if (Test-Path "$letter`:\sources\boot.wim" -or Test-Path "$letter`:\sources\install.wim" -or Test-Path "$letter`:\sources\install.esd") {
+                          # Verify this is actually our mounted ISO
+                          $testDiskImage = Get-DiskImage -ImagePath $isoPath -ErrorAction SilentlyContinue
+                          if ($testDiskImage) {
+                              $testPartition = Get-Partition -DriveLetter $letter -ErrorAction SilentlyContinue
+                              if ($testPartition -and $testPartition.DiskNumber -eq $testDiskImage.Number) {
+                                  $driveLetter = $letter
+                                  Write-Host "Found drive letter by checking Windows files: $driveLetter"
+                                  break
+                              }
+                          }
+                      }
+                  }
+              }
+              
+              if ($driveLetter) {
+                  break
+              }
+              
+              Write-Host "Waiting for drive letter... ($elapsed seconds)"
+          }
+          
+          if (-not $driveLetter) {
+              Write-Error "Failed to get drive letter after $elapsed seconds"
+              Write-Host "Mount result: $mountResult"
+              Write-Host "Disk image info:"
+              Get-DiskImage -ImagePath $isoPath | Format-List
+              Write-Host "Available volumes:"
+              Get-Volume | Format-List
+              exit 1
+          }
+          
+          Write-Host "ISO mounted successfully to drive: $driveLetter"
+          Write-Host "ISO_DRIVE=$driveLetter" >> $env:GITHUB_ENV
+          
+          # Verify Windows files exist
+          $bootWim = "$driveLetter`:\sources\boot.wim"
+          $installWim = "$driveLetter`:\sources\install.wim"
+          $installEsd = "$driveLetter`:\sources\install.esd"
+          
+          Write-Host "Checking for Windows installation files..."
+          Write-Host "boot.wim exists: $(Test-Path $bootWim)"
+          Write-Host "install.wim exists: $(Test-Path $installWim)"
+          Write-Host "install.esd exists: $(Test-Path $installEsd)"
+          
+          if (-not (Test-Path $bootWim) -and -not (Test-Path $installWim) -and -not (Test-Path $installEsd)) {
+              Write-Error "Windows installation files not found in mounted ISO at drive $driveLetter"
+              Write-Host "Contents of $driveLetter`:\:"
+              Get-ChildItem "$driveLetter`:\" | Select-Object -First 10
+              if (Test-Path "$driveLetter`:\sources") {
+                  Write-Host "Contents of $driveLetter`:\sources:"
+                  Get-ChildItem "$driveLetter`:\sources" | Select-Object -First 10
+              }
+              exit 1
+          }
+          
+          Write-Host "Windows installation files verified successfully"
+
+      - name: Run Tiny11 Builder Script
+        shell: pwsh
+        id: build_script
+        run: |
+          $scriptType = "${{ inputs.script_type }}"
+          $isoDrive = $env:ISO_DRIVE
+          $scratchDrive = "${{ inputs.scratch_drive }}"
+          
+          Write-Host "Running script: $scriptType.ps1"
+          Write-Host "ISO Drive: $isoDrive"
+          Write-Host "Scratch Drive: $scratchDrive"
+          
+          # Set execution policy
+          Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
+          
+          # Run the appropriate script
+          if ("$scriptType" -eq "tiny11maker") {
+              # tiny11maker supports parameters but still has image index prompt
+              Write-Host "Using tiny11maker with parameters and automation"
+              
+              # Create wrapper to handle image index selection
+              $wrapperPath = Join-Path $PSScriptRoot ".github\scripts\run-maker-automated.ps1"
+              if (-not (Test-Path $wrapperPath)) {
+                  Write-Error "Wrapper script not found: $wrapperPath"
+                  exit 1
+              }
+              
+              $wrapperParams = @{
+                  ISODrive = "$isoDrive`:"
+              }
+              if ("$scratchDrive" -ne "") {
+                  $wrapperParams.ScratchDrive = "$scratchDrive"
+              }
+              
+              & $wrapperPath @wrapperParams
+          } else {
+              # For tiny11Coremaker, use the wrapper script
+              Write-Host "Using tiny11Coremaker with automation wrapper"
+              $wrapperPath = Join-Path $PSScriptRoot ".github\scripts\run-coremaker-automated.ps1"
+              if (-not (Test-Path $wrapperPath)) {
+                  Write-Error "Wrapper script not found: $wrapperPath"
+                  exit 1
+              }
+              & $wrapperPath -ISODrive "$isoDrive`:" -EnableDotNet35 ${{ inputs.enable_dotnet35 }}
+          }
+
+      - name: Wait for script completion and find ISO
+        shell: pwsh
+        run: |
+          Write-Host "Waiting for script to complete..."
+          
+          # Wait for script to finish (check every 30 seconds, max 10 minutes)
+          $maxWaitTime = 600  # 10 minutes
+          $checkInterval = 30  # 30 seconds
+          $elapsed = 0
+          $isoFound = $false
+          
+          while ($elapsed -lt $maxWaitTime -and -not $isoFound) {
+              Start-Sleep -Seconds $checkInterval
+              $elapsed += $checkInterval
+              
+              # Check for ISO file in script root
+              $isoFiles = Get-ChildItem -Path $PSScriptRoot -Filter "tiny11.iso" -ErrorAction SilentlyContinue
+              if ($isoFiles) {
+                  Write-Host "Found ISO file: $($isoFiles.FullName)"
+                  Write-Host "ISO_PATH=$($isoFiles.FullName)" >> $env:GITHUB_ENV
+                  $isoFound = $true
+                  break
+              }
+              
+              Write-Host "Waiting for ISO file... ($elapsed seconds elapsed)"
+          }
+          
+          if (-not $isoFound) {
+              Write-Host "ISO file not found after waiting. Checking all locations..."
+              # Also check in scratch drive if specified
+              $scratchDrive = "${{ inputs.scratch_drive }}"
+              if ($scratchDrive -ne "") {
+                  $scratchPath = "$scratchDrive`:\tiny11\sources"
+                  if (Test-Path $scratchPath) {
+                      Write-Host "Checking scratch path: $scratchPath"
+                  }
+              }
+              
+              # Final check
+              $isoFiles = Get-ChildItem -Path $PSScriptRoot -Filter "tiny11.iso" -ErrorAction SilentlyContinue
+              if ($isoFiles) {
+                  Write-Host "Found ISO file: $($isoFiles.FullName)"
+                  Write-Host "ISO_PATH=$($isoFiles.FullName)" >> $env:GITHUB_ENV
+              } else {
+                  Write-Error "Failed to find tiny11.iso file after waiting $elapsed seconds"
+                  Write-Host "Checking for any ISO files in script root..."
+                  Get-ChildItem -Path $PSScriptRoot -Filter "*.iso" | ForEach-Object {
+                      Write-Host "Found ISO: $($_.FullName)"
+                  }
+                  exit 1
+              }
+          }
+
+      - name: Upload Tiny11 ISO Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tiny11-iso
+          path: ${{ env.ISO_PATH }}
+          retention-days: 7
+          if-no-files-found: error
+
+      - name: Cleanup
+        shell: pwsh
+        if: always()
+        run: |
+          Write-Host "Cleaning up..."
+          
+          # Unmount ISO if still mounted
+          $isoPath = "$env:RUNNER_TEMP\windows11.iso"
+          if (Test-Path $isoPath) {
+              try {
+                  $diskImage = Get-DiskImage -ImagePath $isoPath -ErrorAction SilentlyContinue
+                  if ($diskImage -and $diskImage.Attached) {
+                      Write-Host "Unmounting ISO..."
+                      Dismount-DiskImage -ImagePath $isoPath -ErrorAction Stop
+                      Write-Host "ISO unmounted successfully"
+                      
+                      # Wait a moment for unmount to complete
+                      Start-Sleep -Seconds 2
+                  } else {
+                      Write-Host "ISO is not currently mounted"
+                  }
+              } catch {
+                  Write-Host "Warning: Could not unmount ISO: $_"
+                  Write-Host "This is non-critical, continuing cleanup..."
+              }
+          } else {
+              Write-Host "ISO file not found at expected path"
+          }
+          
+          # Cleanup temp files
+          if (Test-Path "$env:RUNNER_TEMP\windows11.iso") {
+              Write-Host "Removing temporary ISO file..."
+              Remove-Item -Path "$env:RUNNER_TEMP\windows11.iso" -Force -ErrorAction SilentlyContinue
+          }
+          
+          Write-Host "Cleanup completed"
+
