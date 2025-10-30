@@ -239,6 +239,21 @@ jobs:
           }
           
           Write-Host "Script Root: $scriptRoot"
+
+          # Fallback: if ISO_DRIVE is empty, re-detect by scanning non-system drives for Windows setup files
+          if (-not $isoDrive -or $isoDrive -eq "") {
+            Write-Host "ISO_DRIVE env not found, re-detecting drive letter..."
+            $systemDrive = $env:SystemDrive -replace ':',''
+            $letters = Get-Volume | Where-Object { $_.DriveLetter -ne $null -and $_.DriveLetter -ne $systemDrive } | Select-Object -ExpandProperty DriveLetter
+            foreach ($letter in $letters) {
+              if (Test-Path "$letter`:\sources\boot.wim" -or Test-Path "$letter`:\sources\install.wim" -or Test-Path "$letter`:\sources\install.esd") {
+                $isoDrive = $letter
+                Write-Host "Detected ISO drive: $isoDrive"
+                break
+              }
+            }
+            if (-not $isoDrive) { Write-Error "Failed to detect ISO drive letter"; exit 1 }
+          }
           
           # Set execution policy
           Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
@@ -264,9 +279,7 @@ jobs:
           try {
               if ("$scriptType" -eq "tiny11maker") {
                   Write-Host "Using tiny11maker with parameters and automation"
-                  $wrapperParams = @{
-                      ISODrive = "$isoDrive`:"
-                  }
+                  $wrapperParams = @{ ISODrive = "$isoDrive`:" }
                   # ScratchDrive not provided - script will use script root automatically
                   & $makerWrapper @wrapperParams
                   $exitCode = $LASTEXITCODE

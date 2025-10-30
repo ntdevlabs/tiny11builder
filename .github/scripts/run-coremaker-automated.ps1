@@ -41,11 +41,21 @@ $scriptContent = Get-Content $scriptPath -Raw -ErrorAction Stop
 # Fix missing $ScratchDisk variable (should be $mainOSDrive)
 $scriptContent = $scriptContent -replace '\$ScratchDisk', '$mainOSDrive'
 
-# Disable admin restart check by commenting out the exit
-$scriptContent = $scriptContent -replace 'if \(!\s*\$myWindowsPrincipal\.IsInRole\(\$adminRole\)\)', 'if ($false -and !$myWindowsPrincipal.IsInRole($adminRole))  # Disabled for GitHub Actions'
+# Robustly disable admin restart check by replacing the entire if-block with a no-op
+$adminBlockPattern = 'if\s*\(\s*!\s*\$myWindowsPrincipal\.IsInRole\(\$adminRole\)\s*\)\s*\{[\s\S]*?\}'
+$scriptContent = [regex]::Replace($scriptContent, $adminBlockPattern, 'if ($false) { }')
+# Also handle any previously injected pattern without braces
+$scriptContent = $scriptContent -replace 'if \(\$false -and \s*!\s*\$myWindowsPrincipal\.IsInRole\(\$adminRole\)\s*\)', 'if ($false)'
 
-# Disable execution policy check by commenting out the exit
-$scriptContent = $scriptContent -replace 'if \(\(Get-ExecutionPolicy\) -eq ''Restricted''\)', 'if ($false -and (Get-ExecutionPolicy) -eq ''Restricted'')  # Disabled for GitHub Actions'
+# Robustly disable execution policy check by replacing the entire if-block with a no-op
+$execPolicyBlockPattern = 'if\s*\([^\)]*Get-ExecutionPolicy[^\)]*\)\s*\{[\s\S]*?\}'
+$scriptContent = [regex]::Replace($scriptContent, $execPolicyBlockPattern, 'if ($false) { }')
+# Handle one-line or previously injected variants without braces
+$scriptContent = $scriptContent -replace 'if \([^\)]*Get-Execution-?Policy[^\)]*\)', 'if ($false)'
+$scriptContent = $scriptContent -replace 'if \(\$false -and[^\)]*Get-Execution-?Policy[^\)]*\)', 'if ($false)'
+
+# Final safety: convert any "if ($false -and <anything>) {<maybe missing>" into a proper no-op block
+$scriptContent = [regex]::Replace($scriptContent, 'if\s*\(\s*\$false\s*-and[\s\S]*?\)', 'if ($false) { }')
 
 # Add error checking after oscdimg command to verify ISO was created
 # Match the oscdimg command line ending with tiny11.iso
