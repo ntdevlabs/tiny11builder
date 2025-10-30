@@ -48,6 +48,33 @@ $scriptContent = $scriptContent -replace 'if \(!\s*\$myWindowsPrincipal\.IsInRol
 # Disable execution policy check by commenting out the exit
 $scriptContent = $scriptContent -replace 'if \(\(Get-ExecutionPolicy\) -eq ''Restricted''\)', 'if ($false -and (Get-ExecutionPolicy) -eq ''Restricted'')  # Disabled for GitHub Actions'
 
+# Add error checking after oscdimg command to verify ISO was created
+# Match the oscdimg command line ending with tiny11.iso
+$oscdimgPattern = '(&\s*"\$OSCDIMG"[^`r`n]*tiny11\.iso[^`r`n]*)'
+$oscdimgReplacement = @"
+`$1
+if (`$LASTEXITCODE -ne 0 -and `$LASTEXITCODE -ne `$null) {
+    Write-Error "oscdimg failed with exit code: `$LASTEXITCODE"
+    exit 1
+}
+
+# Verify ISO file was created
+`$expectedIsoPath = "`$PSScriptRoot\tiny11.iso"
+Start-Sleep -Seconds 2
+if (-not (Test-Path `$expectedIsoPath)) {
+    Write-Error "ISO file was not created at: `$expectedIsoPath"
+    Write-Host "Checking for ISO in alternative locations..."
+    Get-ChildItem -Path `$PSScriptRoot -Filter "*.iso" -ErrorAction SilentlyContinue | ForEach-Object {
+        Write-Host "Found ISO: `$(`$_.FullName)"
+    }
+    exit 1
+}
+
+Write-Host "ISO file verified: `$expectedIsoPath"
+Write-Host "ISO size: `$([math]::Round((Get-Item `$expectedIsoPath).Length / 1GB, 2)) GB"
+"@
+$scriptContent = $scriptContent -replace $oscdimgPattern, $oscdimgReplacement
+
 # Create a temporary script with auto-answers for image index
 $tempScriptHeader = @"
 `$ErrorActionPreference = 'Continue'  # Continue on errors to see full output
@@ -127,10 +154,25 @@ try {
     & $tempScriptPath
     $scriptExitCode = $LASTEXITCODE
     
+    # Check if script failed (PowerShell sets $LASTEXITCODE for native commands)
+    # If script exited normally, $LASTEXITCODE might be null or 0
     if ($scriptExitCode -ne 0 -and $scriptExitCode -ne $null) {
         Write-Error "Script exited with code: $scriptExitCode"
         exit $scriptExitCode
     }
+    
+    # Verify ISO was actually created (double-check)
+    $expectedIsoPath = Join-Path $scriptRoot "tiny11.iso"
+    if (-not (Test-Path $expectedIsoPath)) {
+        Write-Error "Script completed but ISO file not found at: $expectedIsoPath"
+        Write-Host "Searching for ISO files..."
+        Get-ChildItem -Path $scriptRoot -Filter "*.iso" -Recurse -ErrorAction SilentlyContinue | ForEach-Object {
+            Write-Host "Found: $($_.FullName)"
+        }
+        exit 1
+    }
+    
+    Write-Host "Build completed successfully. ISO found at: $expectedIsoPath"
 } catch {
     Write-Error "Error running script: $_"
     Write-Error "Exception: $($_.Exception.Message)"
