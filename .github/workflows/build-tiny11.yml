@@ -19,11 +19,6 @@ on:
         required: false
         type: boolean
         default: false
-      scratch_drive:
-        description: 'Scratch drive letter (C-Z, leave empty for script root)'
-        required: false
-        type: string
-        default: ''
 
 jobs:
   build:
@@ -230,11 +225,10 @@ jobs:
         run: |
           $scriptType = "${{ inputs.script_type }}"
           $isoDrive = $env:ISO_DRIVE
-          $scratchDrive = "${{ inputs.scratch_drive }}"
           
           Write-Host "Running script: $scriptType.ps1"
           Write-Host "ISO Drive: $isoDrive"
-          Write-Host "Scratch Drive: $scratchDrive"
+          Write-Host "Scratch Drive: Auto (script root)"
           Write-Host "Working Directory: $PWD"
           Write-Host "GITHUB_WORKSPACE: $env:GITHUB_WORKSPACE"
           
@@ -273,9 +267,7 @@ jobs:
                   $wrapperParams = @{
                       ISODrive = "$isoDrive`:"
                   }
-                  if ("$scratchDrive" -ne "") {
-                      $wrapperParams.ScratchDrive = "$scratchDrive"
-                  }
+                  # ScratchDrive not provided - script will use script root automatically
                   & $makerWrapper @wrapperParams
                   $exitCode = $LASTEXITCODE
               } else {
@@ -359,18 +351,6 @@ jobs:
               Write-Host "Checking repo root: $scriptRoot"
               Get-ChildItem -Path $scriptRoot -Filter "*.iso" -ErrorAction SilentlyContinue | ForEach-Object {
                   Write-Host "Found ISO: $($_.FullName)"
-              }
-              
-              # Check scratch drive if specified
-              $scratchDrive = "${{ inputs.scratch_drive }}"
-              if ($scratchDrive -ne "") {
-                  $scratchPath = "$scratchDrive`:\tiny11"
-                  Write-Host "Checking scratch path: $scratchPath"
-                  if (Test-Path $scratchPath) {
-                      Get-ChildItem -Path $scratchPath -Filter "*.iso" -Recurse -ErrorAction SilentlyContinue | ForEach-Object {
-                          Write-Host "Found ISO in scratch: $($_.FullName)"
-                      }
-                  }
               }
               
               # Check system drive
