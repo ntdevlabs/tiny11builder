@@ -42,9 +42,15 @@ $ISODriveLetter = $ISODrive -replace ':', ''
 # Read the script content to modify it for automation
 $scriptContent = Get-Content $scriptPath -Raw -ErrorAction Stop
 
+# Disable admin restart check by commenting out the exit
+$scriptContent = $scriptContent -replace 'if \(!\s*\$myWindowsPrincipal\.IsInRole\(\$adminRole\)\)', 'if ($false -and !$myWindowsPrincipal.IsInRole($adminRole))  # Disabled for GitHub Actions'
+
+# Disable execution policy check by commenting out the exit
+$scriptContent = $scriptContent -replace 'if \(\(Get-ExecutionPolicy\) -eq ''Restricted''\)', 'if ($false -and (Get-ExecutionPolicy) -eq ''Restricted'')  # Disabled for GitHub Actions'
+
 # Create a temporary script with auto-answers for image index
 $tempScriptHeader = @"
-`$ErrorActionPreference = 'Stop'
+`$ErrorActionPreference = 'Continue'  # Continue on errors to see full output
 
 # Set ISO parameter if not already set
 if (-not `$ISO) {
@@ -54,14 +60,14 @@ if (-not `$SCRATCH -and '$ScratchDrive' -ne '') {
     `$SCRATCH = '$ScratchDrive'
 }
 
-# Override Read-Host to auto-answer prompts
+# Override Read-Host BEFORE any script execution to ensure all prompts are handled
 function Read-Host {
     param([string]`$Prompt)
     
     Write-Host "`$Prompt"
     
-    # Auto-answer execution policy prompt (yes/no)
-    if (`$Prompt -eq "" -or `$Prompt -match "change it to RemoteSigned") {
+    # Auto-answer execution policy prompt (yes/no) - handle empty prompt too
+    if (`$Prompt -eq "" -or `$Prompt -match "change it to RemoteSigned" -or `$Prompt -match "Execution Policy" -or `$Prompt -match "Restricted") {
         Write-Host "Auto-answering: yes"
         return "yes"
     }
@@ -86,8 +92,18 @@ function Read-Host {
         return ""
     }
     
-    # Default: return empty
+    # Default: return empty or "yes" for empty prompts
+    if (`$Prompt -eq "") {
+        return "yes"
+    }
     return ""
+}
+
+# Override $myInvocation to prevent admin restart
+`$script:myInvocation = @{
+    MyCommand = @{
+        Definition = `$PSCommandPath
+    }
 }
 
 "@

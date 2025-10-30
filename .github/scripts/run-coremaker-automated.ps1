@@ -41,21 +41,27 @@ $scriptContent = Get-Content $scriptPath -Raw -ErrorAction Stop
 # Fix missing $ScratchDisk variable (should be $mainOSDrive)
 $scriptContent = $scriptContent -replace '\$ScratchDisk', '$mainOSDrive'
 
+# Disable admin restart check by commenting out the exit
+$scriptContent = $scriptContent -replace 'if \(!\s*\$myWindowsPrincipal\.IsInRole\(\$adminRole\)\)', 'if ($false -and !$myWindowsPrincipal.IsInRole($adminRole))  # Disabled for GitHub Actions'
+
+# Disable execution policy check by commenting out the exit
+$scriptContent = $scriptContent -replace 'if \(\(Get-ExecutionPolicy\) -eq ''Restricted''\)', 'if ($false -and (Get-ExecutionPolicy) -eq ''Restricted'')  # Disabled for GitHub Actions'
+
 # Create a temporary script with auto-answers
 $ISODriveLetter = $ISODrive -replace ':', ''
 $dotNetAnswer = if ($EnableDotNet35) { "y" } else { "n" }
 
 $tempScriptHeader = @"
-`$ErrorActionPreference = 'Stop'
+`$ErrorActionPreference = 'Continue'  # Continue on errors to see full output
 
-# Override Read-Host to auto-answer prompts
+# Override Read-Host BEFORE any script execution to ensure all prompts are handled
 function Read-Host {
     param([string]`$Prompt)
     
     Write-Host "`$Prompt"
     
-    # Auto-answer execution policy prompt (yes/no)
-    if (`$Prompt -eq "" -or `$Prompt -match "change it to RemoteSigned") {
+    # Auto-answer execution policy prompt (yes/no) - handle empty prompt too
+    if (`$Prompt -eq "" -or `$Prompt -match "change it to RemoteSigned" -or `$Prompt -match "Execution Policy" -or `$Prompt -match "Restricted") {
         Write-Host "Auto-answering: yes"
         return "yes"
     }
@@ -89,8 +95,18 @@ function Read-Host {
         return ""
     }
     
-    # Default: return empty
+    # Default: return empty or "yes" for empty prompts
+    if (`$Prompt -eq "") {
+        return "yes"
+    }
     return ""
+}
+
+# Override $myInvocation to prevent admin restart
+`$script:myInvocation = @{
+    MyCommand = @{
+        Definition = `$PSCommandPath
+    }
 }
 
 "@
