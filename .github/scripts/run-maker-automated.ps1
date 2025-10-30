@@ -12,12 +12,22 @@ param(
     [string]$ScratchDrive = ""
 )
 
-$ErrorActionPreference = 'Stop'
-$scriptRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+$ErrorActionPreference = 'Continue'  # Change to Continue to allow script to continue on errors
+
+# Use GITHUB_WORKSPACE if available, otherwise calculate from PSScriptRoot
+if ($env:GITHUB_WORKSPACE) {
+    $scriptRoot = $env:GITHUB_WORKSPACE
+} else {
+    $scriptRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+}
+
 $scriptPath = Join-Path $scriptRoot "tiny11maker.ps1"
 
 if (-not (Test-Path $scriptPath)) {
     Write-Error "Script not found: $scriptPath"
+    Write-Host "PSScriptRoot: $PSScriptRoot"
+    Write-Host "scriptRoot: $scriptRoot"
+    Write-Host "Current location: $(Get-Location)"
     exit 1
 }
 
@@ -93,17 +103,23 @@ $scriptContent | Out-File -FilePath $tempScriptPath -Append -Encoding UTF8
 try {
     # Change to script directory
     Push-Location $scriptRoot
-    
-    # Use wrapper approach to ensure all prompts are handled
-    # Even though tiny11maker supports ISO parameter, it still prompts for image index
+    Write-Host "Changed to directory: $(Get-Location)"
     Write-Host "Using wrapper approach to handle all prompts automatically"
+    Write-Host "Running script: $tempScriptPath"
     
     # Run the wrapper script which has Read-Host override
     & $tempScriptPath
+    $scriptExitCode = $LASTEXITCODE
     
+    if ($scriptExitCode -ne 0 -and $scriptExitCode -ne $null) {
+        Write-Error "Script exited with code: $scriptExitCode"
+        exit $scriptExitCode
+    }
 } catch {
     Write-Error "Error running script: $_"
-    throw
+    Write-Error "Exception: $($_.Exception.Message)"
+    Write-Error "Line: $($_.InvocationInfo.ScriptLineNumber)"
+    exit 1
 } finally {
     Pop-Location
     # Cleanup temp script

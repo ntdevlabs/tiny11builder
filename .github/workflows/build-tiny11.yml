@@ -182,48 +182,83 @@ jobs:
           Write-Host "Running script: $scriptType.ps1"
           Write-Host "ISO Drive: $isoDrive"
           Write-Host "Scratch Drive: $scratchDrive"
+          Write-Host "Working Directory: $PWD"
+          Write-Host "GITHUB_WORKSPACE: $env:GITHUB_WORKSPACE"
+          
+          # Use GITHUB_WORKSPACE as script root (repo root)
+          $scriptRoot = $env:GITHUB_WORKSPACE
+          if (-not $scriptRoot) {
+              $scriptRoot = $PSScriptRoot
+          }
+          
+          Write-Host "Script Root: $scriptRoot"
           
           # Set execution policy
           Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
           
-          # Run the appropriate script
+          # Verify wrapper scripts exist
+          $makerWrapper = Join-Path $scriptRoot ".github\scripts\run-maker-automated.ps1"
+          $coreWrapper = Join-Path $scriptRoot ".github\scripts\run-coremaker-automated.ps1"
+          
           if ("$scriptType" -eq "tiny11maker") {
-              # tiny11maker supports parameters but still has image index prompt
-              Write-Host "Using tiny11maker with parameters and automation"
-              
-              # Create wrapper to handle image index selection
-              $wrapperPath = Join-Path $PSScriptRoot ".github\scripts\run-maker-automated.ps1"
-              if (-not (Test-Path $wrapperPath)) {
-                  Write-Error "Wrapper script not found: $wrapperPath"
+              if (-not (Test-Path $makerWrapper)) {
+                  Write-Error "Wrapper script not found: $makerWrapper"
                   exit 1
               }
-              
-              $wrapperParams = @{
-                  ISODrive = "$isoDrive`:"
-              }
-              if ("$scratchDrive" -ne "") {
-                  $wrapperParams.ScratchDrive = "$scratchDrive"
-              }
-              
-              & $wrapperPath @wrapperParams
           } else {
-              # For tiny11Coremaker, use the wrapper script
-              Write-Host "Using tiny11Coremaker with automation wrapper"
-              $wrapperPath = Join-Path $PSScriptRoot ".github\scripts\run-coremaker-automated.ps1"
-              if (-not (Test-Path $wrapperPath)) {
-                  Write-Error "Wrapper script not found: $wrapperPath"
+              if (-not (Test-Path $coreWrapper)) {
+                  Write-Error "Wrapper script not found: $coreWrapper"
                   exit 1
               }
-              & $wrapperPath -ISODrive "$isoDrive`:" -EnableDotNet35 ${{ inputs.enable_dotnet35 }}
           }
+          
+          # Run the appropriate script with proper error handling
+          $exitCode = 0
+          try {
+              if ("$scriptType" -eq "tiny11maker") {
+                  Write-Host "Using tiny11maker with parameters and automation"
+                  $wrapperParams = @{
+                      ISODrive = "$isoDrive`:"
+                  }
+                  if ("$scratchDrive" -ne "") {
+                      $wrapperParams.ScratchDrive = "$scratchDrive"
+                  }
+                  & $makerWrapper @wrapperParams
+                  $exitCode = $LASTEXITCODE
+              } else {
+                  Write-Host "Using tiny11Coremaker with automation wrapper"
+                  & $coreWrapper -ISODrive "$isoDrive`:" -EnableDotNet35 ${{ inputs.enable_dotnet35 }}
+                  $exitCode = $LASTEXITCODE
+              }
+              
+              if ($exitCode -ne 0) {
+                  Write-Error "Script failed with exit code: $exitCode"
+                  exit $exitCode
+              }
+          } catch {
+              Write-Error "Error running script: $_"
+              Write-Error "Exception: $($_.Exception.Message)"
+              Write-Error "StackTrace: $($_.ScriptStackTrace)"
+              exit 1
+          }
+          
+          Write-Host "Script completed successfully"
+          Write-Host "BUILD_SUCCESS=true" >> $env:GITHUB_ENV
 
       - name: Wait for script completion and find ISO
         shell: pwsh
         run: |
-          Write-Host "Waiting for script to complete..."
+          Write-Host "Checking script completion status..."
           
-          # Wait for script to finish (check every 30 seconds, max 10 minutes)
-          $maxWaitTime = 600  # 10 minutes
+          # Check if script was marked as successful
+          if ($env:BUILD_SUCCESS -ne "true") {
+              Write-Warning "Script may not have completed successfully"
+          }
+          
+          Write-Host "Waiting for ISO file..."
+          
+          # Wait for script to finish (check every 30 seconds, max 20 minutes)
+          $maxWaitTime = 1200  # 20 minutes
           $checkInterval = 30  # 30 seconds
           $elapsed = 0
           $isoFound = $false
@@ -232,10 +267,14 @@ jobs:
               Start-Sleep -Seconds $checkInterval
               $elapsed += $checkInterval
               
-              # Check for ISO file in script root
-              $isoFiles = Get-ChildItem -Path $PSScriptRoot -Filter "tiny11.iso" -ErrorAction SilentlyContinue
+              # Check for ISO file in script root (repo root)
+              $scriptRoot = $env:GITHUB_WORKSPACE
+              Write-Host "Checking for ISO in: $scriptRoot ($elapsed seconds elapsed)"
+              
+              $isoFiles = Get-ChildItem -Path $scriptRoot -Filter "tiny11.iso" -ErrorAction SilentlyContinue
               if ($isoFiles) {
                   Write-Host "Found ISO file: $($isoFiles.FullName)"
+                  Write-Host "ISO size: $([math]::Round($isoFiles.Length / 1GB, 2)) GB"
                   Write-Host "ISO_PATH=$($isoFiles.FullName)" >> $env:GITHUB_ENV
                   $isoFound = $true
                   break
@@ -246,32 +285,51 @@ jobs:
           
           if (-not $isoFound) {
               Write-Host "ISO file not found after waiting. Checking all locations..."
-              # Also check in scratch drive if specified
+              
+              # Check repo root
+              $scriptRoot = $env:GITHUB_WORKSPACE
+              Write-Host "Checking repo root: $scriptRoot"
+              Get-ChildItem -Path $scriptRoot -Filter "*.iso" -ErrorAction SilentlyContinue | ForEach-Object {
+                  Write-Host "Found ISO: $($_.FullName)"
+              }
+              
+              # Check scratch drive if specified
               $scratchDrive = "${{ inputs.scratch_drive }}"
               if ($scratchDrive -ne "") {
-                  $scratchPath = "$scratchDrive`:\tiny11\sources"
+                  $scratchPath = "$scratchDrive`:\tiny11"
+                  Write-Host "Checking scratch path: $scratchPath"
                   if (Test-Path $scratchPath) {
-                      Write-Host "Checking scratch path: $scratchPath"
+                      Get-ChildItem -Path $scratchPath -Filter "*.iso" -Recurse -ErrorAction SilentlyContinue | ForEach-Object {
+                          Write-Host "Found ISO in scratch: $($_.FullName)"
+                      }
                   }
               }
               
-              # Final check
-              $isoFiles = Get-ChildItem -Path $PSScriptRoot -Filter "tiny11.iso" -ErrorAction SilentlyContinue
+              # Check system drive
+              $systemDrive = $env:SystemDrive
+              $systemTiny11Path = "$systemDrive\tiny11"
+              if (Test-Path $systemTiny11Path) {
+                  Write-Host "Checking system drive: $systemTiny11Path"
+                  Get-ChildItem -Path $systemTiny11Path -Filter "*.iso" -Recurse -ErrorAction SilentlyContinue | ForEach-Object {
+                      Write-Host "Found ISO in system drive: $($_.FullName)"
+                  }
+              }
+              
+              # Final check in repo root
+              $isoFiles = Get-ChildItem -Path $scriptRoot -Filter "tiny11.iso" -ErrorAction SilentlyContinue
               if ($isoFiles) {
                   Write-Host "Found ISO file: $($isoFiles.FullName)"
                   Write-Host "ISO_PATH=$($isoFiles.FullName)" >> $env:GITHUB_ENV
               } else {
                   Write-Error "Failed to find tiny11.iso file after waiting $elapsed seconds"
-                  Write-Host "Checking for any ISO files in script root..."
-                  Get-ChildItem -Path $PSScriptRoot -Filter "*.iso" | ForEach-Object {
-                      Write-Host "Found ISO: $($_.FullName)"
-                  }
+                  Write-Host "Please check the build logs above for script execution errors"
                   exit 1
               }
           }
 
       - name: Upload Tiny11 ISO Artifact
         uses: actions/upload-artifact@v4
+        if: env.ISO_PATH != ''
         with:
           name: tiny11-iso
           path: ${{ env.ISO_PATH }}
