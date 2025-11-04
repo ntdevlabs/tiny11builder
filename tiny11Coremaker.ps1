@@ -19,7 +19,7 @@ if (! $myWindowsPrincipal.IsInRole($adminRole))
 {
     Write-Host "Restarting Tiny11 image creator as admin in a new window, you can close this one."
     $newProcess = new-object System.Diagnostics.ProcessStartInfo "PowerShell";
-    $newProcess.Arguments = $myInvocation.MyCommand.Definition;
+    $newProcess.Arguments = "-NoProfile -ExecutionPolicy Bypass -NoExit -File `"$($myInvocation.MyCommand.Definition)`"";
     $newProcess.Verb = "runas";
     [System.Diagnostics.Process]::Start($newProcess);
     exit
@@ -577,3 +577,4 @@ elseif ($input -eq 'n') {
 else {
     Write-Host "Invalid input. Please enter 'y' to continue or 'n' to exit."
 }
+
