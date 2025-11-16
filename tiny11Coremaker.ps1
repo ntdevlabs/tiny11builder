@@ -413,6 +413,9 @@ Write-Host "Disabling Copilot"
 & 'reg' 'add' 'HKLM\zSOFTWARE\Policies\Microsoft\Windows\WindowsCopilot' '/v' 'TurnOffWindowsCopilot' '/t' 'REG_DWORD' '/d' '1' '/f' | Out-Null
 & 'reg' 'add' 'HKLM\zSOFTWARE\Policies\Microsoft\Edge' '/v' 'HubsSidebarEnabled' '/t' 'REG_DWORD' '/d' '0' '/f' | Out-Null
 & 'reg' 'add' 'HKLM\zSOFTWARE\Policies\Microsoft\Windows\Explorer' '/v' 'DisableSearchBoxSuggestions' '/t' 'REG_DWORD' '/d' '1' '/f' | Out-Null
+& 'reg' 'add' 'HKLM\zSOFTWARE\Policies\WindowsNotepad' '/v' 'DisableAIFeatures' '/t' 'REG_DWORD' '/d' '1' '/f' | Out-Null
+Write-Host "Prevent taking Screenshots for Recall"
+& 'reg' 'add' 'HKLM\zSOFTWARE\Policies\Microsoft\Windows\WindowsAI' '/v' 'DisableAIDataAnalysis' '/t' 'REG_DWORD' '/d' '1' '/f' | Out-Null
 Write-Host "Prevents installation of Teams:"
 & 'reg' 'add' 'HKLM\zSOFTWARE\Policies\Microsoft\Teams' '/v' 'DisableInstallation' '/t' 'REG_DWORD' '/d' '1' '/f' | Out-Null
 Write-Host "Prevent installation of New Outlook":
@@ -577,3 +580,4 @@ elseif ($input -eq 'n') {
 else {
     Write-Host "Invalid input. Please enter 'y' to continue or 'n' to exit."
 }
+
