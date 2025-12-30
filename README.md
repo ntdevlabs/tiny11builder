@@ -22,8 +22,8 @@ This script generates a significantly reduced Windows 11 image. However, **it's 
 - ⚠️ **tiny11coremaker.ps1** : The core script, which removes even more bloat but also removes the ability to service the image. You cannot add languages, updates, or features post-creation. This is recommended for quick testing or development use.
 
 ## Instructions:
-1. Download Windows 11 from the [Microsoft website](https://www.microsoft.com/software-download/windows11) or [Rufus](https://github.com/pbatard/rufus)
-2. Mount the downloaded ISO image using Windows Explorer.
+1. Download Windows 11 from the [Microsoft website](https://www.microsoft.com/software-download/windows11)
+2. Mount the downloaded ISO image using Windows Explorer or [Rufus](https://github.com/pbatard/rufus).
 3. Open **PowerShell 5.1** as Administrator. 
 5. Change the script execution policy :
 ```powershell
