@@ -97,6 +97,23 @@ You will be asked during image creation if you want to enable .net 3.5 support!
 
 ---
 
+## Adding back a feature
+Since what to keep and what to delete [is not added yet](#features-to-be-implemented),  
+if you want to add or remove something after installing the tiny11maker iso (not possible with core),  
+use the following in a admin powershell terminal.
+```powershell
+DISM /Online /Get-Capabilities | findstr /i Hello
+```
+You can of course replace the word "Hello" with the feature you are looking for.  
+This will return something like `Capability Identity : Hello.Face.20134~~~~0.0.1.0`.  
+Copy the ending and run the following.
+```powershell
+DISM /Online /Add-Capability /CapabilityName:Hello.Face.20134~~~~0.0.1.0
+```
+You should replace the Capability with the one returned of course.
+
+---
+
 ## Known issues:
 - Although Edge is removed, there are some remnants in the Settings, but the app in itself is deleted. 
 - You might have to update Winget before being able to install any apps, using Microsoft Store.
