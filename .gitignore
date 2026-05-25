@@ -1,0 +1,9 @@
+# build output and test artifacts
+tiny11.iso
+tiny11-work/
+tiny11_*.log
+
+# python venv used during development
+.venv/
+
+.DS_Store

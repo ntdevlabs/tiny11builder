@@ -20,6 +20,7 @@ This script generates a significantly reduced Windows 11 image. However, **it's 
 ## ⚠️ Script versions:
 - **tiny11maker.ps1** : The regular script, which removes a lot of bloat but keeps the system serviceable. You can add languages, updates, and features post-creation. This is the recommended script for regular use.
 - ⚠️ **tiny11coremaker.ps1** : The core script, which removes even more bloat but also removes the ability to service the image. You cannot add languages, updates, or features post-creation. This is recommended for quick testing or development use.
+- 🍎 **tiny11maker.sh** : Bash port of `tiny11maker.ps1` for macOS / Linux. Same removals and tweaks as the PowerShell version, with one documented limitation — see the [macOS / Linux instructions](#macos--linux-instructions) below.
 
 ## Instructions:
 1. Download Windows 11 from the [Microsoft website](https://www.microsoft.com/software-download/windows11) or [Rufus](https://github.com/pbatard/rufus)
@@ -41,6 +42,50 @@ C:/path/to/your/tiny11/script.ps1 -ISO <letter> -SCRATCH <letter>
 7. Select the SKU that you want the image to be based.
 8. Sit back and relax :)
 9. When the image is completed, you will see it in the folder where the script was extracted, with the name tiny11.iso
+
+---
+
+## macOS / Linux instructions:
+
+`tiny11maker.sh` is a bash port of `tiny11maker.ps1`. It performs the same modifications using open-source userland tools — no Windows host required.
+
+### Dependencies (macOS)
+
+```bash
+brew install wimlib hivex xorriso p7zip
+```
+
+On Linux, install the equivalents (`wimlib`, `libhivex-bin` / `hivex`, `xorriso`, `p7zip-full`) via your package manager.
+
+### Usage
+
+```bash
+./tiny11maker.sh -s <source> [-o <output.iso>] [-i <index>] [-w <work_dir>] [-y]
+```
+
+Where `<source>` is either a Windows 11 ISO file *or* a directory containing the extracted ISO contents (i.e. with `sources/`, `boot/`, `efi/` at its top level).
+
+Example — full path, prompted for SKU index, output next to the script:
+
+```bash
+./tiny11maker.sh -s ~/Downloads/Win11_24H2_English_x64.iso
+```
+
+Example — pre-pick index 6 (Pro), custom output path, non-interactive:
+
+```bash
+./tiny11maker.sh -s ~/Downloads/Win11.iso -i 6 -o ~/Desktop/tiny11.iso -y
+```
+
+The script writes a timestamped log next to itself (e.g. `tiny11_20251225_133742.log`) and uses ~30 GB of temporary disk space in the work directory.
+
+### ⚠️ Differences vs. the PowerShell version
+
+1. **No WinSxS component-store pruning.** `DISM /Cleanup-Image /StartComponentCleanup /ResetBase` is implemented inside Windows' servicing stack and has no cross-platform equivalent. The resulting ISO will be larger than what the PowerShell script produces on Windows (in testing against Windows 11 25H2 x64: 6.7 GB output vs. 7.9 GB source — about half the savings the Windows version delivers).
+2. **`install.wim` may be split into `install.swm` files.** Homebrew's `xorriso` bottle is built without UDF support, so the ISO uses plain ISO 9660 Level 3 (per-file ceiling: 4 GiB). If the recaptured `install.wim` is larger than that, the script auto-splits it into `install.swm`/`install2.swm`. Windows' installer recognizes split wims natively — this is the same approach Microsoft itself uses for FAT32 boot USBs.
+3. **Compression is non-solid LZMS.** The PowerShell script uses `/Compress:recovery` (solid LZMS). `wimlib-imagex split` rejects solid archives, so the bash port uses non-solid LZMS to stay splittable. Output is ~10-15% larger than solid would produce.
+4. **Provisioned appx removal is folder-level.** The script deletes matched package directories under `Program Files\WindowsApps`, which prevents installation for new users. The staged-app registry entries aren't fully pruned the way `DISM /Remove-ProvisionedAppxPackage` would; Windows handles the missing paths gracefully on first boot.
+5. **Offline registry edits use `libhivex` via Python ctypes.** Homebrew's `hivex` bottle omits `hivexregedit` (a Perl-bindings tool). The bash port ships a small `tiny11_hive.py` helper that calls `libhivex` directly to do surgical per-value edits — no Perl, no Python pip deps beyond the stdlib.
 
 ---
 
