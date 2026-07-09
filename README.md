@@ -77,6 +77,7 @@ C:/path/to/your/tiny11/script.ps1 -ISO <letter> -SCRATCH <letter>
           <li>Tablet PC Math</li>
           <li>Edge</li>
           <li>OneDrive</li>
+          <li>Photos</li>
         </ul>
       </td>
       <td>
