@@ -67,6 +67,36 @@ function Remove-RegistryValue {
 	}
 }
 
+function Remove-ItemWithRetry {
+    param (
+        [string]$Path,
+        [int]$MaxRetries = 3,
+        [int]$DelaySeconds = 2
+    )
+    $retryCount = 0
+    while ($retryCount -lt $MaxRetries) {
+        if (-not (Test-Path -Path $Path)) {
+            Write-Output "$Path does not exist or has been removed."
+            return
+        }
+        try {
+            Remove-Item -Path $Path -Recurse -Force -ErrorAction Stop | Out-Null
+            Write-Output "$Path removed successfully."
+            return
+        }
+        catch {
+            $retryCount++
+            Write-Warning "Failed to remove $Path. Attempt $retryCount of $MaxRetries..."
+            if ($retryCount -lt $MaxRetries) {
+                Start-Sleep -Seconds $DelaySeconds
+                cmd.exe /c "rmdir /s /q `"$Path`"" > $null 2>&1
+            }
+        }
+    }
+    Write-Warning "Could not completely remove $Path after $MaxRetries attempts. A reboot might be required."
+}
+
+
 #---------[ Execution ]---------#
 # Check if PowerShell execution is restricted
 if ((Get-ExecutionPolicy) -eq 'Restricted') {
@@ -105,6 +135,8 @@ Start-Transcript -Path "$PSScriptRoot\tiny11_$(get-date -f yyyyMMdd_HHmms).log"
 
 $Host.UI.RawUI.WindowTitle = "Tiny11 image creator"
 Clear-Host
+Write-Output "Cleaning up previous orphaned mount points..."
+dism /Cleanup-Mountpoints | Out-Null
 Write-Output "Welcome to the tiny11 image creator! Release: 09-07-25"
 
 $hostArchitecture = $Env:PROCESSOR_ARCHITECTURE
@@ -161,10 +193,10 @@ try {
     # This block will catch the error and suppress it.
 	Write-Error "$wimFilePath not found"
 }
-New-Item -ItemType Directory -Force -Path "$ScratchDisk\scratchdir" > $null
-Mount-WindowsImage -ImagePath $ScratchDisk\tiny11\sources\install.wim -Index $index -Path $ScratchDisk\scratchdir
+New-Item -ItemType Directory -Force -Path "$ScratchDisk\scratchdir_install" > $null
+Mount-WindowsImage -ImagePath $ScratchDisk\tiny11\sources\install.wim -Index $index -Path $ScratchDisk\scratchdir_install
 
-$imageIntl = & dism /English /Get-Intl "/Image:$($ScratchDisk)\scratchdir"
+$imageIntl = & dism /English /Get-Intl "/Image:$($ScratchDisk)\scratchdir_install"
 $languageLine = $imageIntl -split '\n' | Where-Object { $_ -match 'Default system UI language : ([a-zA-Z]{2}-[a-zA-Z]{2})' }
 
 if ($languageLine) {
@@ -195,7 +227,7 @@ if (-not $architecture) {
 
 Write-Output "Mounting complete! Performing removal of applications..."
 
-$packages = & 'dism' '/English' "/image:$($ScratchDisk)\scratchdir" '/Get-ProvisionedAppxPackages' |
+$packages = & 'dism' '/English' "/image:$($ScratchDisk)\scratchdir_install" '/Get-ProvisionedAppxPackages' |
     ForEach-Object {
         if ($_ -match 'PackageName : (.*)') {
             $matches[1]
@@ -261,29 +293,29 @@ $packagesToRemove = $packages | Where-Object {
     $packagePrefixes -contains ($packagePrefixes | Where-Object { $packageName -like "*$_*" })
 }
 foreach ($package in $packagesToRemove) {
-    & 'dism' '/English' "/image:$($ScratchDisk)\scratchdir" '/Remove-ProvisionedAppxPackage' "/PackageName:$package"
+    & 'dism' '/English' "/image:$($ScratchDisk)\scratchdir_install" '/Remove-ProvisionedAppxPackage' "/PackageName:$package"
 }
 
 Write-Output "Removing Edge:"
-Remove-Item -Path "$ScratchDisk\scratchdir\Program Files (x86)\Microsoft\Edge" -Recurse -Force | Out-Null
-Remove-Item -Path "$ScratchDisk\scratchdir\Program Files (x86)\Microsoft\EdgeUpdate" -Recurse -Force | Out-Null
-Remove-Item -Path "$ScratchDisk\scratchdir\Program Files (x86)\Microsoft\EdgeCore" -Recurse -Force | Out-Null
-& 'takeown' '/f' "$ScratchDisk\scratchdir\Windows\System32\Microsoft-Edge-Webview" '/r' | Out-Null
-& 'icacls' "$ScratchDisk\scratchdir\Windows\System32\Microsoft-Edge-Webview" '/grant' "$($adminGroup.Value):(F)" '/T' '/C' | Out-Null
-Remove-Item -Path "$ScratchDisk\scratchdir\Windows\System32\Microsoft-Edge-Webview" -Recurse -Force | Out-Null
+Remove-Item -Path "$ScratchDisk\scratchdir_install\Program Files (x86)\Microsoft\Edge" -Recurse -Force | Out-Null
+Remove-Item -Path "$ScratchDisk\scratchdir_install\Program Files (x86)\Microsoft\EdgeUpdate" -Recurse -Force | Out-Null
+Remove-Item -Path "$ScratchDisk\scratchdir_install\Program Files (x86)\Microsoft\EdgeCore" -Recurse -Force | Out-Null
+& 'takeown' '/f' "$ScratchDisk\scratchdir_install\Windows\System32\Microsoft-Edge-Webview" '/r' | Out-Null
+& 'icacls' "$ScratchDisk\scratchdir_install\Windows\System32\Microsoft-Edge-Webview" '/grant' "$($adminGroup.Value):(F)" '/T' '/C' | Out-Null
+Remove-Item -Path "$ScratchDisk\scratchdir_install\Windows\System32\Microsoft-Edge-Webview" -Recurse -Force | Out-Null
 Write-Output "Removing OneDrive:"
-& 'takeown' '/f' "$ScratchDisk\scratchdir\Windows\System32\OneDriveSetup.exe" | Out-Null
-& 'icacls' "$ScratchDisk\scratchdir\Windows\System32\OneDriveSetup.exe" '/grant' "$($adminGroup.Value):(F)" '/T' '/C' | Out-Null
-Remove-Item -Path "$ScratchDisk\scratchdir\Windows\System32\OneDriveSetup.exe" -Force | Out-Null
+& 'takeown' '/f' "$ScratchDisk\scratchdir_install\Windows\System32\OneDriveSetup.exe" | Out-Null
+& 'icacls' "$ScratchDisk\scratchdir_install\Windows\System32\OneDriveSetup.exe" '/grant' "$($adminGroup.Value):(F)" '/T' '/C' | Out-Null
+Remove-Item -Path "$ScratchDisk\scratchdir_install\Windows\System32\OneDriveSetup.exe" -Force | Out-Null
 Write-Output "Removal complete!"
 Start-Sleep -Seconds 2
 Clear-Host
 Write-Output "Loading registry..."
-reg load HKLM\zCOMPONENTS $ScratchDisk\scratchdir\Windows\System32\config\COMPONENTS | Out-Null
-reg load HKLM\zDEFAULT $ScratchDisk\scratchdir\Windows\System32\config\default | Out-Null
-reg load HKLM\zNTUSER $ScratchDisk\scratchdir\Users\Default\ntuser.dat | Out-Null
-reg load HKLM\zSOFTWARE $ScratchDisk\scratchdir\Windows\System32\config\SOFTWARE | Out-Null
-reg load HKLM\zSYSTEM $ScratchDisk\scratchdir\Windows\System32\config\SYSTEM | Out-Null
+reg load HKLM\zCOMPONENTS $ScratchDisk\scratchdir_install\Windows\System32\config\COMPONENTS | Out-Null
+reg load HKLM\zDEFAULT $ScratchDisk\scratchdir_install\Windows\System32\config\default | Out-Null
+reg load HKLM\zNTUSER $ScratchDisk\scratchdir_install\Users\Default\ntuser.dat | Out-Null
+reg load HKLM\zSOFTWARE $ScratchDisk\scratchdir_install\Windows\System32\config\SOFTWARE | Out-Null
+reg load HKLM\zSYSTEM $ScratchDisk\scratchdir_install\Windows\System32\config\SYSTEM | Out-Null
 Write-Output "Bypassing system requirements(on the system image):"
 Set-RegistryValue 'HKLM\zDEFAULT\Control Panel\UnsupportedHardwareNotificationCache' 'SV1' 'REG_DWORD' '0'
 Set-RegistryValue 'HKLM\zDEFAULT\Control Panel\UnsupportedHardwareNotificationCache' 'SV2' 'REG_DWORD' '0'
@@ -321,7 +353,7 @@ Set-RegistryValue 'HKLM\zSOFTWARE\Policies\Microsoft\Windows\CloudContent' 'Disa
 Set-RegistryValue 'HKLM\zSOFTWARE\Policies\Microsoft\Windows\CloudContent' 'DisableCloudOptimizedContent' 'REG_DWORD' '1'
 Write-Output "Enabling Local Accounts on OOBE:"
 Set-RegistryValue 'HKLM\zSOFTWARE\Microsoft\Windows\CurrentVersion\OOBE' 'BypassNRO' 'REG_DWORD' '1'
-Copy-Item -Path "$PSScriptRoot\autounattend.xml" -Destination "$ScratchDisk\scratchdir\Windows\System32\Sysprep\autounattend.xml" -Force | Out-Null
+Copy-Item -Path "$PSScriptRoot\autounattend.xml" -Destination "$ScratchDisk\scratchdir_install\Windows\System32\Sysprep\autounattend.xml" -Force | Out-Null
 
 Write-Output "Disabling Reserved Storage:"
 Set-RegistryValue 'HKLM\zSOFTWARE\Microsoft\Windows\CurrentVersion\ReserveManager' 'ShippedWithReserves' 'REG_DWORD' '0'
@@ -363,7 +395,7 @@ Write-Output "Prevent installation of New Outlook":
 Set-RegistryValue 'HKLM\zSOFTWARE\Policies\Microsoft\Windows\Windows Mail' 'PreventRun' 'REG_DWORD' '1'
 
 Write-Host "Deleting scheduled task definition files..."
-$tasksPath = "$ScratchDisk\scratchdir\Windows\System32\Tasks"
+$tasksPath = "$ScratchDisk\scratchdir_install\Windows\System32\Tasks"
 
 # Application Compatibility Appraiser
 Remove-Item -Path "$tasksPath\Microsoft\Windows\Application Experience\Microsoft Compatibility Appraiser" -Force -ErrorAction SilentlyContinue
@@ -387,11 +419,11 @@ reg unload HKLM\zNTUSER | Out-Null
 reg unload HKLM\zSOFTWARE | Out-Null
 reg unload HKLM\zSYSTEM | Out-Null
 Write-Output "Cleaning up image..."
-dism.exe /Image:$ScratchDisk\scratchdir /Cleanup-Image /StartComponentCleanup /ResetBase
+dism.exe /Image:$ScratchDisk\scratchdir_install /Cleanup-Image /StartComponentCleanup /ResetBase
 Write-Output "Cleanup complete."
 Write-Output ' '
 Write-Output "Unmounting image..."
-Dismount-WindowsImage -Path $ScratchDisk\scratchdir -Save
+Dismount-WindowsImage -Path $ScratchDisk\scratchdir_install -Save
 Write-Host "Exporting image..."
 Dism.exe /Export-Image /SourceImageFile:"$ScratchDisk\tiny11\sources\install.wim" /SourceIndex:$index /DestinationImageFile:"$ScratchDisk\tiny11\sources\install2.wim" /Compress:recovery
 Remove-Item -Path "$ScratchDisk\tiny11\sources\install.wim" -Force | Out-Null
@@ -404,13 +436,13 @@ $wimFilePath = "$ScratchDisk\tiny11\sources\boot.wim"
 & takeown "/F" $wimFilePath | Out-Null
 & icacls $wimFilePath "/grant" "$($adminGroup.Value):(F)"
 Set-ItemProperty -Path $wimFilePath -Name IsReadOnly -Value $false
-Mount-WindowsImage -ImagePath $ScratchDisk\tiny11\sources\boot.wim -Index 2 -Path $ScratchDisk\scratchdir
+Mount-WindowsImage -ImagePath $ScratchDisk\tiny11\sources\boot.wim -Index 2 -Path $ScratchDisk\scratchdir_boot
 Write-Output "Loading registry..."
-reg load HKLM\zCOMPONENTS $ScratchDisk\scratchdir\Windows\System32\config\COMPONENTS
-reg load HKLM\zDEFAULT $ScratchDisk\scratchdir\Windows\System32\config\default
-reg load HKLM\zNTUSER $ScratchDisk\scratchdir\Users\Default\ntuser.dat
-reg load HKLM\zSOFTWARE $ScratchDisk\scratchdir\Windows\System32\config\SOFTWARE
-reg load HKLM\zSYSTEM $ScratchDisk\scratchdir\Windows\System32\config\SYSTEM
+reg load HKLM\zCOMPONENTS $ScratchDisk\scratchdir_boot\Windows\System32\config\COMPONENTS
+reg load HKLM\zDEFAULT $ScratchDisk\scratchdir_boot\Windows\System32\config\default
+reg load HKLM\zNTUSER $ScratchDisk\scratchdir_boot\Users\Default\ntuser.dat
+reg load HKLM\zSOFTWARE $ScratchDisk\scratchdir_boot\Windows\System32\config\SOFTWARE
+reg load HKLM\zSYSTEM $ScratchDisk\scratchdir_boot\Windows\System32\config\SYSTEM
 
 Write-Output "Bypassing system requirements(on the setup image):"
 Set-RegistryValue 'HKLM\zDEFAULT\Control Panel\UnsupportedHardwareNotificationCache' 'SV1' 'REG_DWORD' '0'
@@ -433,7 +465,7 @@ reg unload HKLM\zSOFTWARE | Out-Null
 reg unload HKLM\zSYSTEM | Out-Null
 
 Write-Output "Unmounting image..."
-Dismount-WindowsImage -Path $ScratchDisk\scratchdir -Save
+Dismount-WindowsImage -Path $ScratchDisk\scratchdir_boot -Save
 Clear-Host
 Write-Output "The tiny11 image is now completed. Proceeding with the making of the ISO..."
 Write-Output "Copying unattended file for bypassing MS account on OOBE..."
@@ -472,61 +504,14 @@ if ([System.IO.Directory]::Exists($ADKDepTools)) {
 Write-Output "Creation completed! Press any key to exit the script..."
 Read-Host "Press Enter to continue"
 Write-Output "Performing Cleanup..."
-Remove-Item -Path "$ScratchDisk\tiny11" -Recurse -Force | Out-Null
-Remove-Item -Path "$ScratchDisk\scratchdir" -Recurse -Force | Out-Null
+Remove-ItemWithRetry -Path "$ScratchDisk\tiny11"
+Remove-ItemWithRetry -Path "$ScratchDisk\scratchdir_install"
+Remove-ItemWithRetry -Path "$ScratchDisk\scratchdir_boot"
 Write-Output "Ejecting Iso drive"
 Get-Volume -DriveLetter $DriveLetter[0] | Get-DiskImage | Dismount-DiskImage
 Write-Output "Iso drive ejected"
 Write-Output "Removing oscdimg.exe..."
-Remove-Item -Path "$PSScriptRoot\oscdimg.exe" -Force -ErrorAction SilentlyContinue
-Write-Output "Removing autounattend.xml..."
-Remove-Item -Path "$PSScriptRoot\autounattend.xml" -Force -ErrorAction SilentlyContinue
-
-Write-Output "Cleanup check :"
-if (Test-Path -Path "$ScratchDisk\tiny11") {
-    Write-Output "tiny11 folder still exists. Attempting to remove it again..."
-    Remove-Item -Path "$ScratchDisk\tiny11" -Recurse -Force -ErrorAction SilentlyContinue
-    if (Test-Path -Path "$ScratchDisk\tiny11") {
-        Write-Output "Failed to remove tiny11 folder."
-    } else {
-        Write-Output "tiny11 folder removed successfully."
-    }
-} else {
-    Write-Output "tiny11 folder does not exist. No action needed."
-}
-if (Test-Path -Path "$ScratchDisk\scratchdir") {
-    Write-Output "scratchdir folder still exists. Attempting to remove it again..."
-    Remove-Item -Path "$ScratchDisk\scratchdir" -Recurse -Force -ErrorAction SilentlyContinue
-    if (Test-Path -Path "$ScratchDisk\scratchdir") {
-        Write-Output "Failed to remove scratchdir folder."
-    } else {
-        Write-Output "scratchdir folder removed successfully."
-    }
-} else {
-    Write-Output "scratchdir folder does not exist. No action needed."
-}
-if (Test-Path -Path "$PSScriptRoot\oscdimg.exe") {
-    Write-Output "oscdimg.exe still exists. Attempting to remove it again..."
-    Remove-Item -Path "$PSScriptRoot\oscdimg.exe" -Force -ErrorAction SilentlyContinue
-    if (Test-Path -Path "$PSScriptRoot\oscdimg.exe") {
-        Write-Output "Failed to remove oscdimg.exe."
-    } else {
-        Write-Output "oscdimg.exe removed successfully."
-    }
-} else {
-    Write-Output "oscdimg.exe does not exist. No action needed."
-}
-if (Test-Path -Path "$PSScriptRoot\autounattend.xml") {
-    Write-Output "autounattend.xml still exists. Attempting to remove it again..."
-    Remove-Item -Path "$PSScriptRoot\autounattend.xml" -Force -ErrorAction SilentlyContinue
-    if (Test-Path -Path "$PSScriptRoot\autounattend.xml") {
-        Write-Output "Failed to remove autounattend.xml."
-    } else {
-        Write-Output "autounattend.xml removed successfully."
-    }
-} else {
-    Write-Output "autounattend.xml does not exist. No action needed."
-}
+Remove-ItemWithRetry -Path "$PSScriptRoot\oscdimg.exe"
 
 # Stop the transcript
 Stop-Transcript
