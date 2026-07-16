@@ -33,7 +33,7 @@ Set-ExecutionPolicy Bypass -Scope Process
 
 6. Start the script :
 ```powershell
-C:/path/to/your/tiny11/script.ps1 -ISO <letter> -SCRATCH <letter>
+C:/path/to/your/tiny11/script.ps1 -ISO <letter> -SCRATCH <path>
 ``` 
 > You can see of the script by running the `get-help` command.
 
