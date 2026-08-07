@@ -112,7 +112,17 @@ You will be asked during image creation if you want to enable .net 3.5 support!
 - more flexibility in what to keep and what to delete
 - maybe a GUI???
 
-And that's pretty much it for now!
+---
+
+## New feature (22-03-2026): User-selection of what apps should be removed with the script:
+Here is a preview on how it looks in the console:
+
+<img width="646" height="978" alt="image" src="https://github.com/user-attachments/assets/1307c454-9b11-4d94-80e8-bfc2a2f02908" />
+
+Enjoy (by Gimli)
+
+---
+
 ## ❤️ Support the Project
 
 If this project has helped you, please consider showing your support! A small donation helps me dedicate more time to projects like this.

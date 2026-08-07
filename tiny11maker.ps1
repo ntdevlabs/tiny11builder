@@ -6,6 +6,7 @@
     This is a script created to automate the build of a streamlined Windows 11 image, similar to tiny10.
     My main goal is to use only Microsoft utilities like DISM, and no utilities from external sources.
     The only executable included is oscdimg.exe, which is provided in the Windows ADK and it is used to create bootable ISO images.
+	Tip: Start a PowerShell (with Admin rights) and use "Set-ExecutionPolicy Bypass -Scope Process" to change the policy.
 
 .PARAMETER ISO
     Drive letter given to the mounted iso (eg: E)
@@ -23,8 +24,8 @@
     prefer the use of full named parameter (eg: "-ISO") as you can put in the order you want.
 
 .NOTES
-    Auteur: ntdevlabs
-    Date: 09-07-25
+    Autor: ntdevlabs + Gimli
+    Date: 22-03-2026
 #>
 
 #---------[ Parameters ]---------#
@@ -57,15 +58,104 @@ function Set-RegistryValue {
 
 function Remove-RegistryValue {
     param (
-		[string]$path
-	)
-	try {
-		& 'reg' 'delete' $path '/f' | Out-Null
-		Write-Output "Removed registry value: $path"
-	} catch {
-		Write-Output "Error removing registry value: $_"
-	}
+        [string]$path
+    )
+    try {
+        & 'reg' 'delete' $path '/f' | Out-Null
+        Write-Output "Removed registry value: $path"
+    } catch {
+        Write-Output "Error removing registry value: $_"
+    }
 }
+
+# --- Interactive console selector for package prefixes ---
+function Show-PackageSelector {
+    param(
+        [string[]]$Items,
+        [switch]$DefaultAll
+    )
+
+    # Initialize selection state
+    $selected = @{}
+    for ($i = 0; $i -lt $Items.Count; $i++) {
+        $selected[$i] = $false
+    }
+    if ($DefaultAll) {
+        for ($i = 0; $i -lt $Items.Count; $i++) { $selected[$i] = $true }
+    }
+
+    while ($true) {
+        Clear-Host
+        Write-Host "Select packages to REMOVE from the image:" -ForegroundColor Cyan
+        Write-Host "Toggle items by entering numbers separated by commas. Commands: all, none" -ForegroundColor DarkGray
+        Write-Host "Tip: use ranges like 1-5 or combinations like 1,3,7-9" -ForegroundColor DarkGray
+        Write-Host "use: q / quit / exit to abort - use: 'done' if the selection is ready to proceed" -ForegroundColor DarkGreen
+        Write-Host ""
+
+        for ($i = 0; $i -lt $Items.Count; $i++) {
+            $mark = if ($selected[$i]) { '[X]' } else { '[ ]' }
+            $num = ($i + 1).ToString().PadLeft(3)
+            Write-Host "$num $mark  $($Items[$i])"
+        }
+
+        Write-Host ""
+        $input = Read-Host "Enter selection"
+        if (-not $input) { continue }
+
+        $input = $input.Trim()
+        $lower = $input.ToLowerInvariant()
+        if ($lower -in @('q','quit','exit')) {
+            Write-Host "Exiting selection and keeping current choices." -ForegroundColor Yellow
+            break
+        }
+        if ($lower -eq 'done') { break }
+        if ($lower -eq 'all') {
+            for ($i = 0; $i -lt $Items.Count; $i++) { $selected[$i] = $true }
+            continue
+        }
+        if ($lower -eq 'none') {
+            for ($i = 0; $i -lt $Items.Count; $i++) { $selected[$i] = $false }
+            continue
+        }
+
+        # Parse numeric toggles like "1,3-5,8"
+        $tokens = $input -split '[, ]+' | Where-Object { $_ -ne '' }
+        foreach ($t in $tokens) {
+            if ($t -match '^\d+$') {
+                $idx = [int]$t - 1
+                if ($idx -ge 0 -and $idx -lt $Items.Count) {
+                    $selected[$idx] = -not $selected[$idx]
+                } else {
+                    Write-Host "Number out of range: $t" -ForegroundColor DarkYellow
+                    Start-Sleep -Seconds 1
+                }
+            } elseif ($t -match '^(\d+)-(\d+)$') {
+                $start = [int]$Matches[1] - 1
+                $end = [int]$Matches[2] - 1
+                if ($start -lt 0) { $start = 0 }
+                if ($end -ge $Items.Count) { $end = $Items.Count - 1 }
+                if ($start -le $end) {
+                    for ($j = $start; $j -le $end; $j++) {
+                        $selected[$j] = -not $selected[$j]
+                    }
+                } else {
+                    Write-Host "Invalid range: $t" -ForegroundColor DarkYellow
+                    Start-Sleep -Seconds 1
+                }
+            } else {
+                Write-Host "Ignored token: $t" -ForegroundColor DarkYellow
+                Start-Sleep -Seconds 1
+            }
+        }
+    }
+
+    # Build and return selected items
+    $result = for ($i = 0; $i -lt $Items.Count; $i++) {
+        if ($selected[$i]) { $Items[$i] }
+    }
+    return ,$result
+}
+# --- End selector function ---
 
 #---------[ Execution ]---------#
 # Check if PowerShell execution is restricted
@@ -105,7 +195,7 @@ Start-Transcript -Path "$PSScriptRoot\tiny11_$(get-date -f yyyyMMdd_HHmms).log"
 
 $Host.UI.RawUI.WindowTitle = "Tiny11 image creator"
 Clear-Host
-Write-Output "Welcome to the tiny11 image creator! Release: 09-07-25"
+Write-Output "Welcome to the tiny11 image creator! Release: 22-03-2026"
 
 $hostArchitecture = $Env:PROCESSOR_ARCHITECTURE
 New-Item -ItemType Directory -Force -Path "$ScratchDisk\tiny11\sources" | Out-Null
@@ -159,7 +249,7 @@ try {
     Set-ItemProperty -Path $wimFilePath -Name IsReadOnly -Value $false -ErrorAction Stop
 } catch {
     # This block will catch the error and suppress it.
-	Write-Error "$wimFilePath not found"
+    Write-Error "$wimFilePath not found"
 }
 New-Item -ItemType Directory -Force -Path "$ScratchDisk\scratchdir" > $null
 Mount-WindowsImage -ImagePath $ScratchDisk\tiny11\sources\install.wim -Index $index -Path $ScratchDisk\scratchdir
@@ -202,15 +292,17 @@ $packages = & 'dism' '/English' "/image:$($ScratchDisk)\scratchdir" '/Get-Provis
         }
     }
 
+#---------[ Package prefixes list ]---------#
 $packagePrefixes = 'AppUp.IntelManagementandSecurityStatus',
-'Clipchamp.Clipchamp', 
+'Clipchamp.Clipchamp',
 'DolbyLaboratories.DolbyAccess',
 'DolbyLaboratories.DolbyDigitalPlusDecoderOEM',
+'Microsoft.549981C3F5F10',
 'Microsoft.BingNews',
 'Microsoft.BingSearch',
 'Microsoft.BingWeather',
 'Microsoft.Copilot',
-'Microsoft.Windows.CrossDevice',
+'Microsoft.Edge.GameAssist',
 'Microsoft.GamingApp',
 'Microsoft.GetHelp',
 'Microsoft.Getstarted',
@@ -230,14 +322,16 @@ $packagePrefixes = 'AppUp.IntelManagementandSecurityStatus',
 'Microsoft.StartExperiencesApp',
 'Microsoft.Todos',
 'Microsoft.Wallet',
-'Microsoft.Windows.DevHome',
 'Microsoft.Windows.Copilot',
+'Microsoft.Windows.CrossDevice',
+'Microsoft.Windows.DevHome',
 'Microsoft.Windows.Teams',
 'Microsoft.WindowsAlarms',
 'Microsoft.WindowsCamera',
 'microsoft.windowscommunicationsapps',
 'Microsoft.WindowsFeedbackHub',
 'Microsoft.WindowsMaps',
+'Microsoft.WindowsNotepad',
 'Microsoft.WindowsSoundRecorder',
 'Microsoft.WindowsTerminal',
 'Microsoft.Xbox.TCUI',
@@ -251,16 +345,37 @@ $packagePrefixes = 'AppUp.IntelManagementandSecurityStatus',
 'Microsoft.ZuneVideo',
 'MicrosoftCorporationII.MicrosoftFamily',
 'MicrosoftCorporationII.QuickAssist',
-'MSTeams',
-'MicrosoftTeams', 
-'Microsoft.WindowsTerminal',
-'Microsoft.549981C3F5F10'
+'MicrosoftTeams',
+'MSTeams'
 
-$packagesToRemove = $packages | Where-Object {
-    $packageName = $_
-    $packagePrefixes -contains ($packagePrefixes | Where-Object { $packageName -like "*$_*" })
+# Present interactive selector to the user to choose which prefixes to remove
+try {
+    $selectedPrefixes = Show-PackageSelector -Items $packagePrefixes
+} catch {
+    Write-Warning "Interactive selector failed or was interrupted. Defaulting to selecting all prefixes."
+    $selectedPrefixes = $packagePrefixes
 }
+
+if (-not $selectedPrefixes -or $selectedPrefixes.Count -eq 0) {
+    Write-Output "No package prefixes selected for removal. Skipping Appx package removal step."
+    $packagesToRemove = @()
+} else {
+    Write-Output "Selected package prefixes to remove:"
+    $selectedPrefixes | ForEach-Object { Write-Output " - $_" }
+
+    # Build list of provisioned packages that match any selected prefix
+    $packagesToRemove = $packages | Where-Object {
+        $pkg = $_
+        $match = $false
+        foreach ($pref in $selectedPrefixes) {
+            if ($pkg -like "*$pref*") { $match = $true; break }
+        }
+        $match
+    }
+}
+
 foreach ($package in $packagesToRemove) {
+    Write-Output "Removing provisioned package: $package"
     & 'dism' '/English' "/image:$($ScratchDisk)\scratchdir" '/Remove-ProvisionedAppxPackage' "/PackageName:$package"
 }
 
@@ -532,4 +647,3 @@ if (Test-Path -Path "$PSScriptRoot\autounattend.xml") {
 Stop-Transcript
 
 exit
-
