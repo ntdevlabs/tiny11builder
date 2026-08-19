@@ -67,6 +67,103 @@ function Remove-RegistryValue {
 	}
 }
 
+function Repair-WimMetadata {
+    # On some images (reported on 25H2, see issue #583) the exported WIM loses the
+    # EDITIONID/INSTALLATIONTYPE/PRODUCTTYPE/PRODUCTSUITE/LANGUAGES elements from its
+    # XML. Setup matches ei.cfg against EDITIONID, so without it the install dies with
+    # "Setup has failed to validate the product key" - both when a key is supplied and
+    # when the user picks "I don't have a product key".
+    #
+    # This restores those elements from the values read off the source image before
+    # servicing. It is a no-op when the metadata survived the export.
+    param (
+        [string]$wimPath,
+        [hashtable]$source
+    )
+    try {
+        $stream = [System.IO.File]::Open($wimPath, 'Open', 'ReadWrite')
+    } catch {
+        Write-Output "Could not open $wimPath to check metadata: $_"
+        return
+    }
+    try {
+        $header = New-Object byte[] 208
+        $null = $stream.Read($header, 0, 208)
+        if ([System.Text.Encoding]::ASCII.GetString($header, 0, 5) -ne 'MSWIM') {
+            Write-Output "Not a WIM file, skipping metadata check."
+            return
+        }
+
+        # rhXmlData lives at offset 72: size (7 bytes) + flags (1 byte), offset, uncompressed size
+        $xmlSize   = [int]([BitConverter]::ToUInt64($header, 72) -band 0x00FFFFFFFFFFFFFF)
+        $xmlFlags  = $header[79]
+        $xmlOffset = [long][BitConverter]::ToUInt64($header, 80)
+
+        $buffer = New-Object byte[] $xmlSize
+        $null = $stream.Seek($xmlOffset, 'Begin')
+        $null = $stream.Read($buffer, 0, $xmlSize)
+        $xml = [System.Text.Encoding]::Unicode.GetString($buffer).TrimStart([char]0xFEFF)
+
+        if ($xml -match '<EDITIONID>') {
+            Write-Output "Image metadata is intact."
+            return
+        }
+
+        # the XML blob is written last, so it can be rewritten in place and the file retruncated
+        if ($xmlOffset + $xmlSize -ne $stream.Length) {
+            Write-Output "WARNING: image metadata is missing but the XML block is not at the end of the WIM."
+            Write-Output "Skipping repair - the resulting ISO may fail to install."
+            return
+        }
+
+        Write-Output "Image metadata was lost during export. Restoring it..."
+        $languages = ''
+        if ($source.Languages) {
+            $languages = '<LANGUAGES><LANGUAGE>' + $source.Languages + '</LANGUAGE><DEFAULT>' + $source.Languages + '</DEFAULT></LANGUAGES>'
+        }
+        $restore = '<EDITIONID>' + $source.EditionId + '</EDITIONID>' +
+                   '<INSTALLATIONTYPE>' + $source.InstallationType + '</INSTALLATIONTYPE>' +
+                   '<PRODUCTTYPE>' + $source.ProductType + '</PRODUCTTYPE>' +
+                   '<PRODUCTSUITE>' + $source.ProductSuite + '</PRODUCTSUITE>' +
+                   $languages
+        $xml = $xml -replace '(</PRODUCTNAME>)', "`$1$restore"
+        if ($xml -notmatch '<EDITIONID>') {
+            Write-Output "WARNING: could not restore metadata, PRODUCTNAME element not found."
+            return
+        }
+
+        # TOTALBYTES has to match the new file size, and the number's own length feeds
+        # back into that size, so settle it by iterating
+        for ($i = 0; $i -lt 6; $i++) {
+            $bytes = [byte[]](0xFF, 0xFE) + [System.Text.Encoding]::Unicode.GetBytes($xml)
+            $updated = $xml -replace '^<WIM><TOTALBYTES>\d+</TOTALBYTES>', ('<WIM><TOTALBYTES>' + ($xmlOffset + $bytes.Length) + '</TOTALBYTES>')
+            if ($updated -eq $xml) { break }
+            $xml = $updated
+        }
+        $bytes = [byte[]](0xFF, 0xFE) + [System.Text.Encoding]::Unicode.GetBytes($xml)
+
+        $null = $stream.Seek($xmlOffset, 'Begin')
+        $stream.Write($bytes, 0, $bytes.Length)
+        $stream.SetLength($xmlOffset + $bytes.Length)
+
+        $sizeField = [BitConverter]::GetBytes([uint64]$bytes.Length)
+        $sizeField[7] = $xmlFlags
+        [Array]::Copy($sizeField, 0, $header, 72, 8)
+        [Array]::Copy([BitConverter]::GetBytes([uint64]$bytes.Length), 0, $header, 88, 8)
+
+        # the edit invalidates any integrity table, so clear it
+        for ($i = 124; $i -lt 148; $i++) { $header[$i] = 0 }
+
+        $null = $stream.Seek(0, 'Begin')
+        $stream.Write($header, 0, 208)
+        Write-Output "Restored image metadata (EditionId: $($source.EditionId))."
+    } catch {
+        Write-Output "Error while repairing image metadata: $_"
+    } finally {
+        $stream.Close()
+    }
+}
+
 #---------[ Execution ]---------#
 # Check if PowerShell execution is restricted
 if ((Get-ExecutionPolicy) -eq 'Restricted') {
@@ -191,6 +288,21 @@ foreach ($line in $lines) {
 
 if (-not $architecture) {
     Write-Output "Architecture information not found."
+}
+
+# Remember the edition metadata so it can be restored if the export drops it (see Repair-WimMetadata)
+$sourceMetadata = @{}
+try {
+    $sourceImage = Get-WindowsImage -ImagePath "$ScratchDisk\tiny11\sources\install.wim" -Index $index
+    $sourceMetadata = @{
+        EditionId        = $sourceImage.EditionId
+        InstallationType = $sourceImage.InstallationType
+        ProductType      = $sourceImage.ProductType
+        ProductSuite     = $sourceImage.ProductSuite
+        Languages        = ($sourceImage.Languages | Select-Object -First 1)
+    }
+} catch {
+    Write-Output "Could not read source image metadata: $_"
 }
 
 Write-Output "Mounting complete! Performing removal of applications..."
@@ -396,6 +508,9 @@ Write-Host "Exporting image..."
 Dism.exe /Export-Image /SourceImageFile:"$ScratchDisk\tiny11\sources\install.wim" /SourceIndex:$index /DestinationImageFile:"$ScratchDisk\tiny11\sources\install2.wim" /Compress:recovery
 Remove-Item -Path "$ScratchDisk\tiny11\sources\install.wim" -Force | Out-Null
 Rename-Item -Path "$ScratchDisk\tiny11\sources\install2.wim" -NewName "install.wim" | Out-Null
+if ($sourceMetadata.EditionId) {
+    Repair-WimMetadata -wimPath "$ScratchDisk\tiny11\sources\install.wim" -source $sourceMetadata
+}
 Write-Output "Windows image completed. Continuing with boot.wim."
 Start-Sleep -Seconds 2
 Clear-Host
