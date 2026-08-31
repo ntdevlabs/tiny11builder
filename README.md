@@ -1,8 +1,8 @@
-# tiny11builder
+# Tiny11Builder🛠
 *Scripts to build a trimmed-down Windows 11 image - now in **PowerShell**!*
 
 ## Introduction :
-Tiny11 builder, now completely overhauled. <br> After more than a year (for which I am so sorry) of no updates, tiny11 builder is now a much more complete and flexible solution - one script fits all. Also, it is a steppingstone for an even more fleshed-out solution.
+Tiny11 builder, now completely overhauled. <br> After more than a year (for which I am so sorry) of no updates, tiny11 builder is now a much more complete and flexible solution - one script fits all. Also, it is a stepping stone for an even more fleshed-out solution.
 
 You can now use it on ANY Windows 11 release (not just a specific build), as well as ANY language or architecture.
 This is made possible thanks to the much-improved scripting capabilities of PowerShell, compared to the older Batch release.
@@ -24,7 +24,7 @@ This script generates a significantly reduced Windows 11 image. However, **it's 
 ## Instructions:
 1. Download Windows 11 from the [Microsoft website](https://www.microsoft.com/software-download/windows11) or [Rufus](https://github.com/pbatard/rufus)
 2. Mount the downloaded ISO image using Windows Explorer.
-3. Open **PowerShell 5.1** as Administrator. 
+3. Open **PowerShell 5.1** (Or Terminal if on Windows 11+) as Administrator. 
 5. Change the script execution policy :
 ```powershell
 Set-ExecutionPolicy Bypass -Scope Process
@@ -106,8 +106,6 @@ You will be asked during image creation if you want to enable .net 3.5 support!
 ---
 
 ## Features to be implemented:
-- ~~disabling telemetry~~ (Implemented in the 04-29-24 release!)
-- ~~more ad suppression~~ (Partially implemented in the 09-06-25 release!)
 - improved language and arch detection
 - more flexibility in what to keep and what to delete
 - maybe a GUI???
