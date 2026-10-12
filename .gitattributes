@@ -1,0 +1,14 @@
+* text=auto
+*.cs text eol=crlf
+*.csproj text eol=crlf
+*.props text eol=crlf
+*.sln text eol=crlf
+*.xaml text eol=crlf
+*.manifest text eol=crlf
+*.ps1 text eol=crlf
+*.md text eol=lf
+*.yml text eol=lf
+# Preserve the original upstream builders and answer file byte-for-byte.
+tiny11maker.ps1 -text
+tiny11Coremaker.ps1 -text
+autounattend.xml -text

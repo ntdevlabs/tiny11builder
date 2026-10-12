@@ -1,19 +1,503 @@
-# tiny11builder
+# Tiny11 Builder - native WinUI edition
+
+**WinUI 3 desktop application with a C# image builder.** Its step-by-step layout
+uses the [S9 WoA installer](https://github.com/ntdevlabs/exynos9810-woa) as a reference.
+It does not wrap or execute the PowerShell builders. The original scripts remain
+unchanged below for compatibility.
+
+## What the app does
+
+| Mode | Behavior |
+| --- | --- |
+| Tiny11 | The fixed original-style removal set: bundled apps, Edge/WebView2 and OneDrive binaries, hardware-check settings, reserved-storage and automatic-encryption settings. Keeps Update, Defender, WinRE, Store and shared runtimes. Choose Custom to edit removals. |
+| Tiny11 Core | Applies changes before resetting the component base. Keeps common-controls/GDI+/CRT/servicing files, deletes other WinSxS component folders, removes WinRE and disables Windows Update and Defender. These changes cannot be reversed. Use only for test VMs. |
+| Custom | Starts with no removals selected. Choose individual removal groups or list preinstalled apps, protected system apps, optional features, language capabilities, CBS packages, services, drivers and WinSxS component folders. Features and services also offer disable-only. Core's irreversible removals are a separate, unchecked option with the same warning and acknowledgement. |
+
+The presets are original-style, not command-for-command copies of the scripts.
+Tiny11 cleans superseded components without `/ResetBase`, preserving the
+ability to uninstall existing updates. Core does reset the base, retains
+additional detected runtime/servicing families, and removes WinRE without
+creating the original script's empty placeholder. These compatibility choices
+are unchanged by the reliability update; further reductions require separate
+Setup/boot testing.
+
+The six-step wizard provides:
+
+- A full-width welcome page with clickable build-mode cards. Selecting a card
+  sets its mode and opens ISO selection. Cards stack in narrow windows, and a
+  large faint number (1-6) fades out when the page scrolls down. Back is at the
+  upper-left, with Alt+Left support. All forward actions, including Start and
+  Build, are at the lower-right. There is no footer strip or redundant step count.
+- One-click download of Microsoft's latest published Windows 11 ISO using the
+  host architecture and display language. Unsupported languages fall back to
+  English with an explicit status message. No URL or save dialog is required;
+  downloads go into the selected workspace's `downloads` directory. Microsoft
+  availability/region blocks are reported rather than bypassed.
+- Official Microsoft ISO downloads with speed/progress, strong-ETag resumable
+  partial files, ISO structure checks, and optional verification against a
+  published SHA-256. Only Microsoft's ISO hosts are accepted, including every
+  redirect. Expiring query tokens are not persisted; resume metadata keeps only
+  the Microsoft resource host/path, ETag and length.
+- Local ISO and extracted installation-media input, WIM/ESD detection, edition
+  selection, and automatic read-only native ISO attachment. Windows 11 Pro is
+  selected when found; otherwise index 1 is selected. Restored recipes preserve
+  their saved edition if it still exists.
+- Three build-mode cards: Tiny11, Tiny11 Core and Custom. Individual keep/remove
+  controls are shown only in Custom. Core requires an explicit agreement dialog
+  before proceeding; cancellation leaves Core unapproved.
+  A full image inventory requires an upfront expert warning and a separate risk
+  acknowledgement before a build.
+- Core and Custom WinSxS/component-payload removals always use the legacy
+  Windows installer, including on 24H2 and newer media. The private Setup
+  boot image starts `wpeinit.exe`, then its matching `sources\setup.exe`
+  (`setup_old.exe` when present), instead of the newer SetupHost workflow.
+  This is automatic, not a hardware-bypass option; no installer from a
+  different Windows release is downloaded. Media without the classic
+  executable fails explicitly. A resumed Core job also receives this change
+  even if its final installation image was already compressed.
+  This configures the booted ISO's WinPE shell using
+  [Winpeshl.ini](https://learn.microsoft.com/en-us/windows-hardware/manufacture/desktop/winpeshlini-reference-launching-an-app-when-winpe-starts);
+  it is not an in-place upgrade workaround.
+- Optional .NET 3.5 from matching `sources\sxs`, compact installation, and
+  best-effort local-account setup. No account, password, product key, automatic
+  logon or EULA acceptance is injected.
+- Automatic image-tool detection and compatible-version checks. oscdimg is
+  found locally or downloaded from Microsoft's symbol server with an exact
+  SHA-256 pin. No tool-selection controls or script execution-policy changes.
+- Illustrated installation-option cards with switches, a structured review,
+  and expandable build stages with pending, running, completed, skipped and
+  failed operations. App, feature and capability removals show exact identities.
+  Console-style progress bars stay in the disk log, not in the interface.
+  Overall progress follows stage boundaries, not a time estimate. Items are
+  grouped under their stage; a failed item is not counted again as a second
+  failure for its stage. Unstarted work reads **Not run** after stopping.
+  The build page separates overall progress, the current operation, output
+  details and expandable operation history with more room between sections.
+- Architecture-correct setup XML, UEFI boot media on x64 and ARM64, BIOS boot
+  entry on x64 when the source includes it, and recovery ESD, maximum WIM or fast WIM
+  compression.
+- Recipe import/export, live logs, safe-boundary cancellation, persistent job
+  state, verified saved progress for **Resume build**, an output SHA-256, a JSON
+  report, and separate interrupted-workspace discard/recovery.
+
+## Turbo mode and smaller images
+
+The settings page has independent **Turbo mode**, **Remove redundant image
+data**, and **Omit .NET 3.5 setup payload** switches. All default to off so
+existing recipes and fixed Tiny11/Core removal sets keep their behavior.
+
+| Setting | What changes | Tradeoff |
+| --- | --- | --- |
+| Turbo mode | Serialized feature/capability batches with state verification, up to eight copy workers and reduced log I/O. | More CPU/I/O and temporary space; actual benefit depends on the image and host. |
+| Turbo with Core or Fast WIM output | Uses a fast-compressed writable intermediate WIM instead of recompressing large Core changes into an LZX working image. | Initial conversion can be slower and the working WIM is larger. Final compression remains as selected. |
+| Recovery ESD | Solid recovery compression for the final edition. | Smallest Microsoft-tool output, usually the slowest compression stage. Turbo does not silently replace it. |
+| Maximum WIM | Strong mountable WIM compression. | Easier to service, usually larger than recovery ESD. |
+| Fast WIM | Faster final compression. | Larger ISO; use when build time matters more than storage. |
+| Remove redundant image data | Removes downloaded update cache, temporary files, archived CBS/DISM logs, crash dumps and Windows Error Reporting archives/queues. | Logical removed bytes are recorded; they are not a prediction of compressed ISO savings. |
+| Omit .NET 3.5 setup payload | Does not stage `sources\sxs` into the output ISO. .NET 3.5 can still be enabled during the build from the original source. | Adding it afterward needs other matching media or Windows Update; Core cannot add features afterward. |
+
+Builds and inventory use normal mounts by default, including in Turbo.
+Lazy mounting (`/Optimize`) is not automatically tried when a tool version
+changes: one failed production probe on this PC consumed over twelve minutes.
+The development opt-in retains the known-error fallback and versioned
+`mount-optimization.json` advisory cache. An invalid or inaccessible advisory
+cache disables lazy mounting with a diagnostic rather than stopping the build.
+Turbo does not parallelize servicing against one
+mounted image, disable host antivirus, alter OS power settings, or remove
+integrity checking. The batch tracks every feature and reads back its state;
+a failed batch is reported as failed, not as individual successes.
+
+The cleaner uses a fixed allowlist. It preserves the cache/log root directories,
+current `CBS.log` and `dism.log`, update databases, registry files, driver
+repositories, Windows Installer cache, and servicing manifests. Download and
+temporary payloads are retained when `pending.xml` or `reboot.xml` indicates
+pending servicing, or when the offline registry has servicing/update reboot
+markers. If a missing or corrupt hive prevents verification, sensitive targets
+are retained with a warning; this is not reported as successful removal.
+Registry inspection uses a private hive/log copy so loading it cannot replay
+transactions into the image. Other I/O/access errors remain failures.
+Unknown symlinks and junctions are refused before a cleanup
+target is deleted. It does not scan the running PC for things to delete.
+
+Both Standard and Turbo delete offline entries through backup/restore handles without changing
+their ACLs or clearing read-only attributes shared by remaining hard links.
+Both handle long image paths
+and reject non-image reparse points. Every build records per-operation duration,
+per-stage duration in `timings.json`, setup bytes copied/omitted, and cleanup
+file/byte counts in the report. Failure reports retain timings too.
+
+Common optimizations apply in either mode: source WIM compression is retained
+when not using a fast working image; duplicate targets are handled once;
+already-removed payloads are skipped; preflight only re-queries the selected
+edition; unnecessary feature inventories are omitted; setup files are copied
+largest-first; and same-volume ISO publication renames rather than copies.
+Logs stay private to the job and scratch files use its NTFS workspace.
+The progress timer runs only during operations and processes bounded batches,
+instead of waking continuously while the app is idle.
+
+Before the shared deletion path was adopted, a three-run 4,000-file benchmark
+measured the old ACL-rewriting path at 3.55-4.12 seconds and native deletion at
+0.69-0.75 seconds. This is not a comparison of the current two modes. Real
+977-file ISO staging used 1.74-5.90 seconds with four workers and 1.68-1.85
+seconds with eight; results are cache- and host-dependent, not a universal
+speedup promise. Omitting this image's optional .NET payload avoided copying
+71,656,916 bytes (about 68.3 MiB).
+
+An end-to-end 26H2 x64 Core build with the same removal set and recovery ESD
+compression completed in **31 minutes 44 seconds**, compared with an earlier
+**90 minutes 31 seconds** run on this PC. Core pruning took 37 seconds instead
+of about 4 minutes 38 seconds; commit took 3 minutes 54 seconds instead of about
+29 minutes 38 seconds. Initial conversion to a fast working WIM was slower
+(3 minutes 8 seconds rather than 33 seconds). These are measured development
+runs with different cache/system load, not a guaranteed speed multiplier.
+Optimized lazy mounting was not used because this host's provider rejected it.
+
+The resulting Turbo ISO was **3,259,584,512 bytes (3.04 GiB)**, compared with
+3,331,207,168 bytes previously. About 68.3 MiB was saved by omitting the optional
+setup payload; this clean Microsoft source had no extra cache files to remove.
+No cache savings are claimed for that build. The ISO's Pro edition, build,
+compression and SHA-256 were verified; VM boot certification remains separate.
+
+**This is an image builder, not an installer or a live-system debloater.** It
+never intentionally targets the running Windows installation, formats a disk or
+modifies the source media. Only a newly created working copy is serviced.
+Existing output ISOs are refused, not overwritten.
+
+Offline registry editing temporarily mounts copied image hives under uniquely
+named `HKLM\Tiny11Builder_Offline_<guid>` keys and unloads them explicitly.
+Existing host registry settings are not edited. A hive load/unload failure stops
+the operation and reports the exact temporary key instead of hiding the error.
+Per-job hive journals let workspace recovery unload only that job's temporary
+keys if the app is interrupted before the hives are unloaded.
+DWORD and string writes use the native `RegSetValueExW` API on handles opened
+with scoped backup/restore privileges, and every written value is read back.
+Widgets are disabled with Microsoft's documented
+`SOFTWARE\Policies\Microsoft\Dsh\AllowNewsAndInterests=0` policy. The protected
+`Explorer\Advanced\TaskbarDa` preference is deliberately not written: newer
+hosts can reject it even through the native API. Host protection services are
+not disabled. The policy applies to Widgets and its taskbar content; support
+still varies by Windows edition.
+
+Core payload deletion uses extended-length Windows paths so long
+WinSxS filenames do not fail at the legacy 260-character limit. Symbolic-link
+and junction restrictions are unchanged.
+
+The acceleration uses Microsoft's documented
+[/Mount-Image /Optimize](https://learn.microsoft.com/windows-hardware/manufacture/desktop/dism-image-management-command-line-options-s14)
+and
+[multi-feature /Disable-Feature](https://learn.microsoft.com/windows-hardware/manufacture/desktop/dism-operating-system-package-servicing-command-line-options)
+options. Feature batches target the default Foundation package; individual
+expert servicing actions remain serialized.
+
+Offline image files may legitimately use WIM/WOF reparse tags. Those two
+non-name-surrogate image-provider tags are accepted inside the owned image;
+ordinary symbolic links and junctions are still refused. Source, workspace and
+output paths retain their stricter reparse-point checks.
+
+## Windows 11 build compatibility
+
+The engine accepts **Windows 11 client builds 22621 (22H2) and newer**, including
+23H2, 24H2, 25H2, 26H2 and Insider/Canary media, in **x64 and ARM64**, without a
+hard-coded maximum build number. Image architecture, edition and version are
+read from DISM, not inferred from the ISO filename. Package/capability/feature
+identities come from the mounted image, so missing items are logged as *not
+present*, rather than guessed.
+
+Acceptance is **not a certification that every build and every custom removal
+combination boots**. This new implementation needs VM validation against
+representative media for each release/channel. Unit tests cover build metadata
+and simulated pipelines across release and newer/Canary-style build numbers;
+the opt-in integration test exercises real media read-only.
+
+The DISM executable must be from a matching or newer Microsoft Windows host or
+ADK. New Canary images can require a preview ADK that Microsoft has not yet
+published. The app stops before modifications if its tools are too old.
+Microsoft also decides which stable/Insider ISOs are available: the app does not
+claim to download unpublished Canary releases or use unofficial UUP mirrors.
+The main Download button resolves the current public release automatically.
+The optional Other official downloads section still accepts manual links for
+other languages or Insider media. Microsoft may require you to sign in on its
+Insider page; the app does not handle your credentials.
+
+**Policies are build/edition dependent.** Successful offline registry writes are
+verified, but that does not prove that Home, Pro, Enterprise or a future build
+honors every policy. Required diagnostics remain in the Balanced profile.
+Windows feature updates can restore apps and settings. Local-account and
+hardware-check settings are best effort, not guaranteed bypasses on new builds.
+No modification bypasses Windows licensing or activation.
+
+**Core and expert warnings:** Core has no usable update/component servicing or
+recovery image and disables antivirus protection. A future build with an unknown
+runtime layout is refused before Core pruning starts. Expert mode deliberately
+allows removal of protected and boot-critical items; there is no dependency
+solver. DISM can refuse protected CBS package removal, in which case the build
+fails explicitly. Direct system-app/WinSxS payload removal is separately exposed
+as an unsupported operation. Removing a service deletes its offline registry
+registration; shared `svchost.exe` and other shared binaries are never blindly
+deleted. Test aggressive images in an isolated VM and keep known-good media.
+
+## Build and run
+
+Requirements: Windows 10 2004 or newer as the host, .NET 8 SDK and a Windows SDK
+compatible with the target in the project. The app selects the newest installed
+Microsoft servicing tool and prepares oscdimg automatically. A sufficiently new
+Windows host or ADK is still required for newer image builds. The Windows App
+SDK and .NET runtime are self-contained in published application folders.
+
+Installed tools require a trusted Microsoft signature. Microsoft's symbol-server
+copy of oscdimg omits its embedded certificate, so only the exact approved
+2.56 binary is accepted: SHA-256
+`2000160B2C5044691B2F9A0AC308E5207F273D4880A572457AF16D05886BA861`.
+Downloads are restricted to the approved Microsoft symbol-server resource and
+its observed Microsoft blob redirect. A different checksum or redirect stops
+acquisition without execution. This is not a general unsigned-tool exception.
+
+```powershell
+dotnet build .\Tiny11Builder.sln -c Release
+dotnet publish .\src\Tiny11Builder.App\Tiny11Builder.App.csproj -c Release -r win-x64 -p:Platform=x64 -o .\artifacts\Tiny11Builder-x64
+.\artifacts\Tiny11Builder-x64\Tiny11Builder.exe
+```
+
+For ARM64 hosts:
+
+```powershell
+dotnet publish .\src\Tiny11Builder.App\Tiny11Builder.App.csproj -c Release -r win-arm64 -p:Platform=ARM64 -o .\artifacts\Tiny11Builder-arm64
+```
+
+The app **always requires administrator privileges at startup**. Windows asks
+for UAC approval (or an administrator account's credentials) before opening it;
+declining means the app does not start. This is embedded in the executable,
+not an optional restart button or a UAC bypass. Launch `Tiny11Builder.exe`, not
+the managed DLL. Builds still require explicit confirmation and risk
+acknowledgements. File/folder pickers work in elevated apps.
+
+## GitHub source and release packages
+
+Commit the source, tests, solution, scripts, README, NOTICE and `.github`
+configuration. Generated `bin`, `obj`, `artifacts`, test results and Windows
+images are ignored. Do not include your working media, recipes with personal
+paths or build logs in a public upload.
+
+The GitHub Actions workflow runs the tests on Windows and builds self-contained
+x64 and ARM64 ZIPs. It uploads workflow artifacts only; it does not publish a
+GitHub Release, change permissions, or bundle Windows ISOs/ADK tools.
+Native tests require an elevated Windows runner. Real-image tests remain opt-in.
+
+To build the same archives locally from an elevated PowerShell:
+
+```powershell
+.\scripts\package.ps1 -Architecture x64
+.\scripts\package.ps1 -Architecture arm64
+```
+
+Archives and SHA-256 files appear in `artifacts\release`. The script verifies
+the executable architecture, embedded administrator manifest and bundled
+runtime, and includes dependency license notices. It refuses to overwrite an
+existing archive for that version. Extract the entire ZIP into a folder and
+open `Tiny11Builder.exe`; copying just the EXE is not sufficient.
+
+The current app version is **0.1.0-preview.1**. Packages are unsigned previews,
+not Microsoft-certified Windows images. Review [NOTICE.md](NOTICE.md) before
+public redistribution: this upstream checkout has no standalone license file,
+and this rewrite does not assign a license to someone else's source.
+The existing `origin` points to the upstream project; choose your own GitHub
+repository or fork before pushing. Nothing in the packaging script pushes code.
+
+The default workspace is **`C:\tiny11`**, with output ISOs there as well.
+Use an **NTFS workspace**, typically with 40-70 GiB free. ReFS, FAT32 and network
+workspaces are refused because of WIM mounting constraints. Output cannot be
+FAT32. A workspace on the same drive as output is supported. Network paths,
+alternate data streams, reparse points in source/workspace/output and system
+directories as output/workspace are rejected. Input must include `boot.wim`,
+`install.wim` or `install.esd`, and UEFI boot media; split `install.swm` input is
+not supported. Exporting one edition avoids copying a multi-edition install
+image only to delete it afterward.
+
+## Logs, recipes and recovery
+
+State and cached tools live in `%LOCALAPPDATA%\Tiny11Builder`; working media
+defaults to `C:\tiny11` and can be changed. Each operation creates a unique
+`tiny11-<guid>` subdirectory. A build
+keeps `job.json`, `recipe.json`, `build.log`, `dism.log`, `operations.json`,
+`timings.json` and `report.json`.
+`operations.json` also records failed builds, including the exact operation and
+error detail. The raw disk log preserves exceptions and console output.
+On success, working
+media is removed unless **Keep working media** is selected; logs and reports
+remain. On failure, working files are retained, and the app gives their path.
+Recipes contain local paths and selections, so review them before sharing.
+Switching build modes replaces the previous removal selections. Custom starts
+with no removal groups, advanced actions or Core removals selected. Individual
+component actions add to selected groups: to keep a component, leave both its
+group and its individual entry unchecked. Saved recipes retain the selected
+mode and exact removals. Older recipes are still accepted; modified Core
+recipes load as Custom with Core removals enabled, never silently discarded.
+
+Cancellation does **not** kill an active DISM mount/commit process. It waits for
+the operation to finish, then discards this job's mount at a safe boundary.
+Closing while an operation is running is blocked. ISO creation and download
+streams can be cancelled. A completed stage is recorded before cancellation
+at the following boundary. Working files and logs are kept on failure/cancel.
+Failed notices provide **Open logs**. The red **Cancel safely** button stays at
+the upper-right while work is running. Clicking it first asks for confirmation;
+Keep building/Continue is the default and sends no cancellation. Confirming
+keeps the same dialog open with a progress bar while the current operation
+finishes, the owned mount is discarded and logs are saved. The waiting bar is
+indeterminate, not a guessed shutdown percentage.
+After the run fully settles the dialog shows its actual result. Failed
+cleanup or required recovery is shown as an error, never as a safe completion.
+If the operation finished while the confirmation was open, nothing is
+cancelled. Escape and closing the app are blocked during cancellation cleanup.
+
+After a successful installation-image commit, the job saves `checkpoint.json`
+with the original recipe hash, image identity, image hash and a hashed manifest
+of staged setup files. After final compression, a second checkpoint allows
+retrying ISO creation without recompressing. Checkpoints are flushed and
+replaced atomically while the job's exclusive lock is held. Setup-image
+editing uses a private copy, committed and verified before replacement.
+
+Use **Resume build** and select the stopped job's `job.json`, including after
+restarting the app. The engine verifies the checkpoint, hashes, tools and job
+ownership before continuing. It refuses changed removal choices, corrupt or
+stale progress, active jobs and unsafe paths. The original source is no longer
+needed after a valid commit. The UI restores the original recipe with freshly
+located tools; if the output already exists, choose a new ISO name. The Resume
+confirmation defaults to Cancel and repeats the applicable Core/custom risks.
+
+Older interrupted jobs without a checkpoint cannot be resumed automatically,
+even if they happen to contain a committed WIM. They are not adopted or deleted
+when selected for Resume. Keep their working files if you need them.
+
+Publication never overwrites an existing ISO. Cross-volume copies are flushed
+and hash-checked before the final rename. On an output race, the verified ISO
+is kept at the job's `output.iso` and the build remains resumable. A success
+report is written only after publication. Post-publication log/report/cleanup
+problems are shown as warnings, not as a false failure of the published ISO.
+
+If the app/PC crashes, use **Recover workspace**, select that job's `job.json`,
+and explicitly confirm discarding its working copy. Recovery refuses active
+locked jobs and completed jobs. If saved progress exists, the UI offers
+**Resume instead**, never automatic deletion of the committed image.
+Recovery only addresses that job's mount and staging
+directories; it never uses global DISM mount cleanup and preserves the source,
+logs, recipe and existing output.
+
+## Tests
+
+Run the tests from an elevated terminal. Native file and registry tests require
+Windows backup and restore privileges.
+
+```powershell
+dotnet test .\tests\Tiny11Builder.Core.Tests\Tiny11Builder.Core.Tests.csproj
+```
+
+A small native image-provider check captures a synthetic directory into its
+own temporary WIM, deletes an offline component, commits, and remounts read-only
+to verify the retained hard link's content, permissions and read-only state.
+It does not use your Windows ISO:
+
+```powershell
+$env:TINY11_NATIVE_WIM_CHECK = '1'
+dotnet test .\tests\Tiny11Builder.Core.Tests\Tiny11Builder.Core.Tests.csproj --filter Shared_deletion_survives_a_synthetic_WIM_commit_when_configured -- RunConfiguration.EnvironmentVariables.TINY11_NATIVE_WIM_CHECK=1
+Remove-Item Env:\TINY11_NATIVE_WIM_CHECK
+```
+
+Legacy installer integration can be checked against a real ISO. This test
+copies only `boot.wim` into a disposable job, applies the startup configuration,
+commits, remounts read-only, and checks the saved configuration and image count.
+It leaves the original ISO unchanged; it does not certify Windows Setup in a VM:
+
+```powershell
+dotnet test .\tests\Tiny11Builder.Core.Tests\Tiny11Builder.Core.Tests.csproj --filter Legacy_startup_survives_a_real_Setup_image_commit_when_configured -- RunConfiguration.EnvironmentVariables.TINY11_SETUP_ISO_CHECK=C:\media\Windows11.iso
+```
+
+The real-image test is opt-in and requires a valid Windows 11 WIM. It mounts the
+WIM **read-only**, lists its components, and tests policy and service changes on
+separate copies of its registry files. It then discards the mount and checks
+that the source timestamp is unchanged:
+
+```powershell
+$env:TINY11_TEST_WIM = 'C:\media\sources\install.wim'
+dotnet test .\tests\Tiny11Builder.Core.Tests\Tiny11Builder.Core.Tests.csproj --filter Read_only_real_Windows_image_integration_when_configured
+```
+
+The app is thin WinUI presentation over `src\Tiny11Builder.Core`; tests run
+without the GUI. Live Microsoft catalog and tool checks are opt-in:
+
+```powershell
+$env:TINY11_TEST_DOWNLOADS = '1'
+dotnet test .\tests\Tiny11Builder.Core.Tests\Tiny11Builder.Core.Tests.csproj --filter Live_official_catalog_and_pinned_tool_when_configured
+```
+
+This resolves x64 and ARM64 ISO links and downloads/verifies oscdimg without
+executing it or downloading a full Windows ISO. Windows media and deployment
+executables are not redistributed by this repository.
+
+The writable-hive regression is also opt-in. It applies the full Core policy
+set to a temporary mount, verifies the Widgets policy, then discards changes:
+
+```powershell
+$env:TINY11_PERMISSION_WIM = 'C:\media\working.wim'
+dotnet test .\tests\Tiny11Builder.Core.Tests\Tiny11Builder.Core.Tests.csproj --filter Writable_mount_permission_regression_when_configured
+```
+
+Use a working WIM copy for this test. Full Core ISO verification reads an
+explicit saved recipe, writes a separate ISO under `C:\tiny11`, and does not
+claim VM boot validation:
+
+```powershell
+$env:TINY11_BUILD_RECIPE = 'C:\tiny11\tiny11-job\recipe.json'
+dotnet test .\tests\Tiny11Builder.Core.Tests\Tiny11Builder.Core.Tests.csproj --filter Full_real_Core_build_when_configured
+```
+
+An end-to-end build of Windows 11 Pro 26H2 x64, build 26300.9457, completed with
+the original Core removal set, compact installation and recovery ESD
+compression. The resulting ISO was 3,331,207,168 bytes (3.10 GiB) and contained
+one installation edition at index 1. Source media was 8.31 GiB and multi-edition,
+so that size comparison includes exporting only Pro as well as removal and
+compression. VM boot validation remains separate from ISO creation.
+
+Opt-in Turbo benchmarks:
+
+```powershell
+$env:TINY11_TURBO_BENCHMARK = '1'
+dotnet test .\tests\Tiny11Builder.Core.Tests\Tiny11Builder.Core.Tests.csproj --filter Native_file_deletion_benchmark_when_configured
+
+$env:TINY11_TURBO_TEST_WIM = 'C:\media\working.wim'
+dotnet test .\tests\Tiny11Builder.Core.Tests\Tiny11Builder.Core.Tests.csproj --filter Real_Turbo_mount_staging_and_cleanup_benchmark_when_configured
+
+$env:TINY11_BUILD_RECIPE = 'C:\tiny11\tiny11-job\recipe.json'
+$env:TINY11_TEST_TURBO = '1'
+dotnet test .\tests\Tiny11Builder.Core.Tests\Tiny11Builder.Core.Tests.csproj --filter Full_real_Core_build_when_configured
+```
+
+The last command uses a separate `C:\tiny11\turbo-verification` workspace and
+`C:\tiny11\Tiny11Core-26300-turbo.iso` output. It retains recovery compression,
+enables Turbo and redundant-data cleanup, and omits the optional setup payload.
+Use a working-copy WIM for the mount benchmark, and let each test discard its
+mount before ending the process.
+
+---
+
+# Original PowerShell tiny11builder
 *Scripts to build a trimmed-down Windows 11 image - now in **PowerShell**!*
 
 ## Introduction :
-Tiny11 builder, now completely overhauled. <br> After more than a year (for which I am so sorry) of no updates, tiny11 builder is now a much more complete and flexible solution - one script fits all. Also, it is a steppingstone for an even more fleshed-out solution.
+The original PowerShell scripts create modified Windows 11 installation images
+using DISM and oscdimg. `tiny11maker.ps1` keeps update support;
+`tiny11Coremaker.ps1` removes it.
 
 You can now use it on ANY Windows 11 release (not just a specific build), as well as ANY language or architecture.
 This is made possible thanks to the much-improved scripting capabilities of PowerShell, compared to the older Batch release.
 
-This is a script created to automate the build of a streamlined Windows 11 image, similar to tiny10.
-The script has also been updated to use DISM's recovery compression, resulting in a much smaller final ISO size, and no utilities from external sources. The only other executable included is **oscdimg.exe**, which is provided in the Windows ADK and it is used to create bootable ISO images. 
-Also included is an unattended answer file, which is used to bypass the Microsoft Account on OOBE and to deploy the image with the `/compact` flag.
-It's open-source, **so feel free to add or remove anything you want!** Feedback is also much appreciated.
+The scripts use DISM recovery compression and **oscdimg.exe** from the Windows
+ADK to create the ISO. The included unattended answer file configures compact
+installation and local-account setup. Local-account bypasses may not work on
+newer Windows builds.
 
-Also, for the very first time, **introducing tiny11 core builder**! A more powerful script, designed for a quick and dirty development testbed. Just the bare minimum, none of the fluff. 
-This script generates a significantly reduced Windows 11 image. However, **it's not suitable for regular use due to its lack of serviceability - you can't add languages, updates, or features post-creation**. tiny11 Core is not a full Windows 11 substitute but a rapid testing or development tool, potentially useful for VM environments.
+**tiny11 Core** removes component-store files and Windows recovery support, and
+disables Windows Update and Defender. You cannot add languages, updates or
+features afterward. Use it only for test VMs.
 
 ---
 

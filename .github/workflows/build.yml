@@ -1,0 +1,48 @@
+name: Build and package
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Run tests
+        run: dotnet test .\tests\Tiny11Builder.Core.Tests\Tiny11Builder.Core.Tests.csproj -c Release --logger "trx;LogFileName=tests.trx"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: tests\Tiny11Builder.Core.Tests\TestResults\*.trx
+          if-no-files-found: warn
+
+  package:
+    needs: test
+    runs-on: windows-2025
+    strategy:
+      fail-fast: false
+      matrix:
+        architecture: [x64, arm64]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Build verified release archive
+        run: .\scripts\package.ps1 -Architecture ${{ matrix.architecture }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Tiny11Builder-win-${{ matrix.architecture }}
+          path: |
+            artifacts\release\*.zip
+            artifacts\release\*.sha256
+          if-no-files-found: error
