@@ -50,6 +50,7 @@ try {
         if (!(Test-Path (Join-Path $publish $dependency))) { throw "Missing self-contained dependency: $dependency" }
     }
     Copy-Item -LiteralPath (Join-Path $root 'README.md'), (Join-Path $root 'NOTICE.md') -Destination $publish
+    Copy-Item -LiteralPath (Join-Path $root 'docs') -Destination (Join-Path $publish 'docs') -Recurse
     $cache = if ($env:NUGET_PACKAGES) { $env:NUGET_PACKAGES } else { Join-Path $env:USERPROFILE '.nuget\packages' }
     $licenses = Join-Path $publish 'licenses'
     $deps = Get-Content -LiteralPath (Join-Path $publish 'Tiny11Builder.deps.json') -Raw | ConvertFrom-Json
