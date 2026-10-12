@@ -223,7 +223,7 @@ public sealed class ResumeRefusalTests
         var job = await JobScenarios.InterruptAtCommitAsync(fixture, fixture.Recipe with { SelectedOptions = ["copilot-app", "cleanup"] });
         var original = JobScenarios.OriginalRecipe(job.WorkDirectory);
         var result = await fixture.Engine.ResumeAsync(JobScenarios.JobFile(job),
-            original with { SelectedOptions = [.. original.SelectedOptions.Reverse()] }, null, CancellationToken.None);
+            original with { SelectedOptions = [.. Enumerable.Reverse(original.SelectedOptions)] }, null, CancellationToken.None);
         Assert.True(File.Exists(result.IsoPath));
     }
 
