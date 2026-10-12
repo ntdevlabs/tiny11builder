@@ -49,3 +49,10 @@ Windows. Test your ISO in a VM before installing it.**
 [Attribution and distribution notes](NOTICE.md)
 
 The original PowerShell builders remain in this repository.
+
+## Support the project
+
+[GitHub Sponsors](https://github.com/sponsors/ntdevlabs) ·
+[Patreon](https://www.patreon.com/ntdev) ·
+[PayPal](https://paypal.me/ntdev2) ·
+[Ko-fi](https://ko-fi.com/ntdev)
