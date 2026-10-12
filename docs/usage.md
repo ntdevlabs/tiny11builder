@@ -212,9 +212,22 @@ representative media for each release/channel. Unit tests cover build metadata
 and simulated pipelines across release and newer/Canary-style build numbers;
 the opt-in integration test exercises real media read-only.
 
-The DISM executable must be from a matching or newer Microsoft Windows host or
-ADK. New Canary images can require a preview ADK that Microsoft has not yet
-published. The app stops before modifications if its tools are too old.
+Windows 10, including 22H2, can build Windows 11 images using compatible
+Microsoft deployment tools; the host's release number is not the requirement.
+The app checks the actual servicing providers rather than only the version of
+the `dism.exe` launcher. Known enablement releases share servicing bases:
+23H2 (22631) uses 22621; 25H2 (26200) and 26H2 (26300) use 26100.
+A 26100 tool is therefore not rejected merely because a 26H2 image reports 26300.
+Keep Windows/ADK servicing updates current.
+
+Microsoft's [ADK support list](https://learn.microsoft.com/windows-hardware/get-started/adk-install)
+includes 24H2, 25H2 and 26H2 for the 26100 ADK;
+[DISM supported platforms](https://learn.microsoft.com/windows-hardware/manufacture/desktop/dism-supported-platforms)
+documents using Windows 11 deployment tools on Windows 10.
+Unknown newer/Canary builds are not folded into these families and may still
+require a preview ADK or newer tool providers. The app stops before
+modifications when its tools do not meet that servicing base. It detects
+installed tools automatically; there is no manual tool picker.
 Microsoft also decides which stable/Insider ISOs are available: the app does not
 claim to download unpublished Canary releases or use unofficial UUP mirrors.
 The main Download button resolves the current public release automatically.
@@ -299,7 +312,7 @@ runtime, and includes dependency license notices. It refuses to overwrite an
 existing archive for that version. Extract the entire ZIP into a folder and
 open `Tiny11Builder.exe`; copying just the EXE is not sufficient.
 
-The current app version is **0.1.0-preview.1**. Packages are unsigned previews,
+The current app version is **0.1.1**. Packages are unsigned,
 not Microsoft-certified Windows images. Review [NOTICE.md](../NOTICE.md) before
 public redistribution: this upstream checkout has no standalone license file,
 and this rewrite does not assign a license to someone else's source.

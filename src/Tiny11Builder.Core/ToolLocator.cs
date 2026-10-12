@@ -27,7 +27,7 @@ public static class ToolLocator
     {
         var system = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), @"System32\dism.exe");
         var adk = Path.Combine(AdkDirectory, @"DISM\dism.exe");
-        return File.Exists(adk) && VersionOf(adk) > VersionOf(system) ? adk : system;
+        return File.Exists(adk) && ServicingVersionOf(adk) > ServicingVersionOf(system) ? adk : system;
     }
     public static string FindOscdimg()
     {
@@ -39,6 +39,31 @@ public static class ToolLocator
         var info = FileVersionInfo.GetVersionInfo(path);
         return new(info.FileMajorPart, info.FileMinorPart, info.FileBuildPart, info.FilePrivatePart);
     }
+    public static Version ServicingVersionOf(string dism)
+    {
+        var directory = Path.GetDirectoryName(PathSafety.Full(dism))!;
+        var core = new[] { Path.Combine(directory, "dismcore.dll"), Path.Combine(directory, @"Dism\dismcore.dll") }
+            .FirstOrDefault(File.Exists);
+        var api = Path.Combine(directory, "DismApi.dll");
+        return ResolveServicingVersion(VersionOf(dism), File.Exists(api) ? VersionOf(api) : null,
+            core is null ? null : VersionOf(core));
+    }
+
+    internal static Version ResolveServicingVersion(Version executable, Version? api, Version? core)
+    {
+        // The inbox executable can be an older shim; the servicing engine supplies the DISM banner.
+        // When both providers exist, do not let one newer DLL hide an older servicing dependency.
+        if (core is null) return executable;
+        if (api is null) return core;
+        return api < core ? api : core;
+    }
+
+    internal static int ServicingBase(int build) => build switch
+    {
+        22631 => 22621,                  // 23H2 enables features on the 22H2 core.
+        26200 or 26300 => 26100,         // 25H2 and 26H2 share the 24H2 core.
+        _ => build                      // Never infer compatibility for an unknown Insider build.
+    };
     public static void Validate(string path, string filename)
     {
         path = PathSafety.Full(path);
@@ -67,10 +92,21 @@ public static class ToolLocator
     }
     public static void EnsureServicingVersion(string dism, WindowsImage image)
     {
-        var version = VersionOf(dism);
-        if (version.Build < image.Version.Build)
-            throw new InvalidOperationException($"This image is build {image.Version.Build}, but DISM is build {version.Build}. " +
-                "Select a matching or newer Microsoft DISM from Windows ADK. Insider/Canary images may require a preview ADK or newer Windows host.");
+        EnsureServicingVersion(ServicingVersionOf(dism), image);
+    }
+
+    internal static void EnsureServicingVersion(Version version, WindowsImage image)
+    {
+        var required = ServicingBase(image.Version.Build);
+        var actual = ServicingBase(version.Build);
+        if (version.Major < image.Version.Major || version.Major == image.Version.Major &&
+            (version.Minor < image.Version.Minor || version.Minor == image.Version.Minor && actual < required))
+            throw new InvalidOperationException($"This image is build {image.Version.Build} (servicing base {required}), " +
+                $"but the installed image tools are version {version}. " +
+                "Windows 10 can build Windows 11 images with compatible tools. Install the current Windows ADK Deployment Tools " +
+                "and its servicing updates, then reopen the app; it detects them automatically. " +
+                "Unknown Insider/Canary builds may need a preview ADK or a newer host. " +
+                "Download: https://learn.microsoft.com/windows-hardware/get-started/adk-install");
     }
 
     [StructLayout(LayoutKind.Sequential)]
