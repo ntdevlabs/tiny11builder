@@ -130,14 +130,17 @@ target is deleted. It does not scan the running PC for things to delete.
 
 Component cleanup runs after removals but before enabling .NET Framework 3.5:
 offline feature changes can leave work that completes only when Windows first
-boots. If cleanup returns `0x800F0806` (pending operations), a serviceable
-Tiny11/Custom build keeps that work and reports cleanup as **Skipped** with a
-warning; the image may be larger. Other cleanup errors remain fatal. Pending
-actions are never deleted or reverted to get past this error.
-When that exact pending-state error occurs, selected Edge/WebView2 file removal
-is also skipped for the run, because its WinSxS files may be referenced by
-pending servicing. The report records that those files were kept; it does not
-claim the requested removal succeeded. These warnings survive resume.
+boots. Before invoking cleanup, the builder checks the mounted image for
+pending markers, package states and feature states. If pending work is found,
+serviceable Tiny11/Custom builds skip the DISM cleanup command and warn that
+superseded components may remain, avoiding the `0x800F0806` error. If pending
+work appears after the check and DISM still returns that code, cleanup is
+deferred the same way. Other cleanup errors remain fatal. Pending actions are
+never deleted or reverted to get past this error.
+When pending servicing is detected, selected Edge/WebView2 file removal is
+also skipped for the run, because its WinSxS files may be referenced by that
+work. The report records that those files were kept; it does not claim the
+requested removal succeeded. These warnings survive resume.
 Core and explicit Custom component-payload removal also check pending files,
 package states and feature states immediately before deleting component files,
 even when cleanup is off. If enabling .NET 3.5 leaves pending work, those

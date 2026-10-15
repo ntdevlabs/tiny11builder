@@ -209,6 +209,41 @@ public sealed class PendingOperationsTests
     }
 
     [Fact]
+    public async Task Pending_servicing_is_detected_before_cleanup_is_invoked()
+    {
+        using var fixture = new BuildFixture();
+        const string packages = "Package Identity : RollupFix~31bf3856ad364e35~amd64~~1.0\r\n" +
+            "State : Install Pending\r\nRelease Type : Security Update\r\nInstall Time : \r\n";
+        var engine = Engine(fixture, args => args.Contains("/Get-Packages") ? new(0, packages) : null);
+        var result = await engine.BuildAsync(fixture.Recipe, null, CancellationToken.None);
+
+        Assert.Contains(result.Warnings, warning => warning.StartsWith("Component cleanup was skipped", StringComparison.Ordinal) &&
+            warning.Contains("0x800F0806"));
+        Assert.DoesNotContain(fixture.Events, e => e.Contains("/Cleanup-Image"));
+        Assert.Equal("Skipped", JobScenarios.StageStates(result.WorkDirectory)["Component cleanup"]);
+        Assert.True(File.Exists(result.IsoPath));
+        Assert.Contains("Pending operation before component cleanup: package RollupFix~31bf3856ad364e35~amd64~~1.0: Install Pending",
+            File.ReadAllText(Path.Combine(result.WorkDirectory, "build.log")));
+    }
+
+    [Fact]
+    public async Task Core_refuses_pending_servicing_before_cleanup_or_component_pruning()
+    {
+        using var fixture = new BuildFixture();
+        const string packages = "Package Identity : RollupFix~31bf3856ad364e35~amd64~~1.0\r\n" +
+            "State : Install Pending\r\nRelease Type : Security Update\r\nInstall Time : \r\n";
+        var engine = Engine(fixture, args => args.Contains("/Get-Packages") ? new(0, packages) : null);
+        var failure = await Assert.ThrowsAsync<BuildFailureException>(() =>
+            engine.BuildAsync(CoreRecipe(fixture), null, CancellationToken.None));
+
+        var cause = Assert.IsType<PendingOperationsException>(failure.InnerException);
+        Assert.Equal("package RollupFix~31bf3856ad364e35~amd64~~1.0: Install Pending", Assert.Single(cause.Evidence));
+        Assert.DoesNotContain(fixture.Events, e => e.Contains("/Cleanup-Image") || e is "TrimCore" or "RemoveOriginalFiles");
+        Assert.Contains(fixture.Events, e => e.Contains("/Unmount-Image") && e.Contains("/Discard"));
+        Assert.False(File.Exists(fixture.Recipe.OutputPath));
+    }
+
+    [Fact]
     public async Task A_deferred_cleanup_keeps_every_Edge_file_and_says_so_while_other_original_removals_stay()
     {
         using var fixture = new BuildFixture();
