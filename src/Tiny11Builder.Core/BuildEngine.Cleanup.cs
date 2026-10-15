@@ -5,13 +5,24 @@ public sealed partial class BuildEngine
     /// <summary>CBS_E_PENDING: DISM will not clean the component store while operations are pending (https://learn.microsoft.com/windows-hardware/manufacture/desktop/dism-operating-system-package-servicing-command-line-options).</summary>
     internal const int PendingOperationsExitCode = unchecked((int)0x800F0806);
 
-    private const string PendingSkipReason = "DISM reported pending operations (0x800F0806). They stay pending until first boot and nothing was reverted. " +
+    private const string PendingSkipReason = "DISM has pending operations (0x800F0806); they remain until first boot, and nothing was reverted. " +
         "Superseded components remain, so the image may be larger.";
 
     private static bool RemovesComponentPayloads(BuildRecipe recipe) => SetupInstaller.RequiresLegacy(recipe);
 
     private static async Task CleanComponentsAsync(BuildSession s, CancellationToken token)
     {
+        if (!OperatingSystem.IsWindows())
+            throw new PlatformNotSupportedException("Checking an offline image for pending operations requires Windows.");
+        var scan = await PendingOperations.ScanAsync(s.Dism, s.Mount, token).ConfigureAwait(false);
+        if (scan.Pending.Count > 0)
+        {
+            if (RemovesComponentPayloads(s.Recipe)) throw Refuse(s, scan.Pending, null);
+            foreach (var item in scan.Pending) s.Log("Pending operation before component cleanup: " + item);
+            DeferCleanupForPending(s);
+            return;
+        }
+
         try
         {
             await s.Dism.RunAsync(token, s.Recipe.Flavor == BuildFlavor.Core ?
@@ -23,10 +34,15 @@ public sealed partial class BuildEngine
             token.ThrowIfCancellationRequested();
             if (RemovesComponentPayloads(s.Recipe))
                 throw Refuse(s, [$"DISM exit code {error.ExitCode} (0x{error.ExitCode:X8}) during component cleanup"], error);
-            s.CleanupDeferredForPending = true;
-            s.Warn("Component cleanup was skipped: " + PendingSkipReason);
-            s.Tracking.SkipStage(PendingSkipReason);
+            DeferCleanupForPending(s);
         }
+    }
+
+    private static void DeferCleanupForPending(BuildSession s)
+    {
+        s.CleanupDeferredForPending = true;
+        s.Warn("Component cleanup was skipped: " + PendingSkipReason);
+        s.Tracking.SkipStage(PendingSkipReason);
     }
 
     private static IReadOnlyList<string> OriginalFileOptions(BuildSession s)
