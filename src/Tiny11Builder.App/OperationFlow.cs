@@ -24,6 +24,22 @@ internal sealed record OperationOutcome(OperationKind Kind, bool Cancelled, stri
 
 internal static class OperationOutcomes
 {
+    public static DownloadServiceException? DownloadServiceProblem(Exception error) => error switch
+    {
+        DownloadServiceException download => download,
+        AggregateException { InnerExceptions.Count: > 0 } aggregate => DownloadServiceProblem(aggregate.InnerExceptions[0]),
+        BuildFailureException { InnerException: { } inner } => DownloadServiceProblem(inner),
+        _ => null
+    };
+
+    public static bool RequiresServicingTools(Exception error) => error switch
+    {
+        ServicingToolsRequiredException => true,
+        AggregateException { InnerExceptions.Count: > 0 } aggregate => RequiresServicingTools(aggregate.InnerExceptions[0]),
+        BuildFailureException { InnerException: { } inner } => RequiresServicingTools(inner),
+        _ => false
+    };
+
     // The Win32 code for "the user declined the elevation prompt".
     private const int UserDeclinedElevation = 1223;
 

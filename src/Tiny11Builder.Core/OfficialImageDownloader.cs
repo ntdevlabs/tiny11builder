@@ -12,15 +12,25 @@ public sealed record DownloadProgress(long Bytes, long? Total, double BytesPerSe
     public double? Percent => Total > 0 ? Bytes * 100d / Total : null;
 }
 
-public sealed class OfficialImageDownloader(HttpClient client)
+public sealed class OfficialImageDownloader
 {
     public const string DownloadPage = "https://www.microsoft.com/software-download/windows11";
     public const string ArmDownloadPage = "https://www.microsoft.com/software-download/windows11arm64";
     private const long MaxSize = 32L * 1024 * 1024 * 1024;
     private sealed record PartialInfo(string Resource, string? ETag, long? Length);
+    private readonly HttpClient client;
+    private readonly Func<TimeSpan, CancellationToken, Task>? delay;
 
-    public static HttpClient CreateClient() => new(new HttpClientHandler { AllowAutoRedirect = false })
-    { Timeout = TimeSpan.FromHours(4) };
+    public OfficialImageDownloader(HttpClient client) : this(client, null) { }
+
+    // Tests replace the wait between attempts so retries never sleep.
+    internal OfficialImageDownloader(HttpClient client, Func<TimeSpan, CancellationToken, Task>? delay)
+    {
+        this.client = client;
+        this.delay = delay;
+    }
+
+    public static HttpClient CreateClient() => OfficialTransport.CreateClient(TimeSpan.FromHours(4));
 
     public static Uri ValidateUrl(string value)
     {
@@ -41,8 +51,9 @@ public sealed class OfficialImageDownloader(HttpClient client)
         return normalized;
     }
 
+    /// <param name="status">Receives a message whenever a connection problem makes the download retry, such as a switch to TLS 1.2.</param>
     public async Task<DownloadResult> DownloadAsync(string url, string destination, string? expectedHash,
-        IProgress<DownloadProgress>? progress, CancellationToken token)
+        IProgress<DownloadProgress>? progress, CancellationToken token, IProgress<string>? status = null)
     {
         var uri = ValidateUrl(url);
         expectedHash = ValidateHash(expectedHash);
@@ -65,7 +76,8 @@ public sealed class OfficialImageDownloader(HttpClient client)
         }
         var offset = saved?.ETag is not null && !saved.ETag.StartsWith("W/", StringComparison.OrdinalIgnoreCase) ?
             new FileInfo(part).Length : 0;
-        using var response = await SendAsync(uri, offset, saved?.ETag, token).ConfigureAwait(false);
+        var transport = new OfficialTransport(status, delay, DownloadPage);
+        using var response = await SendAsync(uri, offset, saved?.ETag, transport, token).ConfigureAwait(false);
         if (response.StatusCode == HttpStatusCode.RequestedRangeNotSatisfiable &&
             response.Content.Headers.ContentRange?.Length == offset && offset > 0)
             return await FinishAsync(part, destination, metadata, expectedHash, token).ConfigureAwait(false);
@@ -95,7 +107,13 @@ public sealed class OfficialImageDownloader(HttpClient client)
             long readTotal = offset;
             while (true)
             {
-                var count = await content.ReadAsync(buffer, token).ConfigureAwait(false);
+                int count;
+                try { count = await content.ReadAsync(buffer, token).ConfigureAwait(false); }
+                catch (Exception error) when (OfficialTransport.IsInterruption(error, token))
+                {
+                    throw transport.Unavailable("The connection to Microsoft was interrupted. The partial download is kept: retry to resume it, " +
+                        "use a local ISO, or open Microsoft's official download page.", error);
+                }
                 if (count == 0) break;
                 readTotal += count;
                 if (readTotal > MaxSize || (total is long limit && readTotal > limit))
@@ -105,31 +123,43 @@ public sealed class OfficialImageDownloader(HttpClient client)
             }
             await file.FlushAsync(token).ConfigureAwait(false);
             if (total is long expected && readTotal != expected)
-                throw new IOException("The download was incomplete. Retry to resume the partial file.");
+                throw transport.Unavailable("The download was incomplete. Retry to resume the partial file, use a local ISO, " +
+                    "or open Microsoft's official download page.");
         }
         return await FinishAsync(part, destination, metadata, expectedHash, token).ConfigureAwait(false);
     }
 
-    private async Task<HttpResponseMessage> SendAsync(Uri uri, long offset, string? etag, CancellationToken token)
+    private async Task<HttpResponseMessage> SendAsync(Uri uri, long offset, string? etag, OfficialTransport transport, CancellationToken token)
     {
         for (var hop = 0; hop < 6; hop++)
         {
-            using var request = new HttpRequestMessage(HttpMethod.Get, uri);
-            if (offset > 0)
+            var current = uri;
+            var response = await transport.RunAsync(current, async (tls12, attempt) =>
             {
-                request.Headers.Range = new RangeHeaderValue(offset, null);
-                request.Headers.IfRange = new RangeConditionHeaderValue(EntityTagHeaderValue.Parse(etag!));
-            }
-            var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false);
-            if (response.StatusCode is not (HttpStatusCode.MovedPermanently or HttpStatusCode.Redirect or
-                HttpStatusCode.TemporaryRedirect or HttpStatusCode.PermanentRedirect)) return response;
+                using var request = OfficialTransport.Request(current, tls12);
+                if (offset > 0)
+                {
+                    request.Headers.Range = new RangeHeaderValue(offset, null);
+                    request.Headers.IfRange = new RangeConditionHeaderValue(EntityTagHeaderValue.Parse(etag!));
+                }
+                var result = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, attempt).ConfigureAwait(false);
+                if (result.IsSuccessStatusCode || IsRedirect(result.StatusCode) || result.StatusCode == HttpStatusCode.RequestedRangeNotSatisfiable)
+                    return result;
+                var failure = OfficialTransport.StatusError(result);
+                result.Dispose();
+                throw failure;
+            }, token).ConfigureAwait(false);
+            if (!IsRedirect(response.StatusCode)) return response;
             var next = response.Headers.Location;
             response.Dispose();
-            if (next is null) throw new IOException("Microsoft returned a redirect without a destination.");
+            if (next is null) throw transport.Unavailable("Microsoft returned a redirect without a destination.");
             uri = ValidateUrl((next.IsAbsoluteUri ? next : new Uri(uri, next)).AbsoluteUri);
         }
-        throw new IOException("Too many download redirects.");
+        throw transport.Unavailable("Too many download redirects.");
     }
+
+    private static bool IsRedirect(HttpStatusCode code) => code is HttpStatusCode.MovedPermanently or HttpStatusCode.Redirect or
+        HttpStatusCode.TemporaryRedirect or HttpStatusCode.PermanentRedirect;
 
     private static async Task<DownloadResult> FinishAsync(string part, string destination, string metadata,
         string? expectedHash, CancellationToken token)

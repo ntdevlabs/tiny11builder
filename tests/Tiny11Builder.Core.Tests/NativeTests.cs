@@ -76,6 +76,37 @@ public sealed class NativeTests(Xunit.Abstractions.ITestOutputHelper output)
         Assert.Throws<InvalidDataException>(() => new ImageOperations().RemoveOriginalFiles(fixture.Root, "x64", ["edge-files"], _ => { }));
     }
 
+    [Fact]
+    public void Search_policy_avoids_the_protected_user_preference_and_verifies_the_supported_machine_policy()
+    {
+        using var fixture = new BuildFixture();
+        var mount = CreateOwnedMount(fixture.Root);
+        foreach (var relative in new[]
+        {
+            @"Windows\System32\config\SYSTEM", @"Windows\System32\config\SOFTWARE", @"Users\Default\NTUSER.DAT"
+        })
+        {
+            var file = Path.Combine(mount, relative);
+            Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+            if (File.Exists(file)) File.Delete(file);
+            SaveFixtureHive(file);
+        }
+        var userFile = Path.Combine(mount, @"Users\Default\NTUSER.DAT");
+        using (var user = OfflineRegistry.Load(userFile))
+        using (var protectedPreference = OfflineRegistry.OpenWriteKey(user.Root,
+            @"Software\Microsoft\Windows\CurrentVersion\SearchSettings"))
+            protectedPreference.SetValue("IsDynamicSearchBoxEnabled", 1);
+        var messages = new List<string>();
+        new OfflineRegistry().Apply(mount, new BuildRecipe { SelectedOptions = ["search"] }, messages.Add);
+        using (var software = OfflineRegistry.Load(Path.Combine(mount, @"Windows\System32\config\SOFTWARE"), false))
+        using (var policy = software.Root.OpenSubKey(@"Policies\Microsoft\Windows\Windows Search"))
+            Assert.Equal(0, policy!.GetValue("EnableDynamicContentInWSB"));
+        using (var user = OfflineRegistry.Load(userFile, false))
+        using (var preference = user.Root.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\SearchSettings"))
+            Assert.Equal(1, preference!.GetValue("IsDynamicSearchBoxEnabled"));
+        Assert.DoesNotContain(PolicyCatalog.ForOption("search"), value => value.Name == "IsDynamicSearchBoxEnabled");
+        Assert.Empty(Directory.EnumerateFiles(Path.GetDirectoryName(mount)!, "*.hive.json"));
+    }
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

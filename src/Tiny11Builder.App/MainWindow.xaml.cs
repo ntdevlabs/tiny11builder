@@ -35,7 +35,8 @@ public sealed partial class MainWindow : Window
     private bool completed;
     private bool coreAcknowledged;
     private bool modalOpen;
-    private enum NoticeAction { None, OpenLogs, CopyDetails }
+    private enum NoticeAction { None, OpenLogs, CopyDetails, OpenTools, OpenOfficialDownload }
+    private string officialDownloadPage = OfficialImageDownloader.DownloadPage;
     // The run RunOperation is executing and the cancel prompt open for it; both are null when nothing is happening.
     private OperationRun? active;
     private CancellationFlow? cancelFlow;
@@ -356,7 +357,18 @@ public sealed partial class MainWindow : Window
             {
                 var outcome = Describe(kind, error);
                 operation.Record(OperationEnd.From(outcome));
-                try { ShowStopped(kind, outcome); }
+                try
+                {
+                    ShowStopped(kind, outcome);
+                    if (OperationOutcomes.RequiresServicingTools(error))
+                        ShowNotice(outcome.Title, outcome.FullMessage,
+                            InfoBarSeverity.Error, NoticeAction.OpenTools, outcome.Details);
+                    else if (OperationOutcomes.DownloadServiceProblem(error) is { } download)
+                    {
+                        officialDownloadPage = download.OfficialPage;
+                        ShowNotice(outcome.Title, download.Message, InfoBarSeverity.Error, NoticeAction.OpenOfficialDownload, outcome.Details);
+                    }
+                }
                 catch (Exception display)
                 {
                     try { ShowNotice("The operation did not complete.", ErrorText.Reason(error) + " " + display.Message, InfoBarSeverity.Error); }
@@ -464,14 +476,36 @@ public sealed partial class MainWindow : Window
         noticeAction = action;
         noticeDetails = details ?? "";
         NoticeButton.Visibility = action == NoticeAction.None ? Visibility.Collapsed : Visibility.Visible;
-        NoticeButton.Content = action == NoticeAction.OpenLogs ? "Open logs" : "Copy details";
-        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(NoticeButton, action == NoticeAction.OpenLogs ? "Open logs folder" : "Copy error details");
+        var label = action switch
+        {
+            NoticeAction.OpenLogs => "Open logs", NoticeAction.OpenTools => "Get image tools",
+            NoticeAction.OpenOfficialDownload => "Open Microsoft download page", _ => "Copy details"
+        };
+        NoticeButton.Content = label;
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(NoticeButton, label);
         Notice.IsOpen = true;
     }
 
     private void OnNoticeAction(object sender, RoutedEventArgs args)
     {
         if (noticeAction == NoticeAction.OpenLogs) { OnOpenLogs(sender, args); return; }
+        if (noticeAction is NoticeAction.OpenTools or NoticeAction.OpenOfficialDownload)
+        {
+            var page = noticeAction == NoticeAction.OpenTools ? ServicingToolsRequiredException.DownloadPage : officialDownloadPage;
+            try
+            {
+                if (page is not (ServicingToolsRequiredException.DownloadPage or OfficialImageDownloader.DownloadPage or OfficialImageDownloader.ArmDownloadPage))
+                    throw new InvalidDataException("The suggested download page is not an approved Microsoft page.");
+                using var browser = Process.Start(new ProcessStartInfo(page) { UseShellExecute = true });
+                if (browser is null) throw new IOException("The browser could not open Microsoft's image-tools page.");
+            }
+            catch (Exception error) when (error is IOException or InvalidDataException or System.ComponentModel.Win32Exception or InvalidOperationException)
+            {
+                ShowNotice("Could not open the download page.", page + "\n" +
+                    ErrorText.Reason(error), InfoBarSeverity.Error, NoticeAction.CopyDetails, error.ToString());
+            }
+            return;
+        }
         if (noticeAction != NoticeAction.CopyDetails || noticeDetails.Length == 0) return;
         NoticeButton.Content = CopyToClipboard(noticeDetails) ? "Copied" : "Could not copy";
     }
@@ -680,7 +714,8 @@ public sealed partial class MainWindow : Window
         BeginDownloadText(p => FormatDownload(p, ""));
         try
         {
-            var downloaded = await new OfficialImageDownloader(client).DownloadAsync(uri.AbsoluteUri, path, hash, downloadUpdates, token);
+            var downloaded = await new OfficialImageDownloader(client).DownloadAsync(uri.AbsoluteUri, path, hash, downloadUpdates, token,
+                status: new UiProgress<string>(text => DispatcherQueue.TryEnqueue(() => DownloadStatus.Text = text)));
             DrainDownload();
             SourcePathBox.Text = downloaded.Path;
             DownloadStatus.Text = $"SHA-256: {downloaded.Sha256}";
@@ -725,7 +760,7 @@ public sealed partial class MainWindow : Window
                 using var downloadClient = OfficialImageDownloader.CreateClient();
                 BeginDownloadText(p => FormatDownload(p, $"{media.Language} · "));
                 var download = await new OfficialImageDownloader(downloadClient).DownloadAsync(media.Url.AbsoluteUri,
-                    path, media.Sha256, downloadUpdates, token);
+                    path, media.Sha256, downloadUpdates, token, status: catalogProgress);
                 DrainDownload();
                 await File.WriteAllTextAsync(path + ".sha256", download.Sha256, token);
                 DownloadStatus.Text = $"Downloaded {media.Description}. SHA-256: {download.Sha256}" +
@@ -741,6 +776,7 @@ public sealed partial class MainWindow : Window
     {
         servicingTool = ToolLocator.FindDism();
         using var client = OfficialImageDownloader.CreateClient();
+        client.Timeout = TimeSpan.FromSeconds(60);
         isoTool = await new OscdimgAcquirer(client).EnsureAsync(Path.Combine(dataDirectory, "tools"),
             new UiProgress<string>(text => DispatcherQueue.TryEnqueue(() => ToolStatus.Text = text)), token);
         ToolStatus.Text = "Image and ISO tools ready.";
@@ -842,7 +878,12 @@ public sealed partial class MainWindow : Window
             ExpertConsent.IsChecked = true;
             FilterInventory();
             UpdateCounts();
-            ShowNotice("Component list loaded.", "Existing selections were preserved. Check the individual items you want to remove or disable.");
+            if (!ToolLocator.SupportsServicing(recipe.DismPath, image!))
+                ShowNotice("Component list loaded read-only.", "The installed tools could list this image, but building it requires newer " +
+                    "Windows ADK Deployment Tools. Install them and reopen the app before building.",
+                    InfoBarSeverity.Warning, NoticeAction.OpenTools);
+            else
+                ShowNotice("Component list loaded.", "Existing selections were preserved. Check the individual items you want to remove or disable.");
         });
     }
 
@@ -1008,7 +1049,7 @@ public sealed partial class MainWindow : Window
         var warnings = built.Warnings;
         // A cancel prompt open for this run reports the warning too, instead of calling the end clean.
         if (warnings.Count > 0)
-            active?.NoteWarning("The ISO was saved, but some follow-up steps reported problems. See the warnings on the page.");
+            active?.NoteWarning("The ISO was saved with warnings. See the warnings on the page.");
         ResultWarnings.IsOpen = warnings.Count > 0;
         if (warnings.Count > 0)
             ResultWarnings.Message = string.Join("\n", warnings.Take(4).Select(w => "• " + ErrorText.Summary(w, 200))) +
@@ -1028,7 +1069,7 @@ public sealed partial class MainWindow : Window
         BuildBar.IsIndeterminate = false;
         BuildBar.Value = 100;
         CurrentMessage.Text = warnings.Count > 0 ?
-            "The ISO was saved, but some follow-up steps reported problems. See the warnings below." :
+            "The ISO was saved with warnings. See the skipped work and other details below." :
             "The ISO and build report have been saved. Test the ISO in a VM before use.";
         stoppedRun = null;
         stoppedHasCheckpoint = false;

@@ -54,7 +54,6 @@ public static class PolicyCatalog
                 User(@"Software\Policies\Microsoft\Windows\Explorer", "DisableSearchBoxSuggestions", 1);
                 Machine(@"Policies\Microsoft\Windows\Windows Search", "AllowCloudSearch", 0);
                 Machine(@"Policies\Microsoft\Windows\Windows Search", "EnableDynamicContentInWSB", 0);
-                User(@"Software\Microsoft\Windows\CurrentVersion\SearchSettings", "IsDynamicSearchBoxEnabled", 0);
                 break;
             case "onedrive":
                 Machine(@"Policies\Microsoft\Windows\OneDrive", "DisableFileSyncNGSC", 1);

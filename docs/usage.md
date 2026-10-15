@@ -36,6 +36,12 @@ The six-step wizard provides:
   English with an explicit status message. No URL or save dialog is required;
   downloads go into the selected workspace's `downloads` directory. Microsoft
   availability/region blocks are reported rather than bypassed.
+  Transient connection resets and busy-server responses are retried a bounded
+  number of times with visible status. After a secure-handshake reset the app
+  can retry with TLS 1.2, still using Windows certificate validation. Certificate,
+  DNS, proxy and permission failures are not bypassed. The failure notice links
+  to Microsoft's download page; a local ISO remains an option. Interrupted
+  ISO body transfers retain their partial file for retry/resume.
 - Official Microsoft ISO downloads with speed/progress, strong-ETag resumable
   partial files, ISO structure checks, and optional verification against a
   published SHA-256. Only Microsoft's ISO hosts are accepted, including every
@@ -122,6 +128,22 @@ transactions into the image. Other I/O/access errors remain failures.
 Unknown symlinks and junctions are refused before a cleanup
 target is deleted. It does not scan the running PC for things to delete.
 
+Component cleanup runs after removals but before enabling .NET Framework 3.5:
+offline feature changes can leave work that completes only when Windows first
+boots. If cleanup returns `0x800F0806` (pending operations), a serviceable
+Tiny11/Custom build keeps that work and reports cleanup as **Skipped** with a
+warning; the image may be larger. Other cleanup errors remain fatal. Pending
+actions are never deleted or reverted to get past this error.
+When that exact pending-state error occurs, selected Edge/WebView2 file removal
+is also skipped for the run, because its WinSxS files may be referenced by
+pending servicing. The report records that those files were kept; it does not
+claim the requested removal succeeded. These warnings survive resume.
+Core and explicit Custom component-payload removal also check pending files,
+package states and feature states immediately before deleting component files,
+even when cleanup is off. If enabling .NET 3.5 leaves pending work, those
+destructive builds stop with an explanation rather than removing files needed
+at first boot. Build without .NET 3.5 or use a serviceable image in that case.
+
 Both Standard and Turbo delete offline entries through backup/restore handles without changing
 their ACLs or clearing read-only attributes shared by remaining hard links.
 Both handle long image paths
@@ -181,6 +203,12 @@ hosts can reject it even through the native API. Host protection services are
 not disabled. The policy applies to Widgets and its taskbar content; support
 still varies by Windows edition.
 
+Search highlights use the machine policy
+`SOFTWARE\Policies\Microsoft\Windows\Windows Search\EnableDynamicContentInWSB=0`.
+The protected default-user `SearchSettings\IsDynamicSearchBoxEnabled`
+preference is not edited. Required policy writes are still verified; access
+errors are not silently ignored and no host registry protection is disabled.
+
 Core payload deletion uses extended-length Windows paths so long
 WinSxS filenames do not fail at the legacy 260-character limit. Symbolic-link
 and junction restrictions are unchanged.
@@ -205,6 +233,10 @@ hard-coded maximum build number. Image architecture, edition and version are
 read from DISM, not inferred from the ISO filename. Package/capability/feature
 identities come from the mounted image, so missing items are logged as *not
 present*, rather than guessed.
+Edition names are decoded using the OEM code page Windows image tools write,
+with UTF byte-order marks recognized explicitly. Cyrillic text is not repaired
+by replacing fonts or guessing edition names. Invalid encoded output fails
+explicitly rather than silently substituting characters.
 
 Acceptance is **not a certification that every build and every custom removal
 combination boots**. This new implementation needs VM validation against
@@ -228,6 +260,38 @@ Unknown newer/Canary builds are not folded into these families and may still
 require a preview ADK or newer tool providers. The app stops before
 modifications when its tools do not meet that servicing base. It detects
 installed tools automatically; there is no manual tool picker.
+
+### Windows 10 reports image tools 10.0.19041
+
+For image build **26300**, tools **10.0.19041.3636** are not the same case as
+the earlier false rejection of 26100 tools. Windows 10 can stay installed,
+but its inbox servicing tools are older than this image's servicing base.
+
+1. Open the [Microsoft ADK page](https://learn.microsoft.com/windows-hardware/get-started/adk-install)
+   using **Get image tools** in the app's error notice.
+2. Install the ADK that Microsoft lists for Windows 11 24H2/25H2/26H2
+   (26100 family), selecting **Deployment Tools**, and apply its servicing
+   updates. The separate Windows PE add-on is not required to modify the
+   `boot.wim` already present in a complete ISO.
+3. Close and reopen Tiny11 Builder so it detects the installed tools, then
+   start the build again with your original ISO.
+
+Do not replace files in `Windows\System32`, download a standalone DISM EXE,
+or remove pending-operation files. The app needs a complete compatible
+toolset, not a renamed launcher.
+
+Advanced component inventory is read-only and checks the actual listing
+operations instead of imposing the writable-build version gate or output
+space requirements. If the installed tools cannot query a newer image,
+the app stops the inventory, discards its owned mount and offers **Get image
+tools**, linking to Microsoft's ADK page. Listing an image successfully is
+not permission to modify it with older tools: build and resume preflight still
+require compatible servicing providers.
+
+A saved image's hash, edition, architecture, installation type and complete
+version remain verified on resume. Its localized display name is not treated
+as an identity: fixing incorrectly decoded text does not invalidate unchanged
+saved image bytes.
 Microsoft also decides which stable/Insider ISOs are available: the app does not
 claim to download unpublished Canary releases or use unofficial UUP mirrors.
 The main Download button resolves the current public release automatically.
@@ -312,7 +376,7 @@ runtime, and includes dependency license notices. It refuses to overwrite an
 existing archive for that version. Extract the entire ZIP into a folder and
 open `Tiny11Builder.exe`; copying just the EXE is not sufficient.
 
-The current app version is **0.1.1**. Packages are unsigned,
+The current app version is **0.1.2**. Packages are unsigned,
 not Microsoft-certified Windows images. Review [NOTICE.md](../NOTICE.md) before
 public redistribution: this upstream checkout has no standalone license file,
 and this rewrite does not assign a license to someone else's source.

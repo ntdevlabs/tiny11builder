@@ -36,12 +36,31 @@ public sealed class ServicingVersionTests
     [InlineData(29691, 99999)]
     public void Older_servicing_families_and_unknown_newer_builds_are_not_silently_allowed(int tool, int build)
     {
-        var error = Assert.Throws<InvalidOperationException>(() =>
+        var error = Assert.Throws<ServicingToolsRequiredException>(() =>
             ToolLocator.EnsureServicingVersion(new Version(10, 0, tool, 1000), Image(build)));
         Assert.Contains($"build {build}", error.Message);
         Assert.Contains("detects them automatically", error.Message);
         Assert.Contains("Windows 10", error.Message);
         Assert.DoesNotContain("Select a matching", error.Message);
+    }
+
+    [Theory]
+    [InlineData(19041, 3636)]
+    [InlineData(22621, 1)]
+    public void Reported_old_tools_get_complete_instructions_without_requiring_a_Windows_upgrade(int build, int revision)
+    {
+        var installed = new Version(10, 0, build, revision);
+        var error = Assert.Throws<ServicingToolsRequiredException>(() =>
+            ToolLocator.EnsureServicingVersion(installed, Image(26300)));
+        Assert.Contains(installed.ToString(), error.Message);
+        Assert.Contains("build 26300", error.Message);
+        Assert.Contains("base 26100", error.Message);
+        Assert.Contains("Deployment Tools", error.Message);
+        Assert.Contains("Windows 10 can stay installed", error.Message);
+        Assert.True(error.Message.Length <= 280, error.Message);
+        Assert.False(ToolLocator.SupportsServicing(installed, Image(26300)));
+        // Installing compatible tools, without changing the host OS, is the supported remediation.
+        ToolLocator.EnsureServicingVersion(new Version(10, 0, 26100, 9457), Image(26300));
     }
 
     [Fact]
@@ -54,7 +73,7 @@ public sealed class ServicingVersionTests
         var older = new Version(10, 0, 26100, 6584);
         Assert.Equal(older, ToolLocator.ResolveServicingVersion(wrapper, api, older));
         Assert.Equal(older, ToolLocator.ResolveServicingVersion(wrapper, older, api));
-        Assert.Throws<InvalidOperationException>(() => ToolLocator.EnsureServicingVersion(new Version(6, 3, 99999), Image(26300)));
+        Assert.Throws<ServicingToolsRequiredException>(() => ToolLocator.EnsureServicingVersion(new Version(6, 3, 99999), Image(26300)));
     }
 
     [Fact]
@@ -84,7 +103,7 @@ public sealed class ServicingVersionTests
             Assert.Equal(26300, image.Version.Build);
             ToolLocator.EnsureServicingVersion(tool, image);
             Assert.Equal(26300, image.Version.Build);
-            Assert.Throws<InvalidOperationException>(() => ToolLocator.EnsureServicingVersion(
+            Assert.Throws<ServicingToolsRequiredException>(() => ToolLocator.EnsureServicingVersion(
                 new Version(10, 0, 22621, 1), image));
         }
         Assert.Equal(originalTime, File.GetLastWriteTimeUtc(iso));

@@ -55,6 +55,9 @@ internal sealed record CheckpointReport
     public IReadOnlyList<ImageCleanupResult> RedundantData { get; init; } = [];
     public IReadOnlyList<FeatureRemovalVerification> Features { get; init; } = [];
     public IReadOnlyList<RemovalVerification> Capabilities { get; init; } = [];
+
+    /// <summary>Problems found before the commit (for example a skipped component cleanup). A resume reports them again.</summary>
+    public IReadOnlyList<string> Warnings { get; init; } = [];
 }
 
 internal sealed record ResumeCheckpoint

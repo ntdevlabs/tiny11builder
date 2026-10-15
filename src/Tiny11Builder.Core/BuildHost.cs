@@ -6,6 +6,7 @@ public interface IBuildHost
 {
     void ValidateTools(BuildRecipe recipe);
     void ValidateImage(BuildRecipe recipe, WindowsImage image);
+    void ValidateInventory(BuildRecipe recipe, WindowsImage image) => ValidateImage(recipe, image);
 
     /// <summary>
     /// Checks a host before a saved build is resumed. The default keeps older hosts working; <see cref="BuildHost"/>
@@ -34,6 +35,17 @@ public sealed class BuildHost : IBuildHost
         if (drive.AvailableFreeSpace < required)
             throw new IOException($"The workspace needs at least {required / (1024 * 1024 * 1024)} GiB free for this image.");
         ValidateOutputDrive(recipe, drive);
+    }
+
+    public void ValidateInventory(BuildRecipe recipe, WindowsImage image)
+    {
+        image.Validate();
+        var drive = new DriveInfo(Path.GetPathRoot(recipe.WorkspacePath)!);
+        RequireNtfs(drive);
+        // Inventory reads a WIM in place; ESD conversion needs room for one working image.
+        var required = image.Size + (3L << 30);
+        if (drive.AvailableFreeSpace < required)
+            throw new IOException($"The workspace needs at least {(required + (1L << 30) - 1) >> 30} GiB free to list this image.");
     }
 
     public void ValidateResume(BuildRecipe recipe, WindowsImage image, long requiredWorkspaceBytes)

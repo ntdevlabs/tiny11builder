@@ -29,6 +29,7 @@ public sealed partial class BuildEngine
         public string? ResumedFrom { get; init; }
         public bool UsedOptimizedMount { get; set; }
         public bool SetupPending { get; set; }
+        public bool CleanupDeferredForPending { get; set; }
         public bool CompressPending { get; set; } = true;
         public string StageName { get; set; } = "Prepare";
         public bool Mounted { get; set; }
@@ -51,6 +52,11 @@ public sealed partial class BuildEngine
         public void AddWarning(string message)
         {
             lock (warningGate) Warnings.Add(message);
+        }
+
+        public string[] WarningSnapshot()
+        {
+            lock (warningGate) return [.. Warnings];
         }
 
         public void Stage(string next, string description, CancellationToken token)
@@ -114,7 +120,8 @@ public sealed partial class BuildEngine
             Report = new()
             {
                 UsedOptimizedMount = s.UsedOptimizedMount, Execution = s.Execution, SetupMedia = s.StagingResult,
-                RedundantData = s.Cleanup, Features = s.Features.ToArray(), Capabilities = s.Capabilities.ToArray()
+                RedundantData = s.Cleanup, Features = s.Features.ToArray(), Capabilities = s.Capabilities.ToArray(),
+                Warnings = s.WarningSnapshot()
             },
             ActiveMilliseconds = s.TotalActive.TotalMilliseconds,
             Operations = s.Tracking.SnapshotCompleting("stage:Commit", "checkpoint:committed")

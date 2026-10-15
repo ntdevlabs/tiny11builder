@@ -41,7 +41,7 @@ public sealed partial class BuildEngine
         var dism = new DismClient(recipe.DismPath, runner);
         var sourceWim = InstallationMedia.ImageFile(media.RootPath);
         var image = await dism.GetImageAsync(sourceWim, recipe.ImageIndex, token).ConfigureAwait(false);
-        host.ValidateImage(recipe with { OutputPath = "" }, image);
+        host.ValidateInventory(recipe with { OutputPath = "" }, image);
         // A read-only inventory never uses lazy mounting: it has no 87/4350 fallback, and a failed probe costs minutes.
         var execution = BuildExecutionPlan.Create(recipe, Environment.ProcessorCount, allowOptimizedMount: false);
         using var job = BuildJob.Create(recipe.WorkspacePath, "inventory", execution.BufferedLog);
@@ -82,6 +82,10 @@ public sealed partial class BuildEngine
         }
         catch (Exception error)
         {
+            if (error is DismCommandException && OperatingSystem.IsWindows() &&
+                File.Exists(recipe.DismPath) && !ToolLocator.SupportsServicing(recipe.DismPath, image))
+                error = new ServicingToolsRequiredException("The installed image tools could not read this image's components. " +
+                    "Install current Windows ADK Deployment Tools and servicing updates, then reopen the app and retry.", error);
             // Recovery first: nothing fallible (log, flush, job marker) may run before an owned mount is discarded.
             var cancelled = BuildFailureException.IsCancellationCause(error);
             var secondary = new List<Exception>();
@@ -174,8 +178,8 @@ public sealed partial class BuildEngine
                 ("Mount", "Mount working image"), ("Inventory", "Validate individual image actions"),
                 ("Custom servicing", "Apply individual servicing actions"), ("Remove apps", "Remove selected apps"),
                 ("Optional features", "Remove optional features and capabilities"),
-                (".NET 3.5", "Include .NET Framework 3.5"), ("Windows settings", "Apply Windows settings"),
-                ("Component cleanup", "Clean superseded component files"), ("Advanced payloads", "Remove selected payload files"),
+                ("Component cleanup", "Clean superseded component files"), (".NET 3.5", "Include .NET Framework 3.5"),
+                ("Windows settings", "Apply Windows settings"), ("Advanced payloads", "Remove selected payload files"),
                 ("Core pruning", "Trim Core component payloads"), ("Redundant data", "Remove redundant offline data"),
                 ("Commit", "Save image changes"),
                 ("Setup image", "Apply Windows Setup settings"), ("Compress", "Compress the final image"),
@@ -358,6 +362,13 @@ public sealed partial class BuildEngine
                 foreach (var capability in removalCapabilities)
                     await tracking.RunAsync("capability:" + capability.Identity, "Optional features", $"Remove capability: {capability.Identity}",
                         () => dism.RunAsync(token, $"/Image:{mount}", "/Remove-Capability", $"/CapabilityName:{capability.Identity}", "/NoRestart")).ConfigureAwait(false);
+            // DISM refuses cleanup while operations are pending, and .NET 3.5 leaves some until first boot.
+            if (recipe.SelectedOptions.Contains("cleanup") || recipe.Flavor == BuildFlavor.Core)
+            {
+                Stage("Component cleanup", recipe.Flavor == BuildFlavor.Core ?
+                    "Cleaning and resetting the component base before Core payload pruning." : "Cleaning superseded components without ResetBase.");
+                await CleanComponentsAsync(session, token).ConfigureAwait(false);
+            }
             if (recipe.EnableNetFx3)
             {
                 Stage(".NET 3.5", "Enabling .NET 3.5 from matching source media, without Windows Update.");
@@ -374,16 +385,9 @@ public sealed partial class BuildEngine
                     return Task.CompletedTask;
                 }).ConfigureAwait(false);
             File.WriteAllText(Path.Combine(staging, "autounattend.xml"), UnattendBuilder.Create(image, recipe));
-            if (recipe.SelectedOptions.Contains("cleanup") || recipe.Flavor == BuildFlavor.Core)
-            {
-                Stage("Component cleanup", recipe.Flavor == BuildFlavor.Core ?
-                    "Cleaning and resetting the component base before Core payload pruning." : "Cleaning superseded components without ResetBase.");
-                await dism.RunAsync(token, recipe.Flavor == BuildFlavor.Core ?
-                    [$"/Image:{mount}", "/Cleanup-Image", "/StartComponentCleanup", "/ResetBase"] :
-                    [$"/Image:{mount}", "/Cleanup-Image", "/StartComponentCleanup"]).ConfigureAwait(false);
-            }
             Stage("Advanced payloads", "Applying original-builder and expert payload removals to the offline copy only.");
-            imageOperations.RemoveOriginalFiles(mount, image.Architecture, recipe.SelectedOptions, Log, recipe.TurboMode);
+            if (RemovesComponentPayloads(recipe)) await EnsureNoPendingOperationsAsync(session, token).ConfigureAwait(false);
+            imageOperations.RemoveOriginalFiles(mount, image.Architecture, OriginalFileOptions(session), Log, recipe.TurboMode);
             if (recipe.Flavor == BuildFlavor.Core)
             {
                 Stage("Core pruning", "Trimming Core component payloads and recovery files.");

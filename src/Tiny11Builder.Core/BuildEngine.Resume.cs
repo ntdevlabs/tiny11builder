@@ -64,6 +64,8 @@ public sealed partial class BuildEngine
         };
         session.Features.AddRange(checkpoint.Report.Features);
         session.Capabilities.AddRange(checkpoint.Report.Capabilities);
+        // Warnings found before the commit (such as a skipped component cleanup) are part of this build's outcome.
+        foreach (var warning in checkpoint.Report.Warnings ?? []) session.AddWarning(warning);
         try
         {
             job.State("running", BuildProgressText.ResumeCheckStage);
@@ -241,9 +243,9 @@ public sealed partial class BuildEngine
     {
         if (images.Count != 1) throw new InvalidDataException($"{what} must contain exactly one image but contains {images.Count}.");
         var actual = images[0];
-        if (actual.Architecture != expected.Architecture || actual.Version.Build != expected.Version.Build ||
+        // File hashes already verify the saved bytes. Display names can change when a console-decoding bug is fixed.
+        if (actual.Architecture != expected.Architecture || actual.Version != expected.Version ||
             !actual.Edition.Equals(expected.Edition, StringComparison.OrdinalIgnoreCase) ||
-            !actual.Name.Equals(expected.Name, StringComparison.OrdinalIgnoreCase) ||
             !actual.Installation.Equals(expected.Installation, StringComparison.OrdinalIgnoreCase))
             throw new InvalidDataException($"{what} is a different Windows image ({actual.Summary}) than this job was building ({expected.Summary}).");
     }
