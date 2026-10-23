@@ -1,0 +1,627 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Action__Build" xml:space="preserve"><value>Build</value></data>
+  <data name="Action__BuildAgain" xml:space="preserve"><value>Build again</value></data>
+  <data name="Action__BuildAnother" xml:space="preserve"><value>Build another</value></data>
+  <data name="Action__Continue" xml:space="preserve"><value>Continue</value></data>
+  <data name="Action__Next" xml:space="preserve"><value>Next</value></data>
+  <data name="Action__RecoverWorkspace" xml:space="preserve"><value>Recover workspace</value></data>
+  <data name="Action__ResumeAgain" xml:space="preserve"><value>Resume again</value></data>
+  <data name="Action__ResumeBuild" xml:space="preserve"><value>Resume build</value></data>
+  <data name="Action__ResumeBuild__Help" xml:space="preserve"><value>Continue a stopped build from the progress it saved.</value></data>
+  <data name="Action__ResumeBuild__Help__Stopped" xml:space="preserve"><value>Continue this build from the progress it saved.</value></data>
+  <data name="Action__Review" xml:space="preserve"><value>Review</value></data>
+  <data name="Action__Start" xml:space="preserve"><value>Start</value></data>
+  <data name="App__Title" xml:space="preserve"><value>Tiny11 Builder</value></data>
+  <data name="Build__Board__Commit" xml:space="preserve"><value>Commit image</value></data>
+  <data name="Build__Board__Compress" xml:space="preserve"><value>Compress image</value></data>
+  <data name="Build__Board__Export" xml:space="preserve"><value>Export and mount</value></data>
+  <data name="Build__Board__Iso" xml:space="preserve"><value>Create ISO</value></data>
+  <data name="Build__Board__Prepare" xml:space="preserve"><value>Prepare media</value></data>
+  <data name="Build__Board__Remove" xml:space="preserve"><value>Remove components</value></data>
+  <data name="Build__Board__Verify" xml:space="preserve"><value>Verify output</value></data>
+  <data name="Build__Building" xml:space="preserve"><value>Building</value></data>
+  <data name="Build__CancelHint" xml:space="preserve"><value>To stop, use Cancel safely at the top right. It stops at the next safe point. Your source is never changed; working files, saved progress and logs are kept.</value></data>
+  <data name="Build__CancellationRequested" xml:space="preserve"><value>Cancellation requested. {0}…</value></data>
+  <data name="Build__CancellationWaiting" xml:space="preserve"><value>Cancellation requested. Waiting for the current operation to finish…</value></data>
+  <data name="Build__CancelledHeading" xml:space="preserve"><value>{0} cancelled</value></data>
+  <data name="Build__Cancelling" xml:space="preserve"><value>Cancelling…</value></data>
+  <data name="Build__CurrentOperation" xml:space="preserve"><value>Current operation</value></data>
+  <data name="Build__Description" xml:space="preserve"><value>The selected edition will be copied, modified, compressed and saved as a bootable ISO.</value></data>
+  <data name="Build__Description__Legacy" xml:space="preserve"><value> The legacy installer is turned on automatically for {0}.</value></data>
+  <data name="Build__Details" xml:space="preserve"><value>Build details</value></data>
+  <data name="Build__ExpandStage" xml:space="preserve"><value>Expand a stage to see each step and any error details.</value></data>
+  <data name="Build__FinishedWithWarnings" xml:space="preserve"><value>Finished with warnings</value></data>
+  <data name="Build__Heading" xml:space="preserve"><value>Build</value></data>
+  <data name="Build__History" xml:space="preserve"><value>Operation history</value></data>
+  <data name="Build__IsoCreated" xml:space="preserve"><value>ISO created</value></data>
+  <data name="Build__NoChanges" xml:space="preserve"><value>No changes have been made.</value></data>
+  <data name="Build__Noun__Build" xml:space="preserve"><value>Build</value></data>
+  <data name="Build__Noun__Resume" xml:space="preserve"><value>Resume</value></data>
+  <data name="Build__OpenLogsAndReport" xml:space="preserve"><value>Open logs and report</value></data>
+  <data name="Build__OpenOutputFolder" xml:space="preserve"><value>Open output folder</value></data>
+  <data name="Build__OutputIso" xml:space="preserve"><value>Output ISO</value></data>
+  <data name="Build__Overall" xml:space="preserve"><value>Overall progress</value></data>
+  <data name="Build__PreparingTools" xml:space="preserve"><value>Preparing image tools…</value></data>
+  <data name="Build__Result__InTotal" xml:space="preserve"><value>{0} in total</value></data>
+  <data name="Build__Result__IsoSize" xml:space="preserve"><value>{0} GiB ISO</value></data>
+  <data name="Build__Result__Minutes" xml:space="preserve"><value>{0} minutes</value></data>
+  <data name="Build__Result__MoreWarnings" xml:space="preserve"><value>{0} more in the build log</value></data>
+  <data name="Build__Result__RedundantRemoved" xml:space="preserve"><value>Redundant data removed: {0} MiB logical · Setup payload omitted: {1} MiB</value></data>
+  <data name="Build__Result__Resumed" xml:space="preserve"><value>Resumed build</value></data>
+  <data name="Build__Result__Saved" xml:space="preserve"><value>The ISO and build report have been saved. Test the ISO in a VM before use.</value></data>
+  <data name="Build__Result__SavedWarnings" xml:space="preserve"><value>The ISO was saved with warnings. See the skipped work and other details below.</value></data>
+  <data name="Build__Result__StageTimings" xml:space="preserve"><value>Detailed stage timings are saved with the build report.</value></data>
+  <data name="Build__Result__Standard" xml:space="preserve"><value>Standard build</value></data>
+  <data name="Build__Result__Turbo" xml:space="preserve"><value>Turbo build</value></data>
+  <data name="Build__Result__WarningNotice" xml:space="preserve"><value>The ISO was saved with warnings. See the warnings on the page.</value></data>
+  <data name="Build__Resuming" xml:space="preserve"><value>Resuming</value></data>
+  <data name="Build__Sha256" xml:space="preserve"><value>SHA-256</value></data>
+  <data name="Build__StageFailed__Message" xml:space="preserve"><value>{0} failed. Expand this stage for error details.</value></data>
+  <data name="Build__StageNames__AdvancedPayloads" xml:space="preserve"><value>Advanced payloads</value></data>
+  <data name="Build__StageNames__Commit" xml:space="preserve"><value>Commit</value></data>
+  <data name="Build__StageNames__ComponentCleanup" xml:space="preserve"><value>Component cleanup</value></data>
+  <data name="Build__StageNames__Compress" xml:space="preserve"><value>Compress</value></data>
+  <data name="Build__StageNames__CopyMedia" xml:space="preserve"><value>Copy media</value></data>
+  <data name="Build__StageNames__CorePruning" xml:space="preserve"><value>Core pruning</value></data>
+  <data name="Build__StageNames__CreateIso" xml:space="preserve"><value>Create ISO</value></data>
+  <data name="Build__StageNames__CustomServicing" xml:space="preserve"><value>Custom servicing</value></data>
+  <data name="Build__StageNames__ExportEdition" xml:space="preserve"><value>Export edition</value></data>
+  <data name="Build__StageNames__Inventory" xml:space="preserve"><value>Inventory</value></data>
+  <data name="Build__StageNames__Mount" xml:space="preserve"><value>Mount</value></data>
+  <data name="Build__StageNames__NetFx" xml:space="preserve"><value>.NET 3.5</value></data>
+  <data name="Build__StageNames__OptionalFeatures" xml:space="preserve"><value>Optional features</value></data>
+  <data name="Build__StageNames__Prepare" xml:space="preserve"><value>Prepare</value></data>
+  <data name="Build__StageNames__RedundantData" xml:space="preserve"><value>Redundant data</value></data>
+  <data name="Build__StageNames__RemoveApps" xml:space="preserve"><value>Remove apps</value></data>
+  <data name="Build__StageNames__ResumeCheck" xml:space="preserve"><value>Check saved progress</value></data>
+  <data name="Build__StageNames__SetupImage" xml:space="preserve"><value>Setup image</value></data>
+  <data name="Build__StageNames__VerifyOutput" xml:space="preserve"><value>Verify output</value></data>
+  <data name="Build__StageNames__WindowsSettings" xml:space="preserve"><value>Windows settings</value></data>
+  <data name="Build__Stage__Complete" xml:space="preserve"><value>Complete</value></data>
+  <data name="Build__Stage__Of" xml:space="preserve"><value>Stage {0} of {1}</value></data>
+  <data name="Build__Stages__AllDone" xml:space="preserve"><value>All {0} stages done</value></data>
+  <data name="Build__Stages__Initial" xml:space="preserve"><value>0 of 7 stages done</value></data>
+  <data name="Build__Stopped" xml:space="preserve"><value>{0} stopped</value></data>
+  <data name="Build__SupportPrompt" xml:space="preserve"><value>If Tiny11 Builder saved you time, you can support its development.</value></data>
+  <data name="Build__TestIso" xml:space="preserve"><value>Test the ISO in a VM before installing Windows.</value></data>
+  <data name="Build__Waiting" xml:space="preserve"><value>Waiting to start</value></data>
+  <data name="Cancel__Body__BeforeCancel" xml:space="preserve"><value>{0} It finished before it could be cancelled, so nothing was cancelled.</value></data>
+  <data name="Cancel__Body__TooLate" xml:space="preserve"><value>{0} The cancellation arrived too late to stop it, so nothing was cancelled.</value></data>
+  <data name="Cancel__ButtonLabel" xml:space="preserve"><value>Cancel safely</value></data>
+  <data name="Cancel__Button__Done" xml:space="preserve"><value>Done</value></data>
+  <data name="Cancel__Confirm__Build" xml:space="preserve"><value>Cancel build</value></data>
+  <data name="Cancel__Confirm__Check" xml:space="preserve"><value>Cancel check</value></data>
+  <data name="Cancel__Confirm__Download" xml:space="preserve"><value>Cancel download</value></data>
+  <data name="Cancel__Confirm__Elevate" xml:space="preserve"><value>Cancel restart</value></data>
+  <data name="Cancel__Confirm__Inspect" xml:space="preserve"><value>Cancel inspection</value></data>
+  <data name="Cancel__Confirm__Inventory" xml:space="preserve"><value>Cancel listing</value></data>
+  <data name="Cancel__Confirm__Other" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Cancel__Confirm__Recover" xml:space="preserve"><value>Cancel recovery</value></data>
+  <data name="Cancel__Confirm__Resume" xml:space="preserve"><value>Cancel resume</value></data>
+  <data name="Cancel__Explanation__Build" xml:space="preserve"><value>The build stops at the next safe point. That can take a few minutes, because the image operation that is running is allowed to finish first. Your source is never changed. The mounted copy is safely unmounted; working files, saved progress and logs are kept.</value></data>
+  <data name="Cancel__Explanation__Check" xml:space="preserve"><value>The check stops. Nothing has been changed.</value></data>
+  <data name="Cancel__Explanation__Download" xml:space="preserve"><value>The download stops. The partial file is kept, so you can continue it later. No source media is modified.</value></data>
+  <data name="Cancel__Explanation__Elevate" xml:space="preserve"><value>The app keeps running without administrator privileges.</value></data>
+  <data name="Cancel__Explanation__Inspect" xml:space="preserve"><value>Inspection stops after the current step. The image is not changed.</value></data>
+  <data name="Cancel__Explanation__Inventory" xml:space="preserve"><value>Listing stops at the next safe point. The read-only mount of the image is discarded and the image is not changed.</value></data>
+  <data name="Cancel__Explanation__Other" xml:space="preserve"><value>The operation stops after the current step. Nothing has been changed.</value></data>
+  <data name="Cancel__Explanation__Recover" xml:space="preserve"><value>Recovery stops at the next safe point. Run Recover workspace again to finish cleaning up this job.</value></data>
+  <data name="Cancel__Explanation__Resume" xml:space="preserve"><value>The resume stops at the next safe point. That can take a few minutes, because the image operation that is running is allowed to finish first. The mounted copy is safely unmounted; working files, saved progress and logs are kept, so you can resume again.</value></data>
+  <data name="Cancel__Finished__Build" xml:space="preserve"><value>The ISO and build report were saved.</value></data>
+  <data name="Cancel__Finished__Check" xml:space="preserve"><value>The check finished.</value></data>
+  <data name="Cancel__Finished__Download" xml:space="preserve"><value>The download finished.</value></data>
+  <data name="Cancel__Finished__Elevate" xml:space="preserve"><value>The app was restarted.</value></data>
+  <data name="Cancel__Finished__Inspect" xml:space="preserve"><value>The image was inspected.</value></data>
+  <data name="Cancel__Finished__Inventory" xml:space="preserve"><value>The component list was loaded.</value></data>
+  <data name="Cancel__Finished__Other" xml:space="preserve"><value>The operation finished.</value></data>
+  <data name="Cancel__Finished__Recover" xml:space="preserve"><value>The workspace was recovered.</value></data>
+  <data name="Cancel__Finished__Resume" xml:space="preserve"><value>The ISO and build report were saved.</value></data>
+  <data name="Cancel__Footnote__JobFolder" xml:space="preserve"><value>Job folder and logs: {0}</value></data>
+  <data name="Cancel__Heading__AlreadyFinished" xml:space="preserve"><value>The {0} already finished</value></data>
+  <data name="Cancel__Heading__BeforeCancel" xml:space="preserve"><value>Finished before it could be cancelled</value></data>
+  <data name="Cancel__Heading__RecoveryCancelled" xml:space="preserve"><value>{0}, but recovery is needed</value></data>
+  <data name="Cancel__Heading__RecoveryFailed" xml:space="preserve"><value>{0}, and recovery is needed</value></data>
+  <data name="Cancel__Hint__Build" xml:space="preserve"><value>Stops the build at the next safe point. Your source is never changed.</value></data>
+  <data name="Cancel__Hint__Check" xml:space="preserve"><value>Stops checking your choices. Nothing is changed.</value></data>
+  <data name="Cancel__Hint__Download" xml:space="preserve"><value>Stops the download. The partial file is kept.</value></data>
+  <data name="Cancel__Hint__Elevate" xml:space="preserve"><value>Stops restarting the app as administrator.</value></data>
+  <data name="Cancel__Hint__Inspect" xml:space="preserve"><value>Stops inspecting the image. Nothing is changed.</value></data>
+  <data name="Cancel__Hint__Inventory" xml:space="preserve"><value>Stops listing components. The image is not changed.</value></data>
+  <data name="Cancel__Hint__Other" xml:space="preserve"><value>Stops the running operation.</value></data>
+  <data name="Cancel__Hint__Recover" xml:space="preserve"><value>Stops the recovery at the next safe point.</value></data>
+  <data name="Cancel__Hint__Resume" xml:space="preserve"><value>Stops the resume at the next safe point. Saved progress is kept.</value></data>
+  <data name="Cancel__Keep__Build" xml:space="preserve"><value>Keep building</value></data>
+  <data name="Cancel__Keep__Check" xml:space="preserve"><value>Continue</value></data>
+  <data name="Cancel__Keep__Download" xml:space="preserve"><value>Keep downloading</value></data>
+  <data name="Cancel__Keep__Elevate" xml:space="preserve"><value>Continue</value></data>
+  <data name="Cancel__Keep__Inspect" xml:space="preserve"><value>Continue</value></data>
+  <data name="Cancel__Keep__Inventory" xml:space="preserve"><value>Continue</value></data>
+  <data name="Cancel__Keep__Other" xml:space="preserve"><value>Continue</value></data>
+  <data name="Cancel__Keep__Recover" xml:space="preserve"><value>Keep recovering</value></data>
+  <data name="Cancel__Keep__Resume" xml:space="preserve"><value>Keep resuming</value></data>
+  <data name="Cancel__Note__DoNotClose" xml:space="preserve"><value>Do not close the app until this finishes.</value></data>
+  <data name="Cancel__Note__ToolNotStopped" xml:space="preserve"><value>The image tool is never force-stopped, so this can take a few minutes. Do not close the app.</value></data>
+  <data name="Cancel__Noun__Build" xml:space="preserve"><value>build</value></data>
+  <data name="Cancel__Noun__Check" xml:space="preserve"><value>check</value></data>
+  <data name="Cancel__Noun__Download" xml:space="preserve"><value>download</value></data>
+  <data name="Cancel__Noun__Elevate" xml:space="preserve"><value>restart</value></data>
+  <data name="Cancel__Noun__Inspect" xml:space="preserve"><value>inspection</value></data>
+  <data name="Cancel__Noun__Inventory" xml:space="preserve"><value>component list</value></data>
+  <data name="Cancel__Noun__Other" xml:space="preserve"><value>operation</value></data>
+  <data name="Cancel__Noun__Recover" xml:space="preserve"><value>recovery</value></data>
+  <data name="Cancel__Noun__Resume" xml:space="preserve"><value>resume</value></data>
+  <data name="Cancel__Question__Build" xml:space="preserve"><value>Cancel this build?</value></data>
+  <data name="Cancel__Question__Check" xml:space="preserve"><value>Cancel the check?</value></data>
+  <data name="Cancel__Question__Download" xml:space="preserve"><value>Cancel this download?</value></data>
+  <data name="Cancel__Question__Elevate" xml:space="preserve"><value>Cancel the restart?</value></data>
+  <data name="Cancel__Question__Inspect" xml:space="preserve"><value>Cancel inspecting this image?</value></data>
+  <data name="Cancel__Question__Inventory" xml:space="preserve"><value>Cancel listing components?</value></data>
+  <data name="Cancel__Question__Other" xml:space="preserve"><value>Cancel this operation?</value></data>
+  <data name="Cancel__Question__Recover" xml:space="preserve"><value>Cancel this recovery?</value></data>
+  <data name="Cancel__Question__Resume" xml:space="preserve"><value>Cancel this resume?</value></data>
+  <data name="Cancel__Status__CleanupFinished" xml:space="preserve"><value>Cleanup finished.</value></data>
+  <data name="Cancel__Status__CurrentOperation" xml:space="preserve"><value>Current operation: {0} · {1}%</value></data>
+  <data name="Cancel__Status__CurrentOperationNoPercent" xml:space="preserve"><value>Current operation: {0}</value></data>
+  <data name="Cancel__Status__DiscardingMount" xml:space="preserve"><value>Discarding the working mount</value></data>
+  <data name="Cancel__Status__Finished" xml:space="preserve"><value>Finished.</value></data>
+  <data name="Cancel__Status__Finishing" xml:space="preserve"><value>Finishing the current operation</value></data>
+  <data name="Cancel__Status__SavingLogs" xml:space="preserve"><value>Saving logs</value></data>
+  <data name="Cancel__Status__Stopped" xml:space="preserve"><value>Stopped.</value></data>
+  <data name="Cancel__Stopping__Build" xml:space="preserve"><value>Cancelling the build</value></data>
+  <data name="Cancel__Stopping__Check" xml:space="preserve"><value>Cancelling the check</value></data>
+  <data name="Cancel__Stopping__Download" xml:space="preserve"><value>Cancelling the download</value></data>
+  <data name="Cancel__Stopping__Elevate" xml:space="preserve"><value>Cancelling the restart</value></data>
+  <data name="Cancel__Stopping__Inspect" xml:space="preserve"><value>Cancelling the inspection</value></data>
+  <data name="Cancel__Stopping__Inventory" xml:space="preserve"><value>Cancelling the component list</value></data>
+  <data name="Cancel__Stopping__Other" xml:space="preserve"><value>Cancelling</value></data>
+  <data name="Cancel__Stopping__Recover" xml:space="preserve"><value>Cancelling the recovery</value></data>
+  <data name="Cancel__Stopping__Resume" xml:space="preserve"><value>Cancelling the resume</value></data>
+  <data name="Cancel__Wait__Download" xml:space="preserve"><value>Stopping the download</value></data>
+  <data name="Cancel__Wait__Operation" xml:space="preserve"><value>Waiting for the current operation to finish</value></data>
+  <data name="Cancel__Wait__Step" xml:space="preserve"><value>Waiting for the current step to finish</value></data>
+  <data name="Cancel__Warning__CallbackFailed" xml:space="preserve"><value>The cancel was sent, but a step that reacts to it failed: {0}</value></data>
+  <data name="Cancel__Warning__TokenFailed" xml:space="preserve"><value>The cancel token could not be released: {0}</value></data>
+  <data name="Catalog__Category__Advanced" xml:space="preserve"><value>Advanced / original builder</value></data>
+  <data name="Catalog__Category__Apps" xml:space="preserve"><value>Bundled apps</value></data>
+  <data name="Catalog__Category__Features" xml:space="preserve"><value>Optional features</value></data>
+  <data name="Catalog__Category__Settings" xml:space="preserve"><value>Windows settings</value></data>
+  <data name="Catalog__ads__Description" xml:space="preserve"><value>Suppress consumer content, Settings suggestions, Explorer promotions and welcome tips.</value></data>
+  <data name="Catalog__ads__Title" xml:space="preserve"><value>Ads, recommendations and sponsored apps</value></data>
+  <data name="Catalog__camera__Description" xml:space="preserve"><value>Remove the Camera app, not camera drivers.</value></data>
+  <data name="Catalog__camera__Title" xml:space="preserve"><value>Camera</value></data>
+  <data name="Catalog__cleanup__Description" xml:space="preserve"><value>Regular mode preserves servicing. Core additionally resets the update base before its irreversible component pruning.</value></data>
+  <data name="Catalog__cleanup__Title" xml:space="preserve"><value>Component cleanup</value></data>
+  <data name="Catalog__clipchamp__Description" xml:space="preserve"><value>Remove the bundled video editor.</value></data>
+  <data name="Catalog__clipchamp__Title" xml:space="preserve"><value>Clipchamp</value></data>
+  <data name="Catalog__copilot-app__Description" xml:space="preserve"><value>Remove preinstalled Copilot apps. Keep shared runtimes and shell components.</value></data>
+  <data name="Catalog__copilot-app__Title" xml:space="preserve"><value>Copilot apps</value></data>
+  <data name="Catalog__copilot__Description" xml:space="preserve"><value>Apply policies to disable Copilot and Recall. Support varies by build and edition.</value></data>
+  <data name="Catalog__copilot__Title" xml:space="preserve"><value>Disable Copilot and Recall</value></data>
+  <data name="Catalog__devhome__Description" xml:space="preserve"><value>Remove Dev Home and Power Automate Desktop.</value></data>
+  <data name="Catalog__devhome__Title" xml:space="preserve"><value>Dev Home and Power Automate</value></data>
+  <data name="Catalog__device-encryption__Description" xml:space="preserve"><value>Prevent automatic BitLocker device encryption; do not use if you require encryption by default.</value></data>
+  <data name="Catalog__device-encryption__Title" xml:space="preserve"><value>Disable automatic device encryption</value></data>
+  <data name="Catalog__edge-files__Description" xml:space="preserve"><value>Delete Edge and WebView2 files. Apps that require WebView2 may stop working. Updates may reinstall Edge.</value></data>
+  <data name="Catalog__edge-files__Title" xml:space="preserve"><value>Remove Edge and WebView2</value></data>
+  <data name="Catalog__edge__Description" xml:space="preserve"><value>Suppress first-run, sidebar and recommendations. Preserve Edge and WebView2 for app compatibility.</value></data>
+  <data name="Catalog__edge__Title" xml:space="preserve"><value>Edge first-run and promotional UI</value></data>
+  <data name="Catalog__feedback__Description" xml:space="preserve"><value>Remove Feedback Hub, Get Help, and introductory apps.</value></data>
+  <data name="Catalog__feedback__Title" xml:space="preserve"><value>Feedback, tips and help</value></data>
+  <data name="Catalog__hardware-bypass__Description" xml:space="preserve"><value>Set CPU, RAM, TPM, storage and Secure Boot bypass values in setup and Windows. Unsupported hardware may not work.</value></data>
+  <data name="Catalog__hardware-bypass__Title" xml:space="preserve"><value>Bypass setup hardware requirements</value></data>
+  <data name="Catalog__language-extras__Description" xml:space="preserve"><value>Remove optional language capabilities in every image language; retain basic language support.</value></data>
+  <data name="Catalog__language-extras__Title" xml:space="preserve"><value>Speech, OCR and handwriting payloads</value></data>
+  <data name="Catalog__legacy-capabilities__Description" xml:space="preserve"><value>Remove WordPad, Steps Recorder, Math Recognizer, legacy Media Player and extended wallpapers where installed.</value></data>
+  <data name="Catalog__legacy-capabilities__Title" xml:space="preserve"><value>Retired accessories and wallpaper payloads</value></data>
+  <data name="Catalog__legacy__Description" xml:space="preserve"><value>Disable the retired Internet Explorer optional feature where present.</value></data>
+  <data name="Catalog__legacy__Title" xml:space="preserve"><value>Legacy Internet Explorer</value></data>
+  <data name="Catalog__maps__Description" xml:space="preserve"><value>Remove retired Maps and Mixed Reality clients.</value></data>
+  <data name="Catalog__maps__Title" xml:space="preserve"><value>Maps and Mixed Reality</value></data>
+  <data name="Catalog__media__Description" xml:space="preserve"><value>Remove bundled media playback apps; codecs and shared frameworks remain.</value></data>
+  <data name="Catalog__media__Title" xml:space="preserve"><value>Media Player and Movies</value></data>
+  <data name="Catalog__news-weather__Description" xml:space="preserve"><value>Remove packaged feed apps; local Windows Search is preserved.</value></data>
+  <data name="Catalog__news-weather__Title" xml:space="preserve"><value>News, weather and Bing apps</value></data>
+  <data name="Catalog__oem__Description" xml:space="preserve"><value>Remove Intel management status and Dolby promotional applications, not drivers.</value></data>
+  <data name="Catalog__oem__Title" xml:space="preserve"><value>OEM promotional apps</value></data>
+  <data name="Catalog__office-promos__Description" xml:space="preserve"><value>Remove Office Hub and Office push-notification promotional apps.</value></data>
+  <data name="Catalog__office-promos__Title" xml:space="preserve"><value>Microsoft 365 promotions</value></data>
+  <data name="Catalog__onedrive-files__Description" xml:space="preserve"><value>Remove both architecture-specific OneDrive installers from the offline image.</value></data>
+  <data name="Catalog__onedrive-files__Title" xml:space="preserve"><value>Remove OneDrive setup binaries</value></data>
+  <data name="Catalog__onedrive__Description" xml:space="preserve"><value>Disable OneDrive sync by policy. OneDrive binaries are retained; use this only if you do not need sync.</value></data>
+  <data name="Catalog__onedrive__Title" xml:space="preserve"><value>OneDrive sync and backup prompts</value></data>
+  <data name="Catalog__oobe__Description" xml:space="preserve"><value>Suppress privacy setup and post-sign-in setup suggestions without creating accounts or accepting the EULA.</value></data>
+  <data name="Catalog__oobe__Title" xml:space="preserve"><value>Setup privacy and finish-setting-up nags</value></data>
+  <data name="Catalog__outlook__Description" xml:space="preserve"><value>Remove Outlook and the retired Mail / Calendar apps.</value></data>
+  <data name="Catalog__outlook__Title" xml:space="preserve"><value>New Outlook and Mail</value></data>
+  <data name="Catalog__paint__Description" xml:space="preserve"><value>Remove Paint, 3D Viewer and OneNote. Leave unchecked to keep them.</value></data>
+  <data name="Catalog__paint__Title" xml:space="preserve"><value>Paint, 3D Viewer and OneNote</value></data>
+  <data name="Catalog__phone__Description" xml:space="preserve"><value>Remove phone integration apps. Cross-device features may stop working.</value></data>
+  <data name="Catalog__phone__Title" xml:space="preserve"><value>Phone Link and cross-device apps</value></data>
+  <data name="Catalog__privacy__Description" xml:space="preserve"><value>Keep required diagnostic data. Disable advertising ID, personalized suggestions and input collection.</value></data>
+  <data name="Catalog__privacy__Title" xml:space="preserve"><value>Optional diagnostics and personalization</value></data>
+  <data name="Catalog__quickassist__Description" xml:space="preserve"><value>Remove Microsoft&#x27;s remote-assistance client.</value></data>
+  <data name="Catalog__quickassist__Title" xml:space="preserve"><value>Quick Assist</value></data>
+  <data name="Catalog__recall-feature__Description" xml:space="preserve"><value>Disable and remove Recall&#x27;s payload only if this image exposes it to DISM.</value></data>
+  <data name="Catalog__recall-feature__Title" xml:space="preserve"><value>Recall optional feature</value></data>
+  <data name="Catalog__reserved-storage__Description" xml:space="preserve"><value>Stop reserving disk space for updates. This can leave less space available during servicing.</value></data>
+  <data name="Catalog__reserved-storage__Title" xml:space="preserve"><value>Disable reserved storage</value></data>
+  <data name="Catalog__search__Description" xml:space="preserve"><value>Turn off web suggestions, cloud search and dynamic search highlights; keep local search.</value></data>
+  <data name="Catalog__search__Title" xml:space="preserve"><value>Web search and search highlights</value></data>
+  <data name="Catalog__social__Description" xml:space="preserve"><value>Remove optional organizer and communication apps.</value></data>
+  <data name="Catalog__social__Title" xml:space="preserve"><value>People, To Do, Family and Skype</value></data>
+  <data name="Catalog__solitaire__Description" xml:space="preserve"><value>Remove bundled games.</value></data>
+  <data name="Catalog__solitaire__Title" xml:space="preserve"><value>Solitaire</value></data>
+  <data name="Catalog__teams__Description" xml:space="preserve"><value>Remove personal Teams clients.</value></data>
+  <data name="Catalog__teams__Title" xml:space="preserve"><value>Teams</value></data>
+  <data name="Catalog__terminal__Description" xml:space="preserve"><value>Remove Terminal. PowerShell and Command Prompt remain.</value></data>
+  <data name="Catalog__terminal__Title" xml:space="preserve"><value>Windows Terminal</value></data>
+  <data name="Catalog__utilities__Description" xml:space="preserve"><value>Remove optional personal utilities.</value></data>
+  <data name="Catalog__utilities__Title" xml:space="preserve"><value>Clock, Recorder and Sticky Notes</value></data>
+  <data name="Catalog__widgets__Description" xml:space="preserve"><value>Disable Widgets by policy and hide its taskbar entry.</value></data>
+  <data name="Catalog__widgets__Title" xml:space="preserve"><value>Widgets and taskbar feeds</value></data>
+  <data name="Catalog__workfolders__Description" xml:space="preserve"><value>Disable enterprise Work Folders sync and remove its payload.</value></data>
+  <data name="Catalog__workfolders__Title" xml:space="preserve"><value>Work Folders</value></data>
+  <data name="Catalog__xbox__Description" xml:space="preserve"><value>Remove Xbox apps and Game Bar. Gaming sign-in and recording may be unavailable.</value></data>
+  <data name="Catalog__xbox__Title" xml:space="preserve"><value>Xbox and gaming overlays</value></data>
+  <data name="Catalog__xps__Description" xml:space="preserve"><value>Disable optional XPS printing and remove its payload.</value></data>
+  <data name="Catalog__xps__Title" xml:space="preserve"><value>XPS printing</value></data>
+  <data name="Common__All" xml:space="preserve"><value>All</value></data>
+  <data name="Common__Back" xml:space="preserve"><value>Back</value></data>
+  <data name="Common__BuildActivity" xml:space="preserve"><value>Build activity</value></data>
+  <data name="Common__BuildLog" xml:space="preserve"><value>Build log</value></data>
+  <data name="Common__CancelSafely" xml:space="preserve"><value>Cancel safely</value></data>
+  <data name="Common__Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Common__ComponentType" xml:space="preserve"><value>Component type</value></data>
+  <data name="Common__CurrentOperationProgress" xml:space="preserve"><value>Current operation progress</value></data>
+  <data name="Common__Dark" xml:space="preserve"><value>Dark</value></data>
+  <data name="Common__DownloadProgress" xml:space="preserve"><value>Download progress</value></data>
+  <data name="Common__ImageComponents" xml:space="preserve"><value>Image components</value></data>
+  <data name="Common__Keep" xml:space="preserve"><value>Keep</value></data>
+  <data name="Common__Light" xml:space="preserve"><value>Light</value></data>
+  <data name="Common__Off" xml:space="preserve"><value>Off</value></data>
+  <data name="Common__Omit" xml:space="preserve"><value>Omit</value></data>
+  <data name="Common__On" xml:space="preserve"><value>On</value></data>
+  <data name="Common__OverallProgress" xml:space="preserve"><value>Overall progress</value></data>
+  <data name="Common__Remove" xml:space="preserve"><value>Remove</value></data>
+  <data name="Common__SearchComponents" xml:space="preserve"><value>Search components</value></data>
+  <data name="Common__Start" xml:space="preserve"><value>Start</value></data>
+  <data name="Common__System" xml:space="preserve"><value>System</value></data>
+  <data name="Common__Working" xml:space="preserve"><value>Working</value></data>
+  <data name="Components__Advanced__Clear" xml:space="preserve"><value>Clear custom selections</value></data>
+  <data name="Components__Advanced__Consent" xml:space="preserve"><value>I accept the risk of an unbootable, unserviceable or insecure custom image.</value></data>
+  <data name="Components__Advanced__IndividualHelp" xml:space="preserve"><value>Individual removals add to the selected groups. To keep a component, leave both its group and its individual entry unchecked.</value></data>
+  <data name="Components__Advanced__Lead" xml:space="preserve"><value>List the image&#x27;s apps, packages, features, services and component files, including protected items. Removing a service deletes its registry entry, not shared executables. Protected packages may refuse removal.</value></data>
+  <data name="Components__Advanced__ListAll" xml:space="preserve"><value>List all components…</value></data>
+  <data name="Components__Advanced__Title" xml:space="preserve"><value>Advanced removals</value></data>
+  <data name="Components__Advanced__WarningMessage" xml:space="preserve"><value>Removing protected or boot-critical items can create an unbootable or insecure image. Direct payload removal bypasses servicing. No dependency solver or boot guarantee is provided.</value></data>
+  <data name="Components__Advanced__WarningTitle" xml:space="preserve"><value>Unsupported removals</value></data>
+  <data name="Components__Card__Core__Description" xml:space="preserve"><value>Essentials only. For test VMs.</value></data>
+  <data name="Components__Card__Custom__Description" xml:space="preserve"><value>Choose individual removals.</value></data>
+  <data name="Components__Card__Tiny11__Description" xml:space="preserve"><value>Original removals. Keep update support.</value></data>
+  <data name="Components__CoreConsent__Accepted" xml:space="preserve"><value>Core limitations accepted for this build.</value></data>
+  <data name="Components__CoreConsent__NotAccepted" xml:space="preserve"><value>Core limitations have not been accepted.</value></data>
+  <data name="Components__CoreConsent__Pending" xml:space="preserve"><value>You will be asked to accept Core&#x27;s limitations before continuing.</value></data>
+  <data name="Components__CoreWarning__Message" xml:space="preserve"><value>Core deletes component files and WinRE, and disables Windows Update and Defender. You cannot add updates, languages or features afterward. Test the image in a VM.</value></data>
+  <data name="Components__CoreWarning__Title" xml:space="preserve"><value>Core removes update and recovery support.</value></data>
+  <data name="Components__Counts__Groups" xml:space="preserve"><value>{0} removal groups selected · {1} advanced actions</value></data>
+  <data name="Components__Counts__Inventory" xml:space="preserve"><value>{0} components listed · {1} advanced actions selected.</value></data>
+  <data name="Components__CustomCore__Header" xml:space="preserve"><value>Apply Core removals</value></data>
+  <data name="Components__CustomCore__Off" xml:space="preserve"><value>Keep servicing, recovery and Defender</value></data>
+  <data name="Components__CustomCore__On" xml:space="preserve"><value>Remove servicing, recovery and Defender</value></data>
+  <data name="Components__Filter__Header" xml:space="preserve"><value>Show choices</value></data>
+  <data name="Components__GroupsHelp" xml:space="preserve"><value>Checked groups are removed or disabled. Unchecked groups are kept. For individual items, use the component list below.</value></data>
+  <data name="Components__Heading" xml:space="preserve"><value>Components</value></data>
+  <data name="Components__Inventory__ActionFor" xml:space="preserve"><value>Action for {0}</value></data>
+  <data name="Components__Inventory__Application" xml:space="preserve"><value>Application</value></data>
+  <data name="Components__Inventory__Disable" xml:space="preserve"><value>Disable</value></data>
+  <data name="Components__Inventory__Protected" xml:space="preserve"><value>Protected / potentially boot-critical</value></data>
+  <data name="Components__Inventory__Remove" xml:space="preserve"><value>Remove</value></data>
+  <data name="Components__Lead" xml:space="preserve"><value>Choose Tiny11, Tiny11 Core, or select your own removals with Custom. Every change is recorded in the build log.</value></data>
+  <data name="Components__ModeDescription__Core" xml:space="preserve"><value>Tiny11 Core removals, including irreversible component pruning. Choose Custom to change individual removals.</value></data>
+  <data name="Components__ModeDescription__Custom" xml:space="preserve"><value>Start with nothing selected, then choose what to remove or disable. You can also list individual components, including protected items.</value></data>
+  <data name="Components__ModeDescription__Tiny11" xml:space="preserve"><value>Original Tiny11 removals, including Edge/WebView2 and OneDrive binaries. Windows Update, Defender and recovery are kept. Choose Custom to change individual removals.</value></data>
+  <data name="Components__NotSelected" xml:space="preserve"><value>Not selected</value></data>
+  <data name="Components__Selected" xml:space="preserve"><value>Selected</value></data>
+  <data name="Components__Use__Core" xml:space="preserve"><value>Use Tiny11 Core</value></data>
+  <data name="Components__Use__Custom" xml:space="preserve"><value>Use Custom</value></data>
+  <data name="Components__Use__Tiny11" xml:space="preserve"><value>Use Tiny11</value></data>
+  <data name="Dialog__Build__Action" xml:space="preserve"><value>Build</value></data>
+  <data name="Dialog__Build__Body" xml:space="preserve"><value>Output: {0}
+
+Mode: {1}
+Removal groups: {2}
+Individual actions: {3}{4}</value></data>
+  <data name="Dialog__Build__Title" xml:space="preserve"><value>Create this offline Windows image?</value></data>
+  <data name="Dialog__Close" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Dialog__Core__Accept" xml:space="preserve"><value>I agree</value></data>
+  <data name="Dialog__Core__Body" xml:space="preserve"><value>No Windows Update
+No Microsoft Defender
+No recovery environment
+No added languages or features
+
+Use only in an isolated test VM.
+The image may not boot.</value></data>
+  <data name="Dialog__Core__Title" xml:space="preserve"><value>Core is not serviceable</value></data>
+  <data name="Dialog__Expert__Body" xml:space="preserve"><value>This inventory includes boot drivers, security, licensing, system apps and component payloads. Removing them can make Windows unbootable, insecure or impossible to update. Protected packages may refuse removal. Direct payload removal is unsupported.
+
+Continue only for isolated testing, with backups and a known-good installer.</value></data>
+  <data name="Dialog__Expert__Inspect" xml:space="preserve"><value>Inspect components</value></data>
+  <data name="Dialog__Expert__Title" xml:space="preserve"><value>Protected components are included</value></data>
+  <data name="Dialog__RecoverProgress__Body" xml:space="preserve"><value>Recover discards a job&#x27;s working copy, and it does not do that for a job with saved progress. Resume continues the build from that progress instead.
+
+Nothing has been changed.</value></data>
+  <data name="Dialog__RecoverProgress__Resume" xml:space="preserve"><value>Resume instead</value></data>
+  <data name="Dialog__RecoverProgress__Title" xml:space="preserve"><value>This job has saved progress</value></data>
+  <data name="Dialog__Recover__Body" xml:space="preserve"><value>Select only job.json from the interrupted tiny11 job. This discards that job&#x27;s mounted working copy and removes its staged media. Its logs, recipe, report and your source ISO are kept. A job whose image was already committed has saved progress and is never discarded here; use Resume build for it. Active builds cannot be recovered.</value></data>
+  <data name="Dialog__Recover__Discard" xml:space="preserve"><value>Discard working copy</value></data>
+  <data name="Dialog__Recover__Title" xml:space="preserve"><value>Discard this interrupted workspace?</value></data>
+  <data name="Dialog__Resume__Action" xml:space="preserve"><value>Resume</value></data>
+  <data name="Dialog__Resume__Title" xml:space="preserve"><value>Resume this build?</value></data>
+  <data name="Error__BrowserMicrosoftPage" xml:space="preserve"><value>The browser could not open Microsoft&#x27;s image-tools page.</value></data>
+  <data name="Error__InspectFirst" xml:space="preserve"><value>Inspect the selected Windows image first.</value></data>
+  <data name="Error__NotApprovedPage" xml:space="preserve"><value>The suggested download page is not an approved Microsoft page.</value></data>
+  <data name="Error__RestartPath" xml:space="preserve"><value>The application path could not be found.</value></data>
+  <data name="Error__SavedSessionEmpty" xml:space="preserve"><value>The saved session is empty.</value></data>
+  <data name="Error__SupportLink" xml:space="preserve"><value>This support link has no valid destination.</value></data>
+  <data name="File__ImageRecipe" xml:space="preserve"><value>Image recipe</value></data>
+  <data name="File__IsoImage" xml:space="preserve"><value>ISO image</value></data>
+  <data name="Image__None" xml:space="preserve"><value>No image selected</value></data>
+  <data name="Language__Header" xml:space="preserve"><value>Language</value></data>
+  <data name="Language__RestartFailed__Title" xml:space="preserve"><value>The app could not restart.</value></data>
+  <data name="Language__Restart__Message" xml:space="preserve"><value>The new language is saved. Restart Tiny11 Builder to use it.</value></data>
+  <data name="Language__Restart__Title" xml:space="preserve"><value>Restart to apply the language.</value></data>
+  <data name="Language__SaveFailed__Message" xml:space="preserve"><value>The app will keep its current language until settings can be written.</value></data>
+  <data name="Language__SaveFailed__Title" xml:space="preserve"><value>The language could not be saved.</value></data>
+  <data name="Language__System" xml:space="preserve"><value>System default</value></data>
+  <data name="Mode__Core" xml:space="preserve"><value>Tiny11 Core</value></data>
+  <data name="Mode__Custom" xml:space="preserve"><value>Custom</value></data>
+  <data name="Mode__Tiny11" xml:space="preserve"><value>Tiny11</value></data>
+  <data name="Nav__Appearance" xml:space="preserve"><value>Appearance</value></data>
+  <data name="Nav__BuildSettings" xml:space="preserve"><value>Build settings</value></data>
+  <data name="Nav__BuildSteps" xml:space="preserve"><value>BUILD STEPS</value></data>
+  <data name="Nav__CreateImage" xml:space="preserve"><value>Create image</value></data>
+  <data name="Nav__RemoveComponents" xml:space="preserve"><value>Remove components</value></data>
+  <data name="Nav__Review" xml:space="preserve"><value>Review</value></data>
+  <data name="Nav__SelectedImage" xml:space="preserve"><value>SELECTED IMAGE</value></data>
+  <data name="Nav__SourceUnchanged" xml:space="preserve"><value>Source files are not modified.</value></data>
+  <data name="Nav__UpstreamProject" xml:space="preserve"><value>Upstream project ↗</value></data>
+  <data name="Nav__Welcome" xml:space="preserve"><value>Welcome</value></data>
+  <data name="Nav__WindowsImage" xml:space="preserve"><value>Windows image</value></data>
+  <data name="Notice__AdminInspectSelected__Message" xml:space="preserve"><value>Close and reopen Tiny11Builder.exe with administrator approval to inspect its editions.</value></data>
+  <data name="Notice__AdminInspect__Message" xml:space="preserve"><value>Close and reopen Tiny11Builder.exe, then approve the Windows administrator prompt.</value></data>
+  <data name="Notice__AdminRecover__Message" xml:space="preserve"><value>Close and reopen Tiny11Builder.exe with administrator approval to recover a workspace.</value></data>
+  <data name="Notice__AdminRequired__Title" xml:space="preserve"><value>Administrator privileges required.</value></data>
+  <data name="Notice__AdminResume__Message" xml:space="preserve"><value>Close and reopen Tiny11Builder.exe with administrator approval, then choose Resume build. Nothing was changed.</value></data>
+  <data name="Notice__BrowserFailed" xml:space="preserve"><value>Your browser could not open {0}. No payment was made.</value></data>
+  <data name="Notice__BuildModeInvalid__Message" xml:space="preserve"><value>The selected card does not identify a valid build mode.</value></data>
+  <data name="Notice__BuildModeInvalid__Title" xml:space="preserve"><value>Build mode could not be selected.</value></data>
+  <data name="Notice__CachedIsoChanged" xml:space="preserve"><value>The cached ISO has changed. It has not been accepted.</value></data>
+  <data name="Notice__CancellationProgress" xml:space="preserve"><value>Cancellation progress</value></data>
+  <data name="Notice__CannotResume__Title" xml:space="preserve"><value>This build can&#x27;t be resumed.</value></data>
+  <data name="Notice__CloseDuringBuild__Cancelling" xml:space="preserve"><value>It is being cancelled. Wait for it to stop before closing.</value></data>
+  <data name="Notice__CloseDuringBuild__Message" xml:space="preserve"><value>Choose {0} and wait for the image operation to finish before closing.</value></data>
+  <data name="Notice__CloseDuringBuild__Title" xml:space="preserve"><value>An operation is still running.</value></data>
+  <data name="Notice__ComponentListLoaded__Message" xml:space="preserve"><value>Existing selections were preserved. Check the individual items you want to remove or disable.</value></data>
+  <data name="Notice__ComponentListLoaded__Title" xml:space="preserve"><value>Component list loaded.</value></data>
+  <data name="Notice__ComponentListReadOnly__Message" xml:space="preserve"><value>The installed tools could list this image, but building it requires newer Windows ADK Deployment Tools. Install them and reopen the app before building.</value></data>
+  <data name="Notice__ComponentListReadOnly__Title" xml:space="preserve"><value>Component list loaded read-only.</value></data>
+  <data name="Notice__Copied" xml:space="preserve"><value>Copied</value></data>
+  <data name="Notice__CopyDetails" xml:space="preserve"><value>Copy details</value></data>
+  <data name="Notice__CouldNotCopy" xml:space="preserve"><value>Could not copy</value></data>
+  <data name="Notice__CouldNotOpenDownload" xml:space="preserve"><value>Could not open the download page.</value></data>
+  <data name="Notice__CouldNotOpenLogs" xml:space="preserve"><value>Could not open logs</value></data>
+  <data name="Notice__DownloadHash" xml:space="preserve"><value>SHA-256: {0}</value></data>
+  <data name="Notice__DownloadedSummary" xml:space="preserve"><value>Downloaded {0}. SHA-256: {1}</value></data>
+  <data name="Notice__FolderOpenFailed__Title" xml:space="preserve"><value>Folder could not be opened.</value></data>
+  <data name="Notice__HighContrastTooltip" xml:space="preserve"><value>Windows high contrast is on, so colors follow your system settings.</value></data>
+  <data name="Notice__ImageInspected__Message" xml:space="preserve"><value>{0} editions found. {1} is selected.</value></data>
+  <data name="Notice__ImageInspected__Title" xml:space="preserve"><value>Image inspected.</value></data>
+  <data name="Notice__ImageSelected__Title" xml:space="preserve"><value>Image selected.</value></data>
+  <data name="Notice__InspectImageFirst__Message" xml:space="preserve"><value>Select an edition before listing its components.</value></data>
+  <data name="Notice__InspectImageFirst__Title" xml:space="preserve"><value>Inspect an image first.</value></data>
+  <data name="Notice__JobFolderGone__Message" xml:space="preserve"><value>{0} no longer exists.</value></data>
+  <data name="Notice__JobFolderGone__Title" xml:space="preserve"><value>The job folder is gone.</value></data>
+  <data name="Notice__OpenLogs" xml:space="preserve"><value>Open logs</value></data>
+  <data name="Notice__OpenOfficialDownload" xml:space="preserve"><value>Open Microsoft download page</value></data>
+  <data name="Notice__OpenTools" xml:space="preserve"><value>Get image tools</value></data>
+  <data name="Notice__PreviouslyDownloaded" xml:space="preserve"><value>Previously downloaded ISO verified.</value></data>
+  <data name="Notice__RecipeLoaded__Message" xml:space="preserve"><value>Inspect the source again. Core/expert risk acknowledgements must be renewed.</value></data>
+  <data name="Notice__RecipeLoaded__Title" xml:space="preserve"><value>Recipe loaded.</value></data>
+  <data name="Notice__RecipeNotReady__Title" xml:space="preserve"><value>The recipe is not ready.</value></data>
+  <data name="Notice__RecipeSaved__Message" xml:space="preserve"><value>It contains selections and local paths, not downloaded media or credentials.</value></data>
+  <data name="Notice__RecipeSaved__Title" xml:space="preserve"><value>Recipe saved.</value></data>
+  <data name="Notice__Restart" xml:space="preserve"><value>Restart now</value></data>
+  <data name="Notice__ResumeNotStarted__Message" xml:space="preserve"><value>The output file already exists. Choose a new file name to continue.</value></data>
+  <data name="Notice__ResumeNotStarted__Title" xml:space="preserve"><value>Resume not started.</value></data>
+  <data name="Notice__SessionRestoreFailed__Title" xml:space="preserve"><value>Session could not be restored.</value></data>
+  <data name="Notice__SessionRestored__Message" xml:space="preserve"><value>Inspect the image again before continuing. No build starts automatically.</value></data>
+  <data name="Notice__SessionRestored__Title" xml:space="preserve"><value>Session restored.</value></data>
+  <data name="Notice__SupportOpenFailed__Title" xml:space="preserve"><value>Support options could not be opened.</value></data>
+  <data name="Notice__SupportPageFailed__Title" xml:space="preserve"><value>Could not open the support page</value></data>
+  <data name="Notice__UnsupportedEdition__Message" xml:space="preserve"><value>Choose a Windows 11 client image, 22H2 or newer, in x64 or ARM64 format.</value></data>
+  <data name="Notice__UnsupportedEdition__Title" xml:space="preserve"><value>This edition is not supported.</value></data>
+  <data name="Notice__WorkspaceRecovered__Message" xml:space="preserve"><value>The interrupted working copy was discarded. Your source and logs were preserved.</value></data>
+  <data name="Notice__WorkspaceRecovered__Title" xml:space="preserve"><value>Workspace recovered.</value></data>
+  <data name="Outcome__BuildCancelled__Message" xml:space="preserve"><value>Your source was not changed. Working files and logs are kept.{0}</value></data>
+  <data name="Outcome__BuildCancelled__Title" xml:space="preserve"><value>Build cancelled.</value></data>
+  <data name="Outcome__BuildFailed__Title" xml:space="preserve"><value>Build failed.</value></data>
+  <data name="Outcome__Cancelled__Message" xml:space="preserve"><value>Nothing was changed.</value></data>
+  <data name="Outcome__Cancelled__Title" xml:space="preserve"><value>Cancelled.</value></data>
+  <data name="Outcome__CleanupProblems" xml:space="preserve"><value>Some cleanup steps reported problems: {0}</value></data>
+  <data name="Outcome__DownloadCancelled__Message" xml:space="preserve"><value>Partial downloads are kept, so you can continue later. No source media was modified.</value></data>
+  <data name="Outcome__DownloadCancelled__Title" xml:space="preserve"><value>Download cancelled.</value></data>
+  <data name="Outcome__DownloadFailed__Title" xml:space="preserve"><value>The download did not complete.</value></data>
+  <data name="Outcome__ElevateCancelled__Message" xml:space="preserve"><value>The app is still running without administrator privileges.</value></data>
+  <data name="Outcome__ElevateCancelled__Title" xml:space="preserve"><value>Restart cancelled.</value></data>
+  <data name="Outcome__ElevateFailed__Title" xml:space="preserve"><value>The app could not restart as administrator.</value></data>
+  <data name="Outcome__Finished" xml:space="preserve"><value>Finished.</value></data>
+  <data name="Outcome__GenericFailed__Title" xml:space="preserve"><value>The operation did not complete.</value></data>
+  <data name="Outcome__InspectCancelled__Message" xml:space="preserve"><value>The image was not changed.</value></data>
+  <data name="Outcome__InspectCancelled__Title" xml:space="preserve"><value>Inspection cancelled.</value></data>
+  <data name="Outcome__InspectFailed__Title" xml:space="preserve"><value>The image could not be inspected.</value></data>
+  <data name="Outcome__InventoryCancelled__Message" xml:space="preserve"><value>The image was not changed.</value></data>
+  <data name="Outcome__InventoryCancelled__Title" xml:space="preserve"><value>Component list cancelled.</value></data>
+  <data name="Outcome__InventoryFailed__Title" xml:space="preserve"><value>The component list could not be loaded.</value></data>
+  <data name="Outcome__NoDetails" xml:space="preserve"><value>No further details were reported.</value></data>
+  <data name="Outcome__RecoverCancelled__Message" xml:space="preserve"><value>Run Recover workspace again to finish cleaning up this job.</value></data>
+  <data name="Outcome__RecoverCancelled__Title" xml:space="preserve"><value>Recovery cancelled.</value></data>
+  <data name="Outcome__RecoverFailed__Title" xml:space="preserve"><value>Recovery did not complete.</value></data>
+  <data name="Outcome__RecoveryNeeded" xml:space="preserve"><value>The job&#x27;s mounted copy could not be discarded. Use Recover workspace and choose this job&#x27;s job.json.</value></data>
+  <data name="Outcome__ResumeAgain" xml:space="preserve"><value> You can resume again.</value></data>
+  <data name="Outcome__ResumeAvailable" xml:space="preserve"><value> Saved progress can be resumed.</value></data>
+  <data name="Outcome__ResumeCancelled__Message" xml:space="preserve"><value>Saved progress and logs are kept.{0}</value></data>
+  <data name="Outcome__ResumeCancelled__Title" xml:space="preserve"><value>Resume cancelled.</value></data>
+  <data name="Outcome__ResumeFailed__Title" xml:space="preserve"><value>Resume failed.</value></data>
+  <data name="Outcome__ResumeProgressKept" xml:space="preserve"><value> Saved progress is kept, so you can resume again.</value></data>
+  <data name="Outcome__Unknown__Message" xml:space="preserve"><value>It ended without saying how, so it is not shown as finished. Check the logs.</value></data>
+  <data name="Outcome__Unknown__Title" xml:space="preserve"><value>The operation did not complete.</value></data>
+  <data name="Resume__Compression__Fast" xml:space="preserve"><value>Fast WIM</value></data>
+  <data name="Resume__Compression__Maximum" xml:space="preserve"><value>Maximum WIM</value></data>
+  <data name="Resume__Compression__Recovery" xml:space="preserve"><value>Recovery ESD</value></data>
+  <data name="Resume__Describe__ChoicesFixed" xml:space="preserve"><value>The removal choices from the original build stay as they were. They can&#x27;t be changed when resuming.</value></data>
+  <data name="Resume__Describe__Compression" xml:space="preserve"><value>Compression: {0}</value></data>
+  <data name="Resume__Describe__CoreWarning" xml:space="preserve"><value>Core: no Windows Update, no Microsoft Defender, no recovery environment. Use only in an isolated test VM.</value></data>
+  <data name="Resume__Describe__ExpertWarning" xml:space="preserve"><value>Individual removals include protected items. The image may not boot.</value></data>
+  <data name="Resume__Describe__Mode" xml:space="preserve"><value>Mode: {0} · {1} removal groups · {2} individual actions</value></data>
+  <data name="Resume__Describe__Output" xml:space="preserve"><value>Output: {0}</value></data>
+  <data name="Resume__Describe__Verified" xml:space="preserve"><value>The saved progress is verified first. If anything does not match, nothing is changed.</value></data>
+  <data name="Resume__InvalidPath" xml:space="preserve"><value>That is not a valid job file path.</value></data>
+  <data name="Resume__Mode__CustomCore" xml:space="preserve"><value>Custom with Core removals</value></data>
+  <data name="Resume__NoCheckpoint" xml:space="preserve"><value>This build has no saved progress to resume. It was started before progress was saved, or it stopped before its image was saved, so it can&#x27;t be continued. Nothing was changed, and its logs and files are kept.</value></data>
+  <data name="Resume__RecipeMissing" xml:space="preserve"><value>This job&#x27;s saved recipe is missing, so it can&#x27;t be resumed.</value></data>
+  <data name="Resume__RecipeUnreadable" xml:space="preserve"><value>This job&#x27;s saved recipe could not be read. {0}</value></data>
+  <data name="Resume__WrongFile" xml:space="preserve"><value>Choose the job.json file inside the build&#x27;s tiny11-… folder.</value></data>
+  <data name="Review__Details__Header" xml:space="preserve"><value>Selected removals and full recipe</value></data>
+  <data name="Review__Heading" xml:space="preserve"><value>Review</value></data>
+  <data name="Review__Image__Title" xml:space="preserve"><value>Windows image</value></data>
+  <data name="Review__Lead" xml:space="preserve"><value>Check your image, removal set and output before building.</value></data>
+  <data name="Review__LoadRecipe" xml:space="preserve"><value>Load recipe</value></data>
+  <data name="Review__NoImage" xml:space="preserve"><value>No image selected</value></data>
+  <data name="Review__Options__CleanAfterBuild" xml:space="preserve"><value>Clean after build</value></data>
+  <data name="Review__Options__Compact" xml:space="preserve"><value>Compact installation: {0}</value></data>
+  <data name="Review__Options__Compression" xml:space="preserve"><value>{0} compression</value></data>
+  <data name="Review__Options__Default" xml:space="preserve"><value>Default</value></data>
+  <data name="Review__Options__Included" xml:space="preserve"><value>Included</value></data>
+  <data name="Review__Options__KeepFiles" xml:space="preserve"><value>Working files: {0}</value></data>
+  <data name="Review__Options__LocalAccount" xml:space="preserve"><value>Local-account setup: {0}</value></data>
+  <data name="Review__Options__NetFx" xml:space="preserve"><value>.NET 3.5: {0}</value></data>
+  <data name="Review__Options__NotIncluded" xml:space="preserve"><value>Not included</value></data>
+  <data name="Review__Options__OmitSetup" xml:space="preserve"><value>.NET setup payload: {0}</value></data>
+  <data name="Review__Options__Preferred" xml:space="preserve"><value>Preferred</value></data>
+  <data name="Review__Options__Redundant" xml:space="preserve"><value>Redundant data: {0}</value></data>
+  <data name="Review__Options__Title" xml:space="preserve"><value>Installation options</value></data>
+  <data name="Review__Options__Turbo" xml:space="preserve"><value>Turbo mode: {0}</value></data>
+  <data name="Review__Paths__Title" xml:space="preserve"><value>Output and workspace</value></data>
+  <data name="Review__Paths__Value" xml:space="preserve"><value>ISO
+{0}
+
+Workspace
+{1}</value></data>
+  <data name="Review__Removals__Core" xml:space="preserve"><value>No servicing, recovery or Defender.</value></data>
+  <data name="Review__Removals__Custom" xml:space="preserve"><value>Custom removals may affect servicing, recovery or security.</value></data>
+  <data name="Review__Removals__Summary" xml:space="preserve"><value>{0} removal groups · {1} individual actions</value></data>
+  <data name="Review__Removals__Tiny11" xml:space="preserve"><value>Windows Update, recovery and Defender retained.</value></data>
+  <data name="Review__SaveRecipe" xml:space="preserve"><value>Save recipe</value></data>
+  <data name="Review__Warning__Message" xml:space="preserve"><value>Some policies apply only to particular editions or builds. Feature updates can reinstall apps. Local-account and hardware bypasses are best effort. Test the resulting ISO before relying on it.</value></data>
+  <data name="Review__Warning__Title" xml:space="preserve"><value>Build-dependent settings</value></data>
+  <data name="Settings__Compact__Description" xml:space="preserve"><value>Install Windows using compressed system files to reduce disk usage.</value></data>
+  <data name="Settings__Compact__Title" xml:space="preserve"><value>Compact installation</value></data>
+  <data name="Settings__Compression__Fast" xml:space="preserve"><value>Fast WIM (fastest build, larger ISO)</value></data>
+  <data name="Settings__Compression__Header" xml:space="preserve"><value>Installation-image compression</value></data>
+  <data name="Settings__Compression__Maximum" xml:space="preserve"><value>Maximum WIM (easier to service later)</value></data>
+  <data name="Settings__Compression__Recovery" xml:space="preserve"><value>Recovery ESD (smaller, slower to compress)</value></data>
+  <data name="Settings__Files__Title" xml:space="preserve"><value>Files and workspace</value></data>
+  <data name="Settings__Heading" xml:space="preserve"><value>Build settings</value></data>
+  <data name="Settings__KeepFiles__Description" xml:space="preserve"><value>Retain the modified installation media after the ISO is saved. Uses more disk space.</value></data>
+  <data name="Settings__KeepFiles__Title" xml:space="preserve"><value>Keep working files</value></data>
+  <data name="Settings__Lead" xml:space="preserve"><value>Choose where to build and how to compress your image.</value></data>
+  <data name="Settings__LocalAccount__Description" xml:space="preserve"><value>Prefer local sign-in during setup. Some newer builds may still request a Microsoft account.</value></data>
+  <data name="Settings__LocalAccount__Title" xml:space="preserve"><value>Local-account setup</value></data>
+  <data name="Settings__NetFx__Description" xml:space="preserve"><value>Include support for older apps. Required source files must be present in the ISO.</value></data>
+  <data name="Settings__NetFx__Title" xml:space="preserve"><value>.NET Framework 3.5</value></data>
+  <data name="Settings__OmitSetup__Description" xml:space="preserve"><value>Leave sources\sxs out of the ISO. You can still include .NET 3.5 now; enabling it later requires separate matching media or Windows Update. Core cannot add it later.</value></data>
+  <data name="Settings__OmitSetup__Title" xml:space="preserve"><value>Omit .NET 3.5 setup payload</value></data>
+  <data name="Settings__Output__Choose" xml:space="preserve"><value>Choose output</value></data>
+  <data name="Settings__Output__Header" xml:space="preserve"><value>New output ISO file</value></data>
+  <data name="Settings__Redundant__Description" xml:space="preserve"><value>Remove downloaded update caches, archived servicing logs, temporary files and crash reports. Pending servicing data, drivers and installers are kept.</value></data>
+  <data name="Settings__Redundant__Title" xml:space="preserve"><value>Remove redundant image data</value></data>
+  <data name="Settings__Tools__Initial" xml:space="preserve"><value>Image and ISO tools are prepared automatically.</value></data>
+  <data name="Settings__Tools__Ready" xml:space="preserve"><value>Image and ISO tools ready.</value></data>
+  <data name="Settings__Turbo__Description" xml:space="preserve"><value>Batch feature and capability removals and reduce log overhead. Core and Fast WIM builds use a faster working image. Uses more CPU and temporary space; final compression stays as selected.</value></data>
+  <data name="Settings__Turbo__Title" xml:space="preserve"><value>Turbo mode</value></data>
+  <data name="Settings__Workspace__Choose" xml:space="preserve"><value>Choose workspace</value></data>
+  <data name="Settings__Workspace__Header" xml:space="preserve"><value>Workspace (NTFS, typically 40 to 70 GiB free)</value></data>
+  <data name="Setup__Legacy" xml:space="preserve"><value>Legacy installer: automatic (needed for {0})</value></data>
+  <data name="Setup__LegacyReason__Core" xml:space="preserve"><value>Core removals</value></data>
+  <data name="Setup__LegacyReason__CorePayload" xml:space="preserve"><value>Core and component-payload removals</value></data>
+  <data name="Setup__LegacyReason__Payload" xml:space="preserve"><value>component-payload removals</value></data>
+  <data name="Setup__LegacyReason__Selected" xml:space="preserve"><value>the selected removals</value></data>
+  <data name="Source__BuildMode" xml:space="preserve"><value>Build mode: {0}</value></data>
+  <data name="Source__Download__AutoDescription" xml:space="preserve"><value>Official Microsoft ISO · {0} · {1}</value></data>
+  <data name="Source__Download__Description" xml:space="preserve"><value>Official Microsoft ISO. Architecture and language selected automatically.</value></data>
+  <data name="Source__Download__InitialStatus" xml:space="preserve"><value>Or use an ISO you already have.</value></data>
+  <data name="Source__Download__Title" xml:space="preserve"><value>Download latest Windows 11</value></data>
+  <data name="Source__Heading" xml:space="preserve"><value>Windows image</value></data>
+  <data name="Source__Lead" xml:space="preserve"><value>Download the latest Windows 11 from Microsoft, or select an ISO or extracted installation folder. Inspect the image to select an edition.</value></data>
+  <data name="Source__Local__ChooseFolder" xml:space="preserve"><value>Choose folder</value></data>
+  <data name="Source__Local__ChooseIso" xml:space="preserve"><value>Choose ISO</value></data>
+  <data name="Source__Local__EditionHeader" xml:space="preserve"><value>Edition to build</value></data>
+  <data name="Source__Local__Inspect" xml:space="preserve"><value>Inspect image</value></data>
+  <data name="Source__Local__PathHeader" xml:space="preserve"><value>Windows ISO or installation-media folder</value></data>
+  <data name="Source__Local__PathPlaceholder" xml:space="preserve"><value>Choose a Windows 11 image</value></data>
+  <data name="Source__Local__Title" xml:space="preserve"><value>Local installation media</value></data>
+  <data name="Source__Other__Arm64" xml:space="preserve"><value>Microsoft ARM64 downloads ↗</value></data>
+  <data name="Source__Other__Download" xml:space="preserve"><value>Download ISO / resume partial</value></data>
+  <data name="Source__Other__HashHeader" xml:space="preserve"><value>Published SHA-256 (recommended)</value></data>
+  <data name="Source__Other__HashPlaceholder" xml:space="preserve"><value>Copy from Microsoft&#x27;s Verify your download section</value></data>
+  <data name="Source__Other__Header" xml:space="preserve"><value>Other official downloads</value></data>
+  <data name="Source__Other__Insider" xml:space="preserve"><value>Official Insider / Canary ISO selection ↗</value></data>
+  <data name="Source__Other__Lead" xml:space="preserve"><value>Choose a language on Microsoft&#x27;s download page, then paste the ISO download link here. Links usually expire after 24 hours.</value></data>
+  <data name="Source__Other__UrlHeader" xml:space="preserve"><value>Microsoft direct ISO link</value></data>
+  <data name="Source__Other__X64" xml:space="preserve"><value>Microsoft x64 downloads ↗</value></data>
+  <data name="Stage__Summary__AllDone" xml:space="preserve"><value>All {0} stages done</value></data>
+  <data name="Stage__Summary__Cancelled" xml:space="preserve"><value>cancelled</value></data>
+  <data name="Stage__Summary__Done" xml:space="preserve"><value>{0} of {1} stages done</value></data>
+  <data name="Stage__Summary__Failed" xml:space="preserve"><value>{0} failed</value></data>
+  <data name="Support__Development" xml:space="preserve"><value>Support development</value></data>
+  <data name="Support__Development__Help" xml:space="preserve"><value>Optional monthly support or one-time donation. All app features remain free.</value></data>
+  <data name="Support__Development__Help__Short" xml:space="preserve"><value>Optional support. Opens support choices, not a payment.</value></data>
+  <data name="Support__LinksNote" xml:space="preserve"><value>Links open in your browser. Nothing is charged or subscribed to in the app.</value></data>
+  <data name="Support__Monthly" xml:space="preserve"><value>Monthly support</value></data>
+  <data name="Support__Monthly__Description" xml:space="preserve"><value>Help keep the project maintained over time.</value></data>
+  <data name="Support__Monthly__Link" xml:space="preserve"><value>Support monthly on GitHub Sponsors</value></data>
+  <data name="Support__OneTime" xml:space="preserve"><value>One-time donation</value></data>
+  <data name="Support__OneTime__Description" xml:space="preserve"><value>A one-off thank-you, with no commitment.</value></data>
+  <data name="Support__OneTime__Link" xml:space="preserve"><value>Donate once on Ko-fi</value></data>
+  <data name="Support__Other" xml:space="preserve"><value>Prefer another service?</value></data>
+  <data name="Support__Patreon" xml:space="preserve"><value>Patreon</value></data>
+  <data name="Support__PayPal" xml:space="preserve"><value>PayPal</value></data>
+  <data name="Support__Purpose" xml:space="preserve"><value>Help fund development time, testing across Windows releases and fixes for reported problems. All app features remain free.</value></data>
+  <data name="Support__Title" xml:space="preserve"><value>Support Tiny11 Builder</value></data>
+  <data name="Welcome__BuildModes" xml:space="preserve"><value>Build modes</value></data>
+  <data name="Welcome__Compatibility" xml:space="preserve"><value>Windows 11 22H2 or newer · x64 and ARM64 · Insider / Canary</value></data>
+  <data name="Welcome__Core__Badge" xml:space="preserve"><value>For test VMs only</value></data>
+  <data name="Welcome__Core__Description" xml:space="preserve"><value>Remove update and recovery support and disable Defender.</value></data>
+  <data name="Welcome__Custom__Badge" xml:space="preserve"><value>Protected items included</value></data>
+  <data name="Welcome__Custom__Description" xml:space="preserve"><value>Select individual apps, components and services to remove.</value></data>
+  <data name="Welcome__Lead" xml:space="preserve"><value>Create a customized Windows 11 ISO. Select an image, choose what to remove, and build the ISO.</value></data>
+  <data name="Welcome__ModeHelp__Core" xml:space="preserve"><value>Select Tiny11 Core and choose a Windows ISO.</value></data>
+  <data name="Welcome__ModeHelp__Custom" xml:space="preserve"><value>Select Custom and choose a Windows ISO.</value></data>
+  <data name="Welcome__ModeHelp__Tiny11" xml:space="preserve"><value>Select Tiny11 and choose a Windows ISO.</value></data>
+  <data name="Welcome__TestWarning" xml:space="preserve"><value>Test Core and custom images in a VM before use.</value></data>
+  <data name="Welcome__Tiny11__Badge" xml:space="preserve"><value>Update support retained</value></data>
+  <data name="Welcome__Tiny11__Description" xml:space="preserve"><value>Use the original Tiny11 removals. Keep Windows Update and recovery.</value></data>
+  <data name="Welcome__Title" xml:space="preserve"><value>Welcome</value></data>
+  <data name="Working__CheckingChoices" xml:space="preserve"><value>Checking your choices…</value></data>
+  <data name="Working__CheckingDownload" xml:space="preserve"><value>Checking the downloaded ISO…</value></data>
+  <data name="Working__Downloading" xml:space="preserve"><value>Downloading from Microsoft…</value></data>
+  <data name="Working__FindingLatest" xml:space="preserve"><value>Finding the latest Windows 11…</value></data>
+  <data name="Working__Inspecting" xml:space="preserve"><value>Inspecting the image…</value></data>
+  <data name="Working__ListingComponents" xml:space="preserve"><value>Listing image components…</value></data>
+  <data name="Working__Recovering" xml:space="preserve"><value>Recovering workspace…</value></data>
+</root>

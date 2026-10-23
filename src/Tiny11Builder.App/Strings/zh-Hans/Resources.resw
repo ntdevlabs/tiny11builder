@@ -1,0 +1,627 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Action__Build" xml:space="preserve"><value>生成</value></data>
+  <data name="Action__BuildAgain" xml:space="preserve"><value>重新生成</value></data>
+  <data name="Action__BuildAnother" xml:space="preserve"><value>再生成一个</value></data>
+  <data name="Action__Continue" xml:space="preserve"><value>继续</value></data>
+  <data name="Action__Next" xml:space="preserve"><value>下一步</value></data>
+  <data name="Action__RecoverWorkspace" xml:space="preserve"><value>恢复工作区</value></data>
+  <data name="Action__ResumeAgain" xml:space="preserve"><value>再次继续</value></data>
+  <data name="Action__ResumeBuild" xml:space="preserve"><value>继续生成</value></data>
+  <data name="Action__ResumeBuild__Help" xml:space="preserve"><value>从已保存的进度继续先前停止的生成。</value></data>
+  <data name="Action__ResumeBuild__Help__Stopped" xml:space="preserve"><value>从已保存的进度继续此生成。</value></data>
+  <data name="Action__Review" xml:space="preserve"><value>检阅</value></data>
+  <data name="Action__Start" xml:space="preserve"><value>开始</value></data>
+  <data name="App__Title" xml:space="preserve"><value>Tiny11 Builder</value></data>
+  <data name="Build__Board__Commit" xml:space="preserve"><value>认可映像</value></data>
+  <data name="Build__Board__Compress" xml:space="preserve"><value>压缩映像</value></data>
+  <data name="Build__Board__Export" xml:space="preserve"><value>导出与装载</value></data>
+  <data name="Build__Board__Iso" xml:space="preserve"><value>创建 ISO</value></data>
+  <data name="Build__Board__Prepare" xml:space="preserve"><value>准备媒体</value></data>
+  <data name="Build__Board__Remove" xml:space="preserve"><value>移除组件</value></data>
+  <data name="Build__Board__Verify" xml:space="preserve"><value>验证输出</value></data>
+  <data name="Build__Building" xml:space="preserve"><value>正在生成</value></data>
+  <data name="Build__CancelHint" xml:space="preserve"><value>若要停止，请使用右上角的「安全取消」。它会在下一个安全点停止。你的源媒体绝不会被更改；工作文件、已保存的进度与日志都会保留。</value></data>
+  <data name="Build__CancellationRequested" xml:space="preserve"><value>已要求取消。{0}…</value></data>
+  <data name="Build__CancellationWaiting" xml:space="preserve"><value>已要求取消。正在等待当前操作完成…</value></data>
+  <data name="Build__CancelledHeading" xml:space="preserve"><value>已取消{0}</value></data>
+  <data name="Build__Cancelling" xml:space="preserve"><value>正在取消…</value></data>
+  <data name="Build__CurrentOperation" xml:space="preserve"><value>当前操作</value></data>
+  <data name="Build__Description" xml:space="preserve"><value>选择的版本会被复制、修改、压缩，并保存为可开机的 ISO。</value></data>
+  <data name="Build__Description__Legacy" xml:space="preserve"><value>旧版安装程序会自动打开，因为需要它来处理{0}。</value></data>
+  <data name="Build__Details" xml:space="preserve"><value>生成详细信息</value></data>
+  <data name="Build__ExpandStage" xml:space="preserve"><value>展开阶段以查看每个步骤与任何错误详细信息。</value></data>
+  <data name="Build__FinishedWithWarnings" xml:space="preserve"><value>完成，但有警告</value></data>
+  <data name="Build__Heading" xml:space="preserve"><value>生成</value></data>
+  <data name="Build__History" xml:space="preserve"><value>操作历史</value></data>
+  <data name="Build__IsoCreated" xml:space="preserve"><value>已创建 ISO</value></data>
+  <data name="Build__NoChanges" xml:space="preserve"><value>尚未进行任何更改。</value></data>
+  <data name="Build__Noun__Build" xml:space="preserve"><value>生成</value></data>
+  <data name="Build__Noun__Resume" xml:space="preserve"><value>继续生成</value></data>
+  <data name="Build__OpenLogsAndReport" xml:space="preserve"><value>打开日志与报告</value></data>
+  <data name="Build__OpenOutputFolder" xml:space="preserve"><value>打开输出文件夹</value></data>
+  <data name="Build__OutputIso" xml:space="preserve"><value>输出 ISO</value></data>
+  <data name="Build__Overall" xml:space="preserve"><value>整体进度</value></data>
+  <data name="Build__PreparingTools" xml:space="preserve"><value>正在准备映像工具…</value></data>
+  <data name="Build__Result__InTotal" xml:space="preserve"><value>总计 {0}</value></data>
+  <data name="Build__Result__IsoSize" xml:space="preserve"><value>{0} GiB ISO</value></data>
+  <data name="Build__Result__Minutes" xml:space="preserve"><value>{0} 分钟</value></data>
+  <data name="Build__Result__MoreWarnings" xml:space="preserve"><value>另有 {0} 项在生成日志中</value></data>
+  <data name="Build__Result__RedundantRemoved" xml:space="preserve"><value>已移除多余数据：{0} MiB 逻辑大小 · 已省略安装承载内容：{1} MiB</value></data>
+  <data name="Build__Result__Resumed" xml:space="preserve"><value>继续的生成</value></data>
+  <data name="Build__Result__Saved" xml:space="preserve"><value>ISO 与生成报告已保存。使用前，请先在 VM 中测试 ISO。</value></data>
+  <data name="Build__Result__SavedWarnings" xml:space="preserve"><value>ISO 已保存，但有警告。请查看下方略过的工作与其他详细信息。</value></data>
+  <data name="Build__Result__StageTimings" xml:space="preserve"><value>详细的阶段计时会保存在生成报告中。</value></data>
+  <data name="Build__Result__Standard" xml:space="preserve"><value>标准生成</value></data>
+  <data name="Build__Result__Turbo" xml:space="preserve"><value>Turbo 生成</value></data>
+  <data name="Build__Result__WarningNotice" xml:space="preserve"><value>ISO 已保存，但有警告。请查看页面上的警告。</value></data>
+  <data name="Build__Resuming" xml:space="preserve"><value>正在继续生成</value></data>
+  <data name="Build__Sha256" xml:space="preserve"><value>SHA-256</value></data>
+  <data name="Build__StageFailed__Message" xml:space="preserve"><value>{0} 失败。展开此阶段以查看错误详细信息。</value></data>
+  <data name="Build__StageNames__AdvancedPayloads" xml:space="preserve"><value>高级承载内容</value></data>
+  <data name="Build__StageNames__Commit" xml:space="preserve"><value>认可</value></data>
+  <data name="Build__StageNames__ComponentCleanup" xml:space="preserve"><value>组件清理</value></data>
+  <data name="Build__StageNames__Compress" xml:space="preserve"><value>压缩</value></data>
+  <data name="Build__StageNames__CopyMedia" xml:space="preserve"><value>复制媒体</value></data>
+  <data name="Build__StageNames__CorePruning" xml:space="preserve"><value>Core 剪除</value></data>
+  <data name="Build__StageNames__CreateIso" xml:space="preserve"><value>创建 ISO</value></data>
+  <data name="Build__StageNames__CustomServicing" xml:space="preserve"><value>自定义服务</value></data>
+  <data name="Build__StageNames__ExportEdition" xml:space="preserve"><value>导出版本</value></data>
+  <data name="Build__StageNames__Inventory" xml:space="preserve"><value>清查</value></data>
+  <data name="Build__StageNames__Mount" xml:space="preserve"><value>装载</value></data>
+  <data name="Build__StageNames__NetFx" xml:space="preserve"><value>.NET 3.5</value></data>
+  <data name="Build__StageNames__OptionalFeatures" xml:space="preserve"><value>可选功能</value></data>
+  <data name="Build__StageNames__Prepare" xml:space="preserve"><value>准备</value></data>
+  <data name="Build__StageNames__RedundantData" xml:space="preserve"><value>多余数据</value></data>
+  <data name="Build__StageNames__RemoveApps" xml:space="preserve"><value>移除应用</value></data>
+  <data name="Build__StageNames__ResumeCheck" xml:space="preserve"><value>检查已保存的进度</value></data>
+  <data name="Build__StageNames__SetupImage" xml:space="preserve"><value>设置映像</value></data>
+  <data name="Build__StageNames__VerifyOutput" xml:space="preserve"><value>验证输出</value></data>
+  <data name="Build__StageNames__WindowsSettings" xml:space="preserve"><value>Windows 设置</value></data>
+  <data name="Build__Stage__Complete" xml:space="preserve"><value>完成</value></data>
+  <data name="Build__Stage__Of" xml:space="preserve"><value>第 {0} 阶段，共 {1} 阶段</value></data>
+  <data name="Build__Stages__AllDone" xml:space="preserve"><value>全部 {0} 个阶段已完成</value></data>
+  <data name="Build__Stages__Initial" xml:space="preserve"><value>已完成 0/7 个阶段</value></data>
+  <data name="Build__Stopped" xml:space="preserve"><value>{0}已停止</value></data>
+  <data name="Build__SupportPrompt" xml:space="preserve"><value>如果 Tiny11 Builder 为你节省了时间，你可以赞助它的开发。</value></data>
+  <data name="Build__TestIso" xml:space="preserve"><value>安装 Windows 前，请先在 VM 中测试 ISO。</value></data>
+  <data name="Build__Waiting" xml:space="preserve"><value>等待开始</value></data>
+  <data name="Cancel__Body__BeforeCancel" xml:space="preserve"><value>{0}它在可取消之前已完成，因此未取消任何内容。</value></data>
+  <data name="Cancel__Body__TooLate" xml:space="preserve"><value>{0}取消要求太晚才送达，因此未取消任何内容。</value></data>
+  <data name="Cancel__ButtonLabel" xml:space="preserve"><value>安全取消</value></data>
+  <data name="Cancel__Button__Done" xml:space="preserve"><value>完成</value></data>
+  <data name="Cancel__Confirm__Build" xml:space="preserve"><value>取消生成</value></data>
+  <data name="Cancel__Confirm__Check" xml:space="preserve"><value>取消检查</value></data>
+  <data name="Cancel__Confirm__Download" xml:space="preserve"><value>取消下载</value></data>
+  <data name="Cancel__Confirm__Elevate" xml:space="preserve"><value>取消重新启动</value></data>
+  <data name="Cancel__Confirm__Inspect" xml:space="preserve"><value>取消检查</value></data>
+  <data name="Cancel__Confirm__Inventory" xml:space="preserve"><value>取消列出</value></data>
+  <data name="Cancel__Confirm__Other" xml:space="preserve"><value>取消</value></data>
+  <data name="Cancel__Confirm__Recover" xml:space="preserve"><value>取消恢复</value></data>
+  <data name="Cancel__Confirm__Resume" xml:space="preserve"><value>取消继续生成</value></data>
+  <data name="Cancel__Explanation__Build" xml:space="preserve"><value>生成会在下一个安全点停止。这可能需要几分钟，因为当前正在运行的映像操作会先被允许完成。你的源媒体绝不会被更改。已装载的副本会安全卸载；工作文件、已保存的进度与日志都会保留。</value></data>
+  <data name="Cancel__Explanation__Check" xml:space="preserve"><value>检查会停止。尚未更改任何内容。</value></data>
+  <data name="Cancel__Explanation__Download" xml:space="preserve"><value>下载会停止。未完成的文件会保留，因此你可以稍后继续。不会修改任何来源媒体。</value></data>
+  <data name="Cancel__Explanation__Elevate" xml:space="preserve"><value>应用会继续在没有系统管理员权限的情况下运行。</value></data>
+  <data name="Cancel__Explanation__Inspect" xml:space="preserve"><value>检查会在当前步骤之后停止。映像不会被更改。</value></data>
+  <data name="Cancel__Explanation__Inventory" xml:space="preserve"><value>列出会在下一个安全点停止。映像的只读装载会被丢弃，映像不会被更改。</value></data>
+  <data name="Cancel__Explanation__Other" xml:space="preserve"><value>操作会在当前步骤之后停止。尚未更改任何内容。</value></data>
+  <data name="Cancel__Explanation__Recover" xml:space="preserve"><value>恢复会在下一个安全点停止。请再次运行「恢复工作区」，以完成此工作的清理。</value></data>
+  <data name="Cancel__Explanation__Resume" xml:space="preserve"><value>继续生成会在下一个安全点停止。这可能需要几分钟，因为当前正在运行的映像操作会先被允许完成。已装载的副本会安全卸载；工作文件、已保存的进度与日志都会保留，因此你可以再次继续。</value></data>
+  <data name="Cancel__Finished__Build" xml:space="preserve"><value>ISO 与生成报告已保存。</value></data>
+  <data name="Cancel__Finished__Check" xml:space="preserve"><value>检查已完成。</value></data>
+  <data name="Cancel__Finished__Download" xml:space="preserve"><value>下载已完成。</value></data>
+  <data name="Cancel__Finished__Elevate" xml:space="preserve"><value>应用已重新启动。</value></data>
+  <data name="Cancel__Finished__Inspect" xml:space="preserve"><value>映像已检查。</value></data>
+  <data name="Cancel__Finished__Inventory" xml:space="preserve"><value>组件列表已加载。</value></data>
+  <data name="Cancel__Finished__Other" xml:space="preserve"><value>操作已完成。</value></data>
+  <data name="Cancel__Finished__Recover" xml:space="preserve"><value>工作区已恢复。</value></data>
+  <data name="Cancel__Finished__Resume" xml:space="preserve"><value>ISO 与生成报告已保存。</value></data>
+  <data name="Cancel__Footnote__JobFolder" xml:space="preserve"><value>工作文件夹与日志：{0}</value></data>
+  <data name="Cancel__Heading__AlreadyFinished" xml:space="preserve"><value>{0}已完成</value></data>
+  <data name="Cancel__Heading__BeforeCancel" xml:space="preserve"><value>在可取消之前已完成</value></data>
+  <data name="Cancel__Heading__RecoveryCancelled" xml:space="preserve"><value>{0}，但需要恢复</value></data>
+  <data name="Cancel__Heading__RecoveryFailed" xml:space="preserve"><value>{0}，且需要恢复</value></data>
+  <data name="Cancel__Hint__Build" xml:space="preserve"><value>会在下一个安全点停止生成。你的源媒体绝不会被更改。</value></data>
+  <data name="Cancel__Hint__Check" xml:space="preserve"><value>会停止检查你的选择。不会更改任何内容。</value></data>
+  <data name="Cancel__Hint__Download" xml:space="preserve"><value>会停止下载。未完成的文件会保留。</value></data>
+  <data name="Cancel__Hint__Elevate" xml:space="preserve"><value>会停止以系统管理员身分重新启动应用。</value></data>
+  <data name="Cancel__Hint__Inspect" xml:space="preserve"><value>会停止检查映像。不会更改任何内容。</value></data>
+  <data name="Cancel__Hint__Inventory" xml:space="preserve"><value>会停止列出组件。映像不会被更改。</value></data>
+  <data name="Cancel__Hint__Other" xml:space="preserve"><value>会停止运行中的操作。</value></data>
+  <data name="Cancel__Hint__Recover" xml:space="preserve"><value>会在下一个安全点停止恢复。</value></data>
+  <data name="Cancel__Hint__Resume" xml:space="preserve"><value>会在下一个安全点停止继续生成。已保存的进度会保留。</value></data>
+  <data name="Cancel__Keep__Build" xml:space="preserve"><value>继续生成</value></data>
+  <data name="Cancel__Keep__Check" xml:space="preserve"><value>继续</value></data>
+  <data name="Cancel__Keep__Download" xml:space="preserve"><value>继续下载</value></data>
+  <data name="Cancel__Keep__Elevate" xml:space="preserve"><value>继续</value></data>
+  <data name="Cancel__Keep__Inspect" xml:space="preserve"><value>继续</value></data>
+  <data name="Cancel__Keep__Inventory" xml:space="preserve"><value>继续</value></data>
+  <data name="Cancel__Keep__Other" xml:space="preserve"><value>继续</value></data>
+  <data name="Cancel__Keep__Recover" xml:space="preserve"><value>继续恢复</value></data>
+  <data name="Cancel__Keep__Resume" xml:space="preserve"><value>继续生成</value></data>
+  <data name="Cancel__Note__DoNotClose" xml:space="preserve"><value>在此完成之前，请勿关闭应用。</value></data>
+  <data name="Cancel__Note__ToolNotStopped" xml:space="preserve"><value>映像工具绝不会被强制停止，因此这可能需要几分钟。请勿关闭应用。</value></data>
+  <data name="Cancel__Noun__Build" xml:space="preserve"><value>生成</value></data>
+  <data name="Cancel__Noun__Check" xml:space="preserve"><value>检查</value></data>
+  <data name="Cancel__Noun__Download" xml:space="preserve"><value>下载</value></data>
+  <data name="Cancel__Noun__Elevate" xml:space="preserve"><value>重新启动</value></data>
+  <data name="Cancel__Noun__Inspect" xml:space="preserve"><value>检查</value></data>
+  <data name="Cancel__Noun__Inventory" xml:space="preserve"><value>组件列表</value></data>
+  <data name="Cancel__Noun__Other" xml:space="preserve"><value>操作</value></data>
+  <data name="Cancel__Noun__Recover" xml:space="preserve"><value>恢复</value></data>
+  <data name="Cancel__Noun__Resume" xml:space="preserve"><value>继续生成</value></data>
+  <data name="Cancel__Question__Build" xml:space="preserve"><value>要取消此生成吗？</value></data>
+  <data name="Cancel__Question__Check" xml:space="preserve"><value>要取消检查吗？</value></data>
+  <data name="Cancel__Question__Download" xml:space="preserve"><value>要取消此下载吗？</value></data>
+  <data name="Cancel__Question__Elevate" xml:space="preserve"><value>要取消重新启动吗？</value></data>
+  <data name="Cancel__Question__Inspect" xml:space="preserve"><value>要取消检查此映像吗？</value></data>
+  <data name="Cancel__Question__Inventory" xml:space="preserve"><value>要取消列出组件吗？</value></data>
+  <data name="Cancel__Question__Other" xml:space="preserve"><value>要取消此操作吗？</value></data>
+  <data name="Cancel__Question__Recover" xml:space="preserve"><value>要取消此恢复吗？</value></data>
+  <data name="Cancel__Question__Resume" xml:space="preserve"><value>要取消此继续生成吗？</value></data>
+  <data name="Cancel__Status__CleanupFinished" xml:space="preserve"><value>清理已完成。</value></data>
+  <data name="Cancel__Status__CurrentOperation" xml:space="preserve"><value>当前操作：{0} · {1}%</value></data>
+  <data name="Cancel__Status__CurrentOperationNoPercent" xml:space="preserve"><value>当前操作：{0}</value></data>
+  <data name="Cancel__Status__DiscardingMount" xml:space="preserve"><value>正在丢弃工作装载</value></data>
+  <data name="Cancel__Status__Finished" xml:space="preserve"><value>已完成。</value></data>
+  <data name="Cancel__Status__Finishing" xml:space="preserve"><value>正在完成当前操作</value></data>
+  <data name="Cancel__Status__SavingLogs" xml:space="preserve"><value>正在保存日志</value></data>
+  <data name="Cancel__Status__Stopped" xml:space="preserve"><value>已停止。</value></data>
+  <data name="Cancel__Stopping__Build" xml:space="preserve"><value>正在取消生成</value></data>
+  <data name="Cancel__Stopping__Check" xml:space="preserve"><value>正在取消检查</value></data>
+  <data name="Cancel__Stopping__Download" xml:space="preserve"><value>正在取消下载</value></data>
+  <data name="Cancel__Stopping__Elevate" xml:space="preserve"><value>正在取消重新启动</value></data>
+  <data name="Cancel__Stopping__Inspect" xml:space="preserve"><value>正在取消检查</value></data>
+  <data name="Cancel__Stopping__Inventory" xml:space="preserve"><value>正在取消组件列表</value></data>
+  <data name="Cancel__Stopping__Other" xml:space="preserve"><value>正在取消</value></data>
+  <data name="Cancel__Stopping__Recover" xml:space="preserve"><value>正在取消恢复</value></data>
+  <data name="Cancel__Stopping__Resume" xml:space="preserve"><value>正在取消继续生成</value></data>
+  <data name="Cancel__Wait__Download" xml:space="preserve"><value>正在停止下载</value></data>
+  <data name="Cancel__Wait__Operation" xml:space="preserve"><value>正在等待当前操作完成</value></data>
+  <data name="Cancel__Wait__Step" xml:space="preserve"><value>正在等待当前步骤完成</value></data>
+  <data name="Cancel__Warning__CallbackFailed" xml:space="preserve"><value>已送出取消，但对其作出反应的步骤失败：{0}</value></data>
+  <data name="Cancel__Warning__TokenFailed" xml:space="preserve"><value>无法释放取消权杖：{0}</value></data>
+  <data name="Catalog__Category__Advanced" xml:space="preserve"><value>高级／原始生成器</value></data>
+  <data name="Catalog__Category__Apps" xml:space="preserve"><value>随附应用</value></data>
+  <data name="Catalog__Category__Features" xml:space="preserve"><value>可选功能</value></data>
+  <data name="Catalog__Category__Settings" xml:space="preserve"><value>Windows 设置</value></data>
+  <data name="Catalog__ads__Description" xml:space="preserve"><value>抑制消费者内容、设置建议、文件总管促销与欢迎提示。</value></data>
+  <data name="Catalog__ads__Title" xml:space="preserve"><value>广告、建议与赞助应用</value></data>
+  <data name="Catalog__camera__Description" xml:space="preserve"><value>移除相机应用，而非相机驱动程序。</value></data>
+  <data name="Catalog__camera__Title" xml:space="preserve"><value>相机</value></data>
+  <data name="Catalog__cleanup__Description" xml:space="preserve"><value>一般模式会保留服务能力。Core 会在其不可逆的组件剪除之前，另外重置更新基底。</value></data>
+  <data name="Catalog__cleanup__Title" xml:space="preserve"><value>组件清理</value></data>
+  <data name="Catalog__clipchamp__Description" xml:space="preserve"><value>移除随附的影片编辑器。</value></data>
+  <data name="Catalog__clipchamp__Title" xml:space="preserve"><value>Clipchamp</value></data>
+  <data name="Catalog__copilot-app__Description" xml:space="preserve"><value>移除预先安装的 Copilot 应用。保留共用运行阶段与壳层组件。</value></data>
+  <data name="Catalog__copilot-app__Title" xml:space="preserve"><value>Copilot 应用</value></data>
+  <data name="Catalog__copilot__Description" xml:space="preserve"><value>套用原则以禁用 Copilot 与 Recall。支持程度因内部版本与版本而异。</value></data>
+  <data name="Catalog__copilot__Title" xml:space="preserve"><value>禁用 Copilot 与 Recall</value></data>
+  <data name="Catalog__devhome__Description" xml:space="preserve"><value>移除 Dev Home 与 Power Automate Desktop。</value></data>
+  <data name="Catalog__devhome__Title" xml:space="preserve"><value>Dev Home 与 Power Automate</value></data>
+  <data name="Catalog__device-encryption__Description" xml:space="preserve"><value>防止自动 BitLocker 设备加密；如果你默认需要加密，请勿使用。</value></data>
+  <data name="Catalog__device-encryption__Title" xml:space="preserve"><value>禁用自动设备加密</value></data>
+  <data name="Catalog__edge-files__Description" xml:space="preserve"><value>删除 Edge 与 WebView2 文件。需要 WebView2 的应用可能停止运作。更新可能会重新安装 Edge。</value></data>
+  <data name="Catalog__edge-files__Title" xml:space="preserve"><value>移除 Edge 与 WebView2</value></data>
+  <data name="Catalog__edge__Description" xml:space="preserve"><value>抑制首次运行、侧边栏与建议。保留 Edge 与 WebView2 以维持应用兼容性。</value></data>
+  <data name="Catalog__edge__Title" xml:space="preserve"><value>Edge 首次运行与促销界面</value></data>
+  <data name="Catalog__feedback__Description" xml:space="preserve"><value>移除意见反应中枢、取得协助与入门应用。</value></data>
+  <data name="Catalog__feedback__Title" xml:space="preserve"><value>意见反应、提示与说明</value></data>
+  <data name="Catalog__hardware-bypass__Description" xml:space="preserve"><value>在安装程序与 Windows 中设置 CPU、RAM、TPM、存储设备与安全开机的略过值。不受支持的硬件可能无法运作。</value></data>
+  <data name="Catalog__hardware-bypass__Title" xml:space="preserve"><value>略过安装硬件需求</value></data>
+  <data name="Catalog__language-extras__Description" xml:space="preserve"><value>移除每个映像语言中的可选语言能力；保留基本语言支持。</value></data>
+  <data name="Catalog__language-extras__Title" xml:space="preserve"><value>语音、OCR 与手写承载内容</value></data>
+  <data name="Catalog__legacy-capabilities__Description" xml:space="preserve"><value>在已安装的情况下，移除 WordPad、步骤收录程序、数学辨识器、旧版媒体播放器与扩充桌布。</value></data>
+  <data name="Catalog__legacy-capabilities__Title" xml:space="preserve"><value>已淘汰的附属应用与桌布承载内容</value></data>
+  <data name="Catalog__legacy__Description" xml:space="preserve"><value>在存在的情况下，禁用已淘汰的 Internet Explorer 可选功能。</value></data>
+  <data name="Catalog__legacy__Title" xml:space="preserve"><value>旧版 Internet Explorer</value></data>
+  <data name="Catalog__maps__Description" xml:space="preserve"><value>移除已淘汰的地图与混合实境客户端。</value></data>
+  <data name="Catalog__maps__Title" xml:space="preserve"><value>地图与混合实境</value></data>
+  <data name="Catalog__media__Description" xml:space="preserve"><value>移除随附的媒体播放应用；编解码器与共用架构会保留。</value></data>
+  <data name="Catalog__media__Title" xml:space="preserve"><value>媒体播放器与电影</value></data>
+  <data name="Catalog__news-weather__Description" xml:space="preserve"><value>移除封装的信息摘要应用；保留本机 Windows 搜寻。</value></data>
+  <data name="Catalog__news-weather__Title" xml:space="preserve"><value>新闻、天气与 Bing 应用</value></data>
+  <data name="Catalog__oem__Description" xml:space="preserve"><value>移除 Intel 管理状态与 Dolby 促销应用，而非驱动程序。</value></data>
+  <data name="Catalog__oem__Title" xml:space="preserve"><value>OEM 促销应用</value></data>
+  <data name="Catalog__office-promos__Description" xml:space="preserve"><value>移除 Office Hub 与 Office 推播通知促销应用。</value></data>
+  <data name="Catalog__office-promos__Title" xml:space="preserve"><value>Microsoft 365 促销</value></data>
+  <data name="Catalog__onedrive-files__Description" xml:space="preserve"><value>从离线映像中移除两种架构专用的 OneDrive 安装程序。</value></data>
+  <data name="Catalog__onedrive-files__Title" xml:space="preserve"><value>移除 OneDrive 安装二进位档</value></data>
+  <data name="Catalog__onedrive__Description" xml:space="preserve"><value>透过原则禁用 OneDrive 同步。OneDrive 二进位档会保留；仅在你不需要同步时使用。</value></data>
+  <data name="Catalog__onedrive__Title" xml:space="preserve"><value>OneDrive 同步与备份提示</value></data>
+  <data name="Catalog__oobe__Description" xml:space="preserve"><value>抑制隐私设置与登录后的设置建议，而不创建账户或接受 EULA。</value></data>
+  <data name="Catalog__oobe__Title" xml:space="preserve"><value>安装隐私与完成设置提示</value></data>
+  <data name="Catalog__outlook__Description" xml:space="preserve"><value>移除 Outlook 与已淘汰的邮件／行事历应用。</value></data>
+  <data name="Catalog__outlook__Title" xml:space="preserve"><value>新版 Outlook 与邮件</value></data>
+  <data name="Catalog__paint__Description" xml:space="preserve"><value>移除小画家、3D 检视器与 OneNote。取消勾选即可保留。</value></data>
+  <data name="Catalog__paint__Title" xml:space="preserve"><value>小画家、3D 检视器与 OneNote</value></data>
+  <data name="Catalog__phone__Description" xml:space="preserve"><value>移除手机整合应用。跨设备功能可能停止运作。</value></data>
+  <data name="Catalog__phone__Title" xml:space="preserve"><value>手机链接与跨设备应用</value></data>
+  <data name="Catalog__privacy__Description" xml:space="preserve"><value>保留必需的诊断数据。禁用广告识别码、个性化建议与输入收集。</value></data>
+  <data name="Catalog__privacy__Title" xml:space="preserve"><value>可选诊断与个性化</value></data>
+  <data name="Catalog__quickassist__Description" xml:space="preserve"><value>移除 Microsoft 的远端协助客户端。</value></data>
+  <data name="Catalog__quickassist__Title" xml:space="preserve"><value>快速小帮手</value></data>
+  <data name="Catalog__recall-feature__Description" xml:space="preserve"><value>仅在此映像向 DISM 显示 Recall 时，才禁用并移除其承载内容。</value></data>
+  <data name="Catalog__recall-feature__Title" xml:space="preserve"><value>Recall 可选功能</value></data>
+  <data name="Catalog__reserved-storage__Description" xml:space="preserve"><value>停止为更新保留磁盘空间。这可能会在服务期间留下较少的可用空间。</value></data>
+  <data name="Catalog__reserved-storage__Title" xml:space="preserve"><value>禁用保留存储空间</value></data>
+  <data name="Catalog__search__Description" xml:space="preserve"><value>关闭网页建议、云端搜寻与动态搜寻醒目提示；保留本机搜寻。</value></data>
+  <data name="Catalog__search__Title" xml:space="preserve"><value>网页搜寻与搜寻醒目提示</value></data>
+  <data name="Catalog__social__Description" xml:space="preserve"><value>移除可选的整理与通讯应用。</value></data>
+  <data name="Catalog__social__Title" xml:space="preserve"><value>人员、To Do、Family 与 Skype</value></data>
+  <data name="Catalog__solitaire__Description" xml:space="preserve"><value>移除随附的游戏。</value></data>
+  <data name="Catalog__solitaire__Title" xml:space="preserve"><value>接龙</value></data>
+  <data name="Catalog__teams__Description" xml:space="preserve"><value>移除个人版 Teams 客户端。</value></data>
+  <data name="Catalog__teams__Title" xml:space="preserve"><value>Teams</value></data>
+  <data name="Catalog__terminal__Description" xml:space="preserve"><value>移除 Terminal。PowerShell 与命令提示字元会保留。</value></data>
+  <data name="Catalog__terminal__Title" xml:space="preserve"><value>Windows Terminal</value></data>
+  <data name="Catalog__utilities__Description" xml:space="preserve"><value>移除可选的个人小工具。</value></data>
+  <data name="Catalog__utilities__Title" xml:space="preserve"><value>时钟、录音机与便笺</value></data>
+  <data name="Catalog__widgets__Description" xml:space="preserve"><value>透过原则禁用小工具，并隐藏其工作列项目。</value></data>
+  <data name="Catalog__widgets__Title" xml:space="preserve"><value>小工具与工作列摘要</value></data>
+  <data name="Catalog__workfolders__Description" xml:space="preserve"><value>禁用企业工作文件夹同步并移除其承载内容。</value></data>
+  <data name="Catalog__workfolders__Title" xml:space="preserve"><value>工作文件夹</value></data>
+  <data name="Catalog__xbox__Description" xml:space="preserve"><value>移除 Xbox 应用与游戏列。游戏登录与录制功能可能无法使用。</value></data>
+  <data name="Catalog__xbox__Title" xml:space="preserve"><value>Xbox 与游戏覆盖层</value></data>
+  <data name="Catalog__xps__Description" xml:space="preserve"><value>禁用可选的 XPS 列印并移除其承载内容。</value></data>
+  <data name="Catalog__xps__Title" xml:space="preserve"><value>XPS 列印</value></data>
+  <data name="Common__All" xml:space="preserve"><value>全部</value></data>
+  <data name="Common__Back" xml:space="preserve"><value>返回</value></data>
+  <data name="Common__BuildActivity" xml:space="preserve"><value>生成活动</value></data>
+  <data name="Common__BuildLog" xml:space="preserve"><value>生成日志</value></data>
+  <data name="Common__CancelSafely" xml:space="preserve"><value>安全取消</value></data>
+  <data name="Common__Close" xml:space="preserve"><value>关闭</value></data>
+  <data name="Common__ComponentType" xml:space="preserve"><value>组件类型</value></data>
+  <data name="Common__CurrentOperationProgress" xml:space="preserve"><value>当前操作进度</value></data>
+  <data name="Common__Dark" xml:space="preserve"><value>深色</value></data>
+  <data name="Common__DownloadProgress" xml:space="preserve"><value>下载进度</value></data>
+  <data name="Common__ImageComponents" xml:space="preserve"><value>映像组件</value></data>
+  <data name="Common__Keep" xml:space="preserve"><value>保留</value></data>
+  <data name="Common__Light" xml:space="preserve"><value>浅色</value></data>
+  <data name="Common__Off" xml:space="preserve"><value>关</value></data>
+  <data name="Common__Omit" xml:space="preserve"><value>省略</value></data>
+  <data name="Common__On" xml:space="preserve"><value>开</value></data>
+  <data name="Common__OverallProgress" xml:space="preserve"><value>整体进度</value></data>
+  <data name="Common__Remove" xml:space="preserve"><value>移除</value></data>
+  <data name="Common__SearchComponents" xml:space="preserve"><value>搜寻组件</value></data>
+  <data name="Common__Start" xml:space="preserve"><value>开始</value></data>
+  <data name="Common__System" xml:space="preserve"><value>系统</value></data>
+  <data name="Common__Working" xml:space="preserve"><value>处理中</value></data>
+  <data name="Components__Advanced__Clear" xml:space="preserve"><value>清除自定义选择项目</value></data>
+  <data name="Components__Advanced__Consent" xml:space="preserve"><value>我接受自定义映像可能无法开机、无法服务或不安全的风险。</value></data>
+  <data name="Components__Advanced__IndividualHelp" xml:space="preserve"><value>个别移除项目会加入已选择的群组。若要保留某个组件，请同时取消勾选其群组与个别项目。</value></data>
+  <data name="Components__Advanced__Lead" xml:space="preserve"><value>列出映像的应用、包、功能、服务与组件文件，包括受保护项目。移除服务会删除其登录项目，而非共用运行档。受保护的包可能会拒绝移除。</value></data>
+  <data name="Components__Advanced__ListAll" xml:space="preserve"><value>列出所有组件…</value></data>
+  <data name="Components__Advanced__Title" xml:space="preserve"><value>高级移除</value></data>
+  <data name="Components__Advanced__WarningMessage" xml:space="preserve"><value>移除受保护或开机关键项目，可能导致映像无法开机或不安全。直接移除承载内容会略过服务机制。不提供相依性解析或开机保证。</value></data>
+  <data name="Components__Advanced__WarningTitle" xml:space="preserve"><value>不支持的移除项目</value></data>
+  <data name="Components__Card__Core__Description" xml:space="preserve"><value>仅保留必需项目。供测试 VM 使用。</value></data>
+  <data name="Components__Card__Custom__Description" xml:space="preserve"><value>选择个别移除项目。</value></data>
+  <data name="Components__Card__Tiny11__Description" xml:space="preserve"><value>原始移除项目。保留更新支持。</value></data>
+  <data name="Components__CoreConsent__Accepted" xml:space="preserve"><value>已接受此生成的 Core 限制。</value></data>
+  <data name="Components__CoreConsent__NotAccepted" xml:space="preserve"><value>尚未接受 Core 限制。</value></data>
+  <data name="Components__CoreConsent__Pending" xml:space="preserve"><value>继续之前，系统会要求你接受 Core 的限制。</value></data>
+  <data name="Components__CoreWarning__Message" xml:space="preserve"><value>Core 会删除组件文件与 WinRE，并禁用 Windows Update 与 Defender。之后将无法新增更新、语言或功能。请先在 VM 中测试映像。</value></data>
+  <data name="Components__CoreWarning__Title" xml:space="preserve"><value>Core 会移除更新与恢复支持。</value></data>
+  <data name="Components__Counts__Groups" xml:space="preserve"><value>已选择 {0} 个移除群组 · {1} 个高级动作</value></data>
+  <data name="Components__Counts__Inventory" xml:space="preserve"><value>已列出 {0} 个组件 · 已选择 {1} 个高级动作。</value></data>
+  <data name="Components__CustomCore__Header" xml:space="preserve"><value>套用 Core 移除项目</value></data>
+  <data name="Components__CustomCore__Off" xml:space="preserve"><value>保留服务、恢复与 Defender</value></data>
+  <data name="Components__CustomCore__On" xml:space="preserve"><value>移除服务、恢复与 Defender</value></data>
+  <data name="Components__Filter__Header" xml:space="preserve"><value>显示选项</value></data>
+  <data name="Components__GroupsHelp" xml:space="preserve"><value>勾选的群组会被移除或禁用。未勾选的群组会保留。若要处理个别项目，请使用下方的组件列表。</value></data>
+  <data name="Components__Heading" xml:space="preserve"><value>组件</value></data>
+  <data name="Components__Inventory__ActionFor" xml:space="preserve"><value>{0} 的动作</value></data>
+  <data name="Components__Inventory__Application" xml:space="preserve"><value>应用</value></data>
+  <data name="Components__Inventory__Disable" xml:space="preserve"><value>禁用</value></data>
+  <data name="Components__Inventory__Protected" xml:space="preserve"><value>受保护／可能为开机关键</value></data>
+  <data name="Components__Inventory__Remove" xml:space="preserve"><value>移除</value></data>
+  <data name="Components__Lead" xml:space="preserve"><value>选择 Tiny11、Tiny11 Core，或使用“自定义”选择自己的移除项目。每项更改都会记录在生成日志中。</value></data>
+  <data name="Components__ModeDescription__Core" xml:space="preserve"><value>Tiny11 Core 移除项目，包括不可逆的组件剪除。选择自定义以更改个别移除项目。</value></data>
+  <data name="Components__ModeDescription__Custom" xml:space="preserve"><value>从未选择任何项目开始，再选择要移除或禁用的内容。你也可以列出个别组件，包括受保护项目。</value></data>
+  <data name="Components__ModeDescription__Tiny11" xml:space="preserve"><value>原始 Tiny11 移除项目，包括 Edge/WebView2 与 OneDrive 二进位档。保留 Windows Update、Defender 与恢复。选择自定义以更改个别移除项目。</value></data>
+  <data name="Components__NotSelected" xml:space="preserve"><value>未选择</value></data>
+  <data name="Components__Selected" xml:space="preserve"><value>已选择</value></data>
+  <data name="Components__Use__Core" xml:space="preserve"><value>使用 Tiny11 Core</value></data>
+  <data name="Components__Use__Custom" xml:space="preserve"><value>使用自定义</value></data>
+  <data name="Components__Use__Tiny11" xml:space="preserve"><value>使用 Tiny11</value></data>
+  <data name="Dialog__Build__Action" xml:space="preserve"><value>生成</value></data>
+  <data name="Dialog__Build__Body" xml:space="preserve"><value>输出：{0}
+
+模式：{1}
+移除群组：{2}
+个别动作：{3}{4}</value></data>
+  <data name="Dialog__Build__Title" xml:space="preserve"><value>要创建此离线 Windows 映像吗？</value></data>
+  <data name="Dialog__Close" xml:space="preserve"><value>取消</value></data>
+  <data name="Dialog__Core__Accept" xml:space="preserve"><value>我同意</value></data>
+  <data name="Dialog__Core__Body" xml:space="preserve"><value>没有 Windows Update
+没有 Microsoft Defender
+没有恢复环境
+无法新增语言或功能
+
+仅可在隔离的测试 VM 中使用。
+映像可能无法开机。</value></data>
+  <data name="Dialog__Core__Title" xml:space="preserve"><value>Core 无法提供服务</value></data>
+  <data name="Dialog__Expert__Body" xml:space="preserve"><value>此清查包含开机驱动程序、安全、授权、系统应用与组件承载内容。移除它们可能导致 Windows 无法开机、不安全或无法更新。受保护的包可能会拒绝移除。不支持直接移除承载内容。
+
+仅在隔离测试时继续，并备份及准备已知良好的安装程序。</value></data>
+  <data name="Dialog__Expert__Inspect" xml:space="preserve"><value>检查组件</value></data>
+  <data name="Dialog__Expert__Title" xml:space="preserve"><value>包含受保护的组件</value></data>
+  <data name="Dialog__RecoverProgress__Body" xml:space="preserve"><value>恢复会丢弃工作的副本，但不会对已保存进度的工作这样做。请改用继续生成，从该进度继续。
+
+尚未更改任何内容。</value></data>
+  <data name="Dialog__RecoverProgress__Resume" xml:space="preserve"><value>改为继续</value></data>
+  <data name="Dialog__RecoverProgress__Title" xml:space="preserve"><value>此工作有已保存的进度</value></data>
+  <data name="Dialog__Recover__Body" xml:space="preserve"><value>请只选择中断的 tiny11 工作中的 job.json。这会丢弃该工作已装载的副本，并移除其临时媒体。其日志、配方、报告与你的来源 ISO 都会保留。映像已确认的工作会有已保存的进度，绝不会在此丢弃；请对它使用继续生成。无法恢复进行中的生成。</value></data>
+  <data name="Dialog__Recover__Discard" xml:space="preserve"><value>丢弃工作副本</value></data>
+  <data name="Dialog__Recover__Title" xml:space="preserve"><value>要丢弃此中断的工作区吗？</value></data>
+  <data name="Dialog__Resume__Action" xml:space="preserve"><value>继续</value></data>
+  <data name="Dialog__Resume__Title" xml:space="preserve"><value>要继续此生成吗？</value></data>
+  <data name="Error__BrowserMicrosoftPage" xml:space="preserve"><value>浏览器无法打开 Microsoft 的映像工具页面。</value></data>
+  <data name="Error__InspectFirst" xml:space="preserve"><value>请先检查选择的 Windows 映像。</value></data>
+  <data name="Error__NotApprovedPage" xml:space="preserve"><value>建议的下载页面不是已批准的 Microsoft 页面。</value></data>
+  <data name="Error__RestartPath" xml:space="preserve"><value>找不到应用路径。</value></data>
+  <data name="Error__SavedSessionEmpty" xml:space="preserve"><value>存储的工作阶段是空的。</value></data>
+  <data name="Error__SupportLink" xml:space="preserve"><value>此赞助链接没有有效的目的地。</value></data>
+  <data name="File__ImageRecipe" xml:space="preserve"><value>映像配方</value></data>
+  <data name="File__IsoImage" xml:space="preserve"><value>ISO 映像</value></data>
+  <data name="Image__None" xml:space="preserve"><value>未选择映像</value></data>
+  <data name="Language__Header" xml:space="preserve"><value>语言</value></data>
+  <data name="Language__RestartFailed__Title" xml:space="preserve"><value>无法重新启动应用。</value></data>
+  <data name="Language__Restart__Message" xml:space="preserve"><value>新语言已保存。请重新启动 Tiny11 Builder 以套用。</value></data>
+  <data name="Language__Restart__Title" xml:space="preserve"><value>重新启动以套用语言。</value></data>
+  <data name="Language__SaveFailed__Message" xml:space="preserve"><value>在设置可以写入之前，应用会维持当前的语言。</value></data>
+  <data name="Language__SaveFailed__Title" xml:space="preserve"><value>无法存储语言。</value></data>
+  <data name="Language__System" xml:space="preserve"><value>系统默认</value></data>
+  <data name="Mode__Core" xml:space="preserve"><value>Tiny11 Core</value></data>
+  <data name="Mode__Custom" xml:space="preserve"><value>自定义</value></data>
+  <data name="Mode__Tiny11" xml:space="preserve"><value>Tiny11</value></data>
+  <data name="Nav__Appearance" xml:space="preserve"><value>外观</value></data>
+  <data name="Nav__BuildSettings" xml:space="preserve"><value>生成设置</value></data>
+  <data name="Nav__BuildSteps" xml:space="preserve"><value>生成步骤</value></data>
+  <data name="Nav__CreateImage" xml:space="preserve"><value>创建映像</value></data>
+  <data name="Nav__RemoveComponents" xml:space="preserve"><value>移除组件</value></data>
+  <data name="Nav__Review" xml:space="preserve"><value>检阅</value></data>
+  <data name="Nav__SelectedImage" xml:space="preserve"><value>已选择的映像</value></data>
+  <data name="Nav__SourceUnchanged" xml:space="preserve"><value>不会修改来源文件。</value></data>
+  <data name="Nav__UpstreamProject" xml:space="preserve"><value>上游项目 ↗</value></data>
+  <data name="Nav__Welcome" xml:space="preserve"><value>欢迎</value></data>
+  <data name="Nav__WindowsImage" xml:space="preserve"><value>Windows 映像</value></data>
+  <data name="Notice__AdminInspectSelected__Message" xml:space="preserve"><value>请以管理员身份重新打开 Tiny11Builder.exe，以检查其版本。</value></data>
+  <data name="Notice__AdminInspect__Message" xml:space="preserve"><value>请关闭并重新打开 Tiny11Builder.exe，然后批准 Windows 管理员提示。</value></data>
+  <data name="Notice__AdminRecover__Message" xml:space="preserve"><value>请以管理员身份重新打开 Tiny11Builder.exe，以恢复工作区。</value></data>
+  <data name="Notice__AdminRequired__Title" xml:space="preserve"><value>需要系统管理员权限。</value></data>
+  <data name="Notice__AdminResume__Message" xml:space="preserve"><value>请以管理员身份重新打开 Tiny11Builder.exe，然后选择继续生成。尚未更改任何内容。</value></data>
+  <data name="Notice__BrowserFailed" xml:space="preserve"><value>浏览器无法打开 {0}。未进行任何付款。</value></data>
+  <data name="Notice__BuildModeInvalid__Message" xml:space="preserve"><value>选择的卡片未指出有效的生成模式。</value></data>
+  <data name="Notice__BuildModeInvalid__Title" xml:space="preserve"><value>无法选择生成模式。</value></data>
+  <data name="Notice__CachedIsoChanged" xml:space="preserve"><value>快取的 ISO 已更改。未被接受。</value></data>
+  <data name="Notice__CancellationProgress" xml:space="preserve"><value>取消进度</value></data>
+  <data name="Notice__CannotResume__Title" xml:space="preserve"><value>无法继续此生成。</value></data>
+  <data name="Notice__CloseDuringBuild__Cancelling" xml:space="preserve"><value>正在取消。请等待它停止后再关闭。</value></data>
+  <data name="Notice__CloseDuringBuild__Message" xml:space="preserve"><value>请选择「{0}」，并等待映像操作完成后再关闭。</value></data>
+  <data name="Notice__CloseDuringBuild__Title" xml:space="preserve"><value>操作仍在运行。</value></data>
+  <data name="Notice__ComponentListLoaded__Message" xml:space="preserve"><value>已保留先前的选择项目。请勾选你要移除或禁用的个别项目。</value></data>
+  <data name="Notice__ComponentListLoaded__Title" xml:space="preserve"><value>已加载组件列表。</value></data>
+  <data name="Notice__ComponentListReadOnly__Message" xml:space="preserve"><value>已安装的工具可以列出此映像，但生成它需要较新的 Windows ADK 部署工具。请先安装这些工具并重新打开应用，再进行生成。</value></data>
+  <data name="Notice__ComponentListReadOnly__Title" xml:space="preserve"><value>组件列表已以只读方式加载。</value></data>
+  <data name="Notice__Copied" xml:space="preserve"><value>已复制</value></data>
+  <data name="Notice__CopyDetails" xml:space="preserve"><value>复制详细信息</value></data>
+  <data name="Notice__CouldNotCopy" xml:space="preserve"><value>无法复制</value></data>
+  <data name="Notice__CouldNotOpenDownload" xml:space="preserve"><value>无法打开下载页面。</value></data>
+  <data name="Notice__CouldNotOpenLogs" xml:space="preserve"><value>无法打开日志</value></data>
+  <data name="Notice__DownloadHash" xml:space="preserve"><value>SHA-256：{0}</value></data>
+  <data name="Notice__DownloadedSummary" xml:space="preserve"><value>已下载 {0}。SHA-256：{1}</value></data>
+  <data name="Notice__FolderOpenFailed__Title" xml:space="preserve"><value>无法打开文件夹。</value></data>
+  <data name="Notice__HighContrastTooltip" xml:space="preserve"><value>Windows 高对比已打开，因此颜色会遵循你的系统设置。</value></data>
+  <data name="Notice__ImageInspected__Message" xml:space="preserve"><value>找到 {0} 个版本。已选择 {1}。</value></data>
+  <data name="Notice__ImageInspected__Title" xml:space="preserve"><value>已检查映像。</value></data>
+  <data name="Notice__ImageSelected__Title" xml:space="preserve"><value>已选择映像。</value></data>
+  <data name="Notice__InspectImageFirst__Message" xml:space="preserve"><value>列出组件之前，请先选择版本。</value></data>
+  <data name="Notice__InspectImageFirst__Title" xml:space="preserve"><value>请先检查映像。</value></data>
+  <data name="Notice__JobFolderGone__Message" xml:space="preserve"><value>{0} 已不存在。</value></data>
+  <data name="Notice__JobFolderGone__Title" xml:space="preserve"><value>工作文件夹已消失。</value></data>
+  <data name="Notice__OpenLogs" xml:space="preserve"><value>打开日志</value></data>
+  <data name="Notice__OpenOfficialDownload" xml:space="preserve"><value>打开 Microsoft 下载页面</value></data>
+  <data name="Notice__OpenTools" xml:space="preserve"><value>取得映像工具</value></data>
+  <data name="Notice__PreviouslyDownloaded" xml:space="preserve"><value>已验证先前下载的 ISO。</value></data>
+  <data name="Notice__RecipeLoaded__Message" xml:space="preserve"><value>请再次检查来源。Core／高级风险确认必须重新进行。</value></data>
+  <data name="Notice__RecipeLoaded__Title" xml:space="preserve"><value>已加载配方。</value></data>
+  <data name="Notice__RecipeNotReady__Title" xml:space="preserve"><value>配方尚未就绪。</value></data>
+  <data name="Notice__RecipeSaved__Message" xml:space="preserve"><value>其中包含选择项目与本机路径，不包含下载的媒体或认证。</value></data>
+  <data name="Notice__RecipeSaved__Title" xml:space="preserve"><value>已保存配方。</value></data>
+  <data name="Notice__Restart" xml:space="preserve"><value>立即重新启动</value></data>
+  <data name="Notice__ResumeNotStarted__Message" xml:space="preserve"><value>输出文件已存在。请选择新的文件名称以继续。</value></data>
+  <data name="Notice__ResumeNotStarted__Title" xml:space="preserve"><value>未开始继续生成。</value></data>
+  <data name="Notice__SessionRestoreFailed__Title" xml:space="preserve"><value>无法还原工作阶段。</value></data>
+  <data name="Notice__SessionRestored__Message" xml:space="preserve"><value>继续之前，请再次检查映像。不会自动开始生成。</value></data>
+  <data name="Notice__SessionRestored__Title" xml:space="preserve"><value>已还原工作阶段。</value></data>
+  <data name="Notice__SupportOpenFailed__Title" xml:space="preserve"><value>无法打开赞助选项。</value></data>
+  <data name="Notice__SupportPageFailed__Title" xml:space="preserve"><value>无法打开赞助页面</value></data>
+  <data name="Notice__UnsupportedEdition__Message" xml:space="preserve"><value>请选择 Windows 11 客户端映像，22H2 或更新版本，且为 x64 或 ARM64 格式。</value></data>
+  <data name="Notice__UnsupportedEdition__Title" xml:space="preserve"><value>不支持此版本。</value></data>
+  <data name="Notice__WorkspaceRecovered__Message" xml:space="preserve"><value>已丢弃中断的工作副本。你的源媒体与日志已保留。</value></data>
+  <data name="Notice__WorkspaceRecovered__Title" xml:space="preserve"><value>已恢复工作区。</value></data>
+  <data name="Outcome__BuildCancelled__Message" xml:space="preserve"><value>你的源媒体未被更改。工作文件与日志已保留。{0}</value></data>
+  <data name="Outcome__BuildCancelled__Title" xml:space="preserve"><value>生成已取消。</value></data>
+  <data name="Outcome__BuildFailed__Title" xml:space="preserve"><value>生成失败。</value></data>
+  <data name="Outcome__Cancelled__Message" xml:space="preserve"><value>未更改任何内容。</value></data>
+  <data name="Outcome__Cancelled__Title" xml:space="preserve"><value>已取消。</value></data>
+  <data name="Outcome__CleanupProblems" xml:space="preserve"><value>部分清理步骤回报问题：{0}</value></data>
+  <data name="Outcome__DownloadCancelled__Message" xml:space="preserve"><value>未完成的下载已保留，因此你可以稍后继续。未修改任何来源媒体。</value></data>
+  <data name="Outcome__DownloadCancelled__Title" xml:space="preserve"><value>下载已取消。</value></data>
+  <data name="Outcome__DownloadFailed__Title" xml:space="preserve"><value>下载未完成。</value></data>
+  <data name="Outcome__ElevateCancelled__Message" xml:space="preserve"><value>应用仍在没有系统管理员权限的情况下运行。</value></data>
+  <data name="Outcome__ElevateCancelled__Title" xml:space="preserve"><value>重新启动已取消。</value></data>
+  <data name="Outcome__ElevateFailed__Title" xml:space="preserve"><value>应用无法以系统管理员身分重新启动。</value></data>
+  <data name="Outcome__Finished" xml:space="preserve"><value>已完成。</value></data>
+  <data name="Outcome__GenericFailed__Title" xml:space="preserve"><value>操作未完成。</value></data>
+  <data name="Outcome__InspectCancelled__Message" xml:space="preserve"><value>映像未被更改。</value></data>
+  <data name="Outcome__InspectCancelled__Title" xml:space="preserve"><value>检查已取消。</value></data>
+  <data name="Outcome__InspectFailed__Title" xml:space="preserve"><value>无法检查映像。</value></data>
+  <data name="Outcome__InventoryCancelled__Message" xml:space="preserve"><value>映像未被更改。</value></data>
+  <data name="Outcome__InventoryCancelled__Title" xml:space="preserve"><value>组件列表已取消。</value></data>
+  <data name="Outcome__InventoryFailed__Title" xml:space="preserve"><value>无法加载组件列表。</value></data>
+  <data name="Outcome__NoDetails" xml:space="preserve"><value>未回报进一步的详细信息。</value></data>
+  <data name="Outcome__RecoverCancelled__Message" xml:space="preserve"><value>请再次运行「恢复工作区」，以完成此工作的清理。</value></data>
+  <data name="Outcome__RecoverCancelled__Title" xml:space="preserve"><value>恢复已取消。</value></data>
+  <data name="Outcome__RecoverFailed__Title" xml:space="preserve"><value>恢复未完成。</value></data>
+  <data name="Outcome__RecoveryNeeded" xml:space="preserve"><value>无法丢弃此工作已装载的副本。请使用「恢复工作区」，并选择此工作的 job.json。</value></data>
+  <data name="Outcome__ResumeAgain" xml:space="preserve"><value>你可以再次继续。</value></data>
+  <data name="Outcome__ResumeAvailable" xml:space="preserve"><value>可以继续已保存的进度。</value></data>
+  <data name="Outcome__ResumeCancelled__Message" xml:space="preserve"><value>已保留已保存的进度与日志。{0}</value></data>
+  <data name="Outcome__ResumeCancelled__Title" xml:space="preserve"><value>继续生成已取消。</value></data>
+  <data name="Outcome__ResumeFailed__Title" xml:space="preserve"><value>继续生成失败。</value></data>
+  <data name="Outcome__ResumeProgressKept" xml:space="preserve"><value>已保留已保存的进度，因此你可以再次继续。</value></data>
+  <data name="Outcome__Unknown__Message" xml:space="preserve"><value>它结束时未说明结果，因此不会显示为已完成。请检查日志。</value></data>
+  <data name="Outcome__Unknown__Title" xml:space="preserve"><value>操作未完成。</value></data>
+  <data name="Resume__Compression__Fast" xml:space="preserve"><value>快速 WIM</value></data>
+  <data name="Resume__Compression__Maximum" xml:space="preserve"><value>最大 WIM</value></data>
+  <data name="Resume__Compression__Recovery" xml:space="preserve"><value>恢复 ESD</value></data>
+  <data name="Resume__Describe__ChoicesFixed" xml:space="preserve"><value>原始生成的移除选择会维持不变。继续时无法更改。</value></data>
+  <data name="Resume__Describe__Compression" xml:space="preserve"><value>压缩：{0}</value></data>
+  <data name="Resume__Describe__CoreWarning" xml:space="preserve"><value>Core：没有 Windows Update、没有 Microsoft Defender、没有恢复环境。仅可在隔离的测试 VM 中使用。</value></data>
+  <data name="Resume__Describe__ExpertWarning" xml:space="preserve"><value>个别移除项目包含受保护项目。映像可能无法开机。</value></data>
+  <data name="Resume__Describe__Mode" xml:space="preserve"><value>模式：{0} · {1} 个移除群组 · {2} 个个别动作</value></data>
+  <data name="Resume__Describe__Output" xml:space="preserve"><value>输出：{0}</value></data>
+  <data name="Resume__Describe__Verified" xml:space="preserve"><value>会先验证已保存的进度。若有任何不符，将不会更改任何内容。</value></data>
+  <data name="Resume__InvalidPath" xml:space="preserve"><value>这不是有效的工作文件路径。</value></data>
+  <data name="Resume__Mode__CustomCore" xml:space="preserve"><value>自定义（含 Core 移除项目）</value></data>
+  <data name="Resume__NoCheckpoint" xml:space="preserve"><value>此生成没有可继续的已保存进度。它是在进度存储之前开始，或在映像存储之前停止，因此无法继续。未更改任何内容，其日志与文件都已保留。</value></data>
+  <data name="Resume__RecipeMissing" xml:space="preserve"><value>找不到此工作已保存的配方，因此无法继续。</value></data>
+  <data name="Resume__RecipeUnreadable" xml:space="preserve"><value>无法读取此工作已保存的配方。{0}</value></data>
+  <data name="Resume__WrongFile" xml:space="preserve"><value>请选择生成的 tiny11-… 文件夹内的 job.json 文件。</value></data>
+  <data name="Review__Details__Header" xml:space="preserve"><value>已选择的移除项目与完整配方</value></data>
+  <data name="Review__Heading" xml:space="preserve"><value>检阅</value></data>
+  <data name="Review__Image__Title" xml:space="preserve"><value>Windows 映像</value></data>
+  <data name="Review__Lead" xml:space="preserve"><value>生成前，请检查你的映像、移除项目与输出。</value></data>
+  <data name="Review__LoadRecipe" xml:space="preserve"><value>加载配方</value></data>
+  <data name="Review__NoImage" xml:space="preserve"><value>未选择映像</value></data>
+  <data name="Review__Options__CleanAfterBuild" xml:space="preserve"><value>生成后清理</value></data>
+  <data name="Review__Options__Compact" xml:space="preserve"><value>精简安装：{0}</value></data>
+  <data name="Review__Options__Compression" xml:space="preserve"><value>{0} 压缩</value></data>
+  <data name="Review__Options__Default" xml:space="preserve"><value>默认</value></data>
+  <data name="Review__Options__Included" xml:space="preserve"><value>已包含</value></data>
+  <data name="Review__Options__KeepFiles" xml:space="preserve"><value>工作文件：{0}</value></data>
+  <data name="Review__Options__LocalAccount" xml:space="preserve"><value>本机账户设置：{0}</value></data>
+  <data name="Review__Options__NetFx" xml:space="preserve"><value>.NET 3.5：{0}</value></data>
+  <data name="Review__Options__NotIncluded" xml:space="preserve"><value>未包含</value></data>
+  <data name="Review__Options__OmitSetup" xml:space="preserve"><value>.NET 安装承载内容：{0}</value></data>
+  <data name="Review__Options__Preferred" xml:space="preserve"><value>偏好</value></data>
+  <data name="Review__Options__Redundant" xml:space="preserve"><value>多余数据：{0}</value></data>
+  <data name="Review__Options__Title" xml:space="preserve"><value>安装选项</value></data>
+  <data name="Review__Options__Turbo" xml:space="preserve"><value>Turbo 模式：{0}</value></data>
+  <data name="Review__Paths__Title" xml:space="preserve"><value>输出与工作区</value></data>
+  <data name="Review__Paths__Value" xml:space="preserve"><value>ISO
+{0}
+
+工作区
+{1}</value></data>
+  <data name="Review__Removals__Core" xml:space="preserve"><value>不提供服务、恢复或 Defender。</value></data>
+  <data name="Review__Removals__Custom" xml:space="preserve"><value>自定义移除项目可能影响服务、恢复或安全。</value></data>
+  <data name="Review__Removals__Summary" xml:space="preserve"><value>{0} 个移除群组 · {1} 个个别动作</value></data>
+  <data name="Review__Removals__Tiny11" xml:space="preserve"><value>保留 Windows Update、恢复与 Defender。</value></data>
+  <data name="Review__SaveRecipe" xml:space="preserve"><value>存储配方</value></data>
+  <data name="Review__Warning__Message" xml:space="preserve"><value>部分原则只适用於特定版本或内部版本。功能更新可能会重新安装应用。本机账户与硬件略过设置为尽力而为。仰赖结果前，请先测试生成的 ISO。</value></data>
+  <data name="Review__Warning__Title" xml:space="preserve"><value>视内部版本而定的设置</value></data>
+  <data name="Settings__Compact__Description" xml:space="preserve"><value>使用压缩的系统文件安装 Windows，以减少磁盘使用量。</value></data>
+  <data name="Settings__Compact__Title" xml:space="preserve"><value>精简安装</value></data>
+  <data name="Settings__Compression__Fast" xml:space="preserve"><value>快速 WIM（生成最快，ISO 较大）</value></data>
+  <data name="Settings__Compression__Header" xml:space="preserve"><value>安装映像压缩</value></data>
+  <data name="Settings__Compression__Maximum" xml:space="preserve"><value>最大 WIM（日后较容易服务）</value></data>
+  <data name="Settings__Compression__Recovery" xml:space="preserve"><value>恢复 ESD（较小，压缩较慢）</value></data>
+  <data name="Settings__Files__Title" xml:space="preserve"><value>文件与工作区</value></data>
+  <data name="Settings__Heading" xml:space="preserve"><value>生成设置</value></data>
+  <data name="Settings__KeepFiles__Description" xml:space="preserve"><value>存储 ISO 后保留修改过的安装媒体。会使用更多磁盘空间。</value></data>
+  <data name="Settings__KeepFiles__Title" xml:space="preserve"><value>保留工作文件</value></data>
+  <data name="Settings__Lead" xml:space="preserve"><value>选择生成位置以及映像的压缩方式。</value></data>
+  <data name="Settings__LocalAccount__Description" xml:space="preserve"><value>在安装期间优先使用本机登录。部分较新的内部版本仍可能要求 Microsoft 账户。</value></data>
+  <data name="Settings__LocalAccount__Title" xml:space="preserve"><value>本机账户设置</value></data>
+  <data name="Settings__NetFx__Description" xml:space="preserve"><value>包含对较旧应用的支持。ISO 中必须有必需的来源文件。</value></data>
+  <data name="Settings__NetFx__Title" xml:space="preserve"><value>.NET Framework 3.5</value></data>
+  <data name="Settings__OmitSetup__Description" xml:space="preserve"><value>从 ISO 中省略 sources\sxs。你现在仍可包含 .NET 3.5；日后若要启用，需要另外准备匹配的媒体或 Windows Update。Core 之后无法再加入。</value></data>
+  <data name="Settings__OmitSetup__Title" xml:space="preserve"><value>省略 .NET 3.5 安装承载内容</value></data>
+  <data name="Settings__Output__Choose" xml:space="preserve"><value>选择输出</value></data>
+  <data name="Settings__Output__Header" xml:space="preserve"><value>新的输出 ISO 文件</value></data>
+  <data name="Settings__Redundant__Description" xml:space="preserve"><value>移除已下载的更新快取、封存的服务日志、临时文件与当机报告。会保留待处理的服务数据、驱动程序与安装程序。</value></data>
+  <data name="Settings__Redundant__Title" xml:space="preserve"><value>移除多余的映像数据</value></data>
+  <data name="Settings__Tools__Initial" xml:space="preserve"><value>映像与 ISO 工具会自动准备。</value></data>
+  <data name="Settings__Tools__Ready" xml:space="preserve"><value>映像与 ISO 工具已就绪。</value></data>
+  <data name="Settings__Turbo__Description" xml:space="preserve"><value>批次处理功能与能力移除，并减少日志额外负荷。Core 与快速 WIM 生成会使用更快的工作映像。会使用更多 CPU 与临时空间；最终压缩方式仍依你的选择。</value></data>
+  <data name="Settings__Turbo__Title" xml:space="preserve"><value>Turbo 模式</value></data>
+  <data name="Settings__Workspace__Choose" xml:space="preserve"><value>选择工作区</value></data>
+  <data name="Settings__Workspace__Header" xml:space="preserve"><value>工作区（NTFS，通常需要 40 到 70 GiB 可用空间）</value></data>
+  <data name="Setup__Legacy" xml:space="preserve"><value>旧版安装程序：自动（需要它来处理{0}）</value></data>
+  <data name="Setup__LegacyReason__Core" xml:space="preserve"><value>Core 移除项目</value></data>
+  <data name="Setup__LegacyReason__CorePayload" xml:space="preserve"><value>Core 与组件承载内容移除项目</value></data>
+  <data name="Setup__LegacyReason__Payload" xml:space="preserve"><value>组件承载内容移除项目</value></data>
+  <data name="Setup__LegacyReason__Selected" xml:space="preserve"><value>选择的移除项目</value></data>
+  <data name="Source__BuildMode" xml:space="preserve"><value>生成模式：{0}</value></data>
+  <data name="Source__Download__AutoDescription" xml:space="preserve"><value>Microsoft 官方 ISO · {0} · {1}</value></data>
+  <data name="Source__Download__Description" xml:space="preserve"><value>Microsoft 官方 ISO。架构与语言会自动选择。</value></data>
+  <data name="Source__Download__InitialStatus" xml:space="preserve"><value>或使用你已有的 ISO。</value></data>
+  <data name="Source__Download__Title" xml:space="preserve"><value>下载最新的 Windows 11</value></data>
+  <data name="Source__Heading" xml:space="preserve"><value>Windows 映像</value></data>
+  <data name="Source__Lead" xml:space="preserve"><value>从 Microsoft 下载最新的 Windows 11，或选择 ISO 或解压后的安装文件夹。检查映像以选择版本。</value></data>
+  <data name="Source__Local__ChooseFolder" xml:space="preserve"><value>选择文件夹</value></data>
+  <data name="Source__Local__ChooseIso" xml:space="preserve"><value>选择 ISO</value></data>
+  <data name="Source__Local__EditionHeader" xml:space="preserve"><value>要生成的版本</value></data>
+  <data name="Source__Local__Inspect" xml:space="preserve"><value>检查映像</value></data>
+  <data name="Source__Local__PathHeader" xml:space="preserve"><value>Windows ISO 或安装媒体文件夹</value></data>
+  <data name="Source__Local__PathPlaceholder" xml:space="preserve"><value>选择 Windows 11 映像</value></data>
+  <data name="Source__Local__Title" xml:space="preserve"><value>本机安装媒体</value></data>
+  <data name="Source__Other__Arm64" xml:space="preserve"><value>Microsoft ARM64 下载 ↗</value></data>
+  <data name="Source__Other__Download" xml:space="preserve"><value>下载 ISO／继续未完成的下载</value></data>
+  <data name="Source__Other__HashHeader" xml:space="preserve"><value>已公布的 SHA-256（建议）</value></data>
+  <data name="Source__Other__HashPlaceholder" xml:space="preserve"><value>从 Microsoft 的「验证你的下载」区段复制</value></data>
+  <data name="Source__Other__Header" xml:space="preserve"><value>其他官方下载</value></data>
+  <data name="Source__Other__Insider" xml:space="preserve"><value>官方 Insider / Canary ISO 选择 ↗</value></data>
+  <data name="Source__Other__Lead" xml:space="preserve"><value>在 Microsoft 下载页面选择语言，然后将 ISO 下载链接贴到这里。链接通常会在 24 小时后失效。</value></data>
+  <data name="Source__Other__UrlHeader" xml:space="preserve"><value>Microsoft 直接 ISO 链接</value></data>
+  <data name="Source__Other__X64" xml:space="preserve"><value>Microsoft x64 下载 ↗</value></data>
+  <data name="Stage__Summary__AllDone" xml:space="preserve"><value>全部 {0} 个阶段已完成</value></data>
+  <data name="Stage__Summary__Cancelled" xml:space="preserve"><value>已取消</value></data>
+  <data name="Stage__Summary__Done" xml:space="preserve"><value>已完成 {0}/{1} 个阶段</value></data>
+  <data name="Stage__Summary__Failed" xml:space="preserve"><value>{0} 个失败</value></data>
+  <data name="Support__Development" xml:space="preserve"><value>赞助开发</value></data>
+  <data name="Support__Development__Help" xml:space="preserve"><value>可选的每月赞助或单次捐赠。所有应用功能仍保持免费。</value></data>
+  <data name="Support__Development__Help__Short" xml:space="preserve"><value>可选的赞助。会打开赞助选项，不会直接付款。</value></data>
+  <data name="Support__LinksNote" xml:space="preserve"><value>链接会在你的浏览器中打开。应用内不会收取费用或进行订阅。</value></data>
+  <data name="Support__Monthly" xml:space="preserve"><value>每月赞助</value></data>
+  <data name="Support__Monthly__Description" xml:space="preserve"><value>协助项目长期维持。</value></data>
+  <data name="Support__Monthly__Link" xml:space="preserve"><value>在 GitHub Sponsors 每月赞助</value></data>
+  <data name="Support__OneTime" xml:space="preserve"><value>单次捐赠</value></data>
+  <data name="Support__OneTime__Description" xml:space="preserve"><value>一次性感谢，无任何义务。</value></data>
+  <data name="Support__OneTime__Link" xml:space="preserve"><value>在 Ko-fi 单次捐赠</value></data>
+  <data name="Support__Other" xml:space="preserve"><value>偏好其他服务？</value></data>
+  <data name="Support__Patreon" xml:space="preserve"><value>Patreon</value></data>
+  <data name="Support__PayPal" xml:space="preserve"><value>PayPal</value></data>
+  <data name="Support__Purpose" xml:space="preserve"><value>协助资助开发时间、跨 Windows 版本的测试，以及修正回报的问题。所有应用功能仍保持免费。</value></data>
+  <data name="Support__Title" xml:space="preserve"><value>赞助 Tiny11 Builder</value></data>
+  <data name="Welcome__BuildModes" xml:space="preserve"><value>生成模式</value></data>
+  <data name="Welcome__Compatibility" xml:space="preserve"><value>Windows 11 22H2 或更新版本 · x64 与 ARM64 · Insider / Canary</value></data>
+  <data name="Welcome__Core__Badge" xml:space="preserve"><value>仅供测试 VM 使用</value></data>
+  <data name="Welcome__Core__Description" xml:space="preserve"><value>移除更新与恢复支持，并禁用 Defender。</value></data>
+  <data name="Welcome__Custom__Badge" xml:space="preserve"><value>包含受保护项目</value></data>
+  <data name="Welcome__Custom__Description" xml:space="preserve"><value>选择要移除的个别应用、组件与服务。</value></data>
+  <data name="Welcome__Lead" xml:space="preserve"><value>创建自定义的 Windows 11 ISO。选择映像、选择要移除的内容，然后生成 ISO。</value></data>
+  <data name="Welcome__ModeHelp__Core" xml:space="preserve"><value>选择 Tiny11 Core 并选择 Windows ISO。</value></data>
+  <data name="Welcome__ModeHelp__Custom" xml:space="preserve"><value>选择自定义并选择 Windows ISO。</value></data>
+  <data name="Welcome__ModeHelp__Tiny11" xml:space="preserve"><value>选择 Tiny11 并选择 Windows ISO。</value></data>
+  <data name="Welcome__TestWarning" xml:space="preserve"><value>使用前，请先在 VM 中测试 Core 与自定义映像。</value></data>
+  <data name="Welcome__Tiny11__Badge" xml:space="preserve"><value>保留更新支持</value></data>
+  <data name="Welcome__Tiny11__Description" xml:space="preserve"><value>使用原始 Tiny11 移除项目。保留 Windows Update 与恢复。</value></data>
+  <data name="Welcome__Title" xml:space="preserve"><value>欢迎</value></data>
+  <data name="Working__CheckingChoices" xml:space="preserve"><value>正在检查你的选择…</value></data>
+  <data name="Working__CheckingDownload" xml:space="preserve"><value>正在检查已下载的 ISO…</value></data>
+  <data name="Working__Downloading" xml:space="preserve"><value>正在从 Microsoft 下载…</value></data>
+  <data name="Working__FindingLatest" xml:space="preserve"><value>正在寻找最新的 Windows 11…</value></data>
+  <data name="Working__Inspecting" xml:space="preserve"><value>正在检查映像…</value></data>
+  <data name="Working__ListingComponents" xml:space="preserve"><value>正在列出映像组件…</value></data>
+  <data name="Working__Recovering" xml:space="preserve"><value>正在恢复工作区…</value></data>
+</root>

@@ -2,6 +2,7 @@
     x:Class="Tiny11Builder.App.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:loc="using:Tiny11Builder.App"
     Title="Tiny11 Builder">
     <Window.SystemBackdrop><MicaBackdrop Kind="BaseAlt"/></Window.SystemBackdrop>
     <Grid x:Name="Root">
@@ -9,42 +10,44 @@
         <Grid x:Name="TitleArea" Padding="24,0,140,0" ColumnSpacing="12">
             <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
             <FontIcon Glyph="&#xE7F8;" FontSize="16" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
-            <TextBlock Grid.Column="1" Text="Tiny11 Builder" VerticalAlignment="Center" FontWeight="SemiBold"/>
+            <TextBlock Grid.Column="1" Text="{loc:Tr Key=App__Title}" VerticalAlignment="Center" FontWeight="SemiBold"/>
         </Grid>
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions><ColumnDefinition Width="248"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
             <Grid Padding="16,24,16,20">
                 <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
                 <StackPanel Spacing="8">
-                    <TextBlock Text="BUILD STEPS" FontSize="10" CharacterSpacing="160"
+                    <TextBlock Text="{loc:Tr Key=Nav__BuildSteps}" FontSize="10" CharacterSpacing="160"
                                Foreground="{ThemeResource TextFillColorTertiaryBrush}" Margin="14,0,0,18"/>
                     <ListView x:Name="StepRail" SelectionChanged="OnRailChanged">
-                        <ListViewItem Tag="0"><StackPanel Orientation="Horizontal" Spacing="14"><TextBlock Text="1" FontFamily="Consolas"/><TextBlock Text="Welcome"/></StackPanel></ListViewItem>
-                        <ListViewItem Tag="1"><StackPanel Orientation="Horizontal" Spacing="14"><TextBlock Text="2" FontFamily="Consolas"/><TextBlock Text="Windows image"/></StackPanel></ListViewItem>
-                        <ListViewItem Tag="2"><StackPanel Orientation="Horizontal" Spacing="14"><TextBlock Text="3" FontFamily="Consolas"/><TextBlock Text="Remove components"/></StackPanel></ListViewItem>
-                        <ListViewItem Tag="3"><StackPanel Orientation="Horizontal" Spacing="14"><TextBlock Text="4" FontFamily="Consolas"/><TextBlock Text="Build settings"/></StackPanel></ListViewItem>
-                        <ListViewItem Tag="4"><StackPanel Orientation="Horizontal" Spacing="14"><TextBlock Text="5" FontFamily="Consolas"/><TextBlock Text="Review"/></StackPanel></ListViewItem>
-                        <ListViewItem Tag="5"><StackPanel Orientation="Horizontal" Spacing="14"><TextBlock Text="6" FontFamily="Consolas"/><TextBlock Text="Create image"/></StackPanel></ListViewItem>
+                        <ListViewItem Tag="0"><StackPanel Orientation="Horizontal" Spacing="14"><TextBlock Text="1" FontFamily="Consolas"/><TextBlock Text="{loc:Tr Key=Nav__Welcome}"/></StackPanel></ListViewItem>
+                        <ListViewItem Tag="1"><StackPanel Orientation="Horizontal" Spacing="14"><TextBlock Text="2" FontFamily="Consolas"/><TextBlock Text="{loc:Tr Key=Nav__WindowsImage}"/></StackPanel></ListViewItem>
+                        <ListViewItem Tag="2"><StackPanel Orientation="Horizontal" Spacing="14"><TextBlock Text="3" FontFamily="Consolas"/><TextBlock Text="{loc:Tr Key=Nav__RemoveComponents}"/></StackPanel></ListViewItem>
+                        <ListViewItem Tag="3"><StackPanel Orientation="Horizontal" Spacing="14"><TextBlock Text="4" FontFamily="Consolas"/><TextBlock Text="{loc:Tr Key=Nav__BuildSettings}"/></StackPanel></ListViewItem>
+                        <ListViewItem Tag="4"><StackPanel Orientation="Horizontal" Spacing="14"><TextBlock Text="5" FontFamily="Consolas"/><TextBlock Text="{loc:Tr Key=Nav__Review}"/></StackPanel></ListViewItem>
+                        <ListViewItem Tag="5"><StackPanel Orientation="Horizontal" Spacing="14"><TextBlock Text="6" FontFamily="Consolas"/><TextBlock Text="{loc:Tr Key=Nav__CreateImage}"/></StackPanel></ListViewItem>
                     </ListView>
                 </StackPanel>
                 <StackPanel Grid.Row="2" Spacing="12">
                     <Border Style="{StaticResource Card}" Padding="16">
                         <StackPanel Spacing="6">
-                            <TextBlock Text="SELECTED IMAGE" FontSize="10" CharacterSpacing="120"/>
-                            <TextBlock x:Name="ImageBadge" Text="No image selected" FontWeight="SemiBold" TextWrapping="Wrap"/>
-                            <TextBlock Text="Source files are not modified." FontSize="12" Style="{StaticResource Secondary}"/>
+                            <TextBlock Text="{loc:Tr Key=Nav__SelectedImage}" FontSize="10" CharacterSpacing="120"/>
+                            <TextBlock x:Name="ImageBadge" Text="{loc:Tr Key=Image__None}" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                            <TextBlock Text="{loc:Tr Key=Nav__SourceUnchanged}" FontSize="12" Style="{StaticResource Secondary}"/>
                         </StackPanel>
                     </Border>
-                    <Button x:Name="ResumeButton" Content="Resume build" Click="OnResume" HorizontalAlignment="Stretch"
-                            AutomationProperties.HelpText="Continue a stopped build from the progress it saved."/>
-                    <Button x:Name="RecoverButton" Content="Recover workspace" Click="OnRecover" HorizontalAlignment="Stretch"/>
-                    <ComboBox x:Name="ThemeChoice" Header="Appearance" SelectionChanged="OnThemeChanged" HorizontalAlignment="Stretch" SelectedIndex="0">
-                        <ComboBoxItem Content="System"/><ComboBoxItem Content="Light"/><ComboBoxItem Content="Dark"/>
+                    <Button x:Name="ResumeButton" Content="{loc:Tr Key=Action__ResumeBuild}" Click="OnResume" HorizontalAlignment="Stretch"
+                            AutomationProperties.HelpText="{loc:Tr Key=Action__ResumeBuild__Help}"/>
+                    <Button x:Name="RecoverButton" Content="{loc:Tr Key=Action__RecoverWorkspace}" Click="OnRecover" HorizontalAlignment="Stretch"/>
+                    <ComboBox x:Name="ThemeChoice" Header="{loc:Tr Key=Nav__Appearance}" SelectionChanged="OnThemeChanged" HorizontalAlignment="Stretch" SelectedIndex="0">
+                        <ComboBoxItem Content="{loc:Tr Key=Common__System}"/><ComboBoxItem Content="{loc:Tr Key=Common__Light}"/><ComboBoxItem Content="{loc:Tr Key=Common__Dark}"/>
                     </ComboBox>
+                    <ComboBox x:Name="LanguageChoice" Header="{loc:Tr Key=Language__Header}" SelectionChanged="OnLanguageChanged"
+                              HorizontalAlignment="Stretch" DisplayMemberPath="DisplayName"/>
                     <StackPanel Spacing="4">
-                        <HyperlinkButton x:Name="SupportButton" Content="Support development" Click="OnSupport" Padding="0"
-                                         AutomationProperties.HelpText="Optional monthly support or one-time donation. All app features remain free."/>
-                        <HyperlinkButton Content="Upstream project ↗" NavigateUri="https://github.com/ntdevlabs/tiny11builder" Padding="0"/>
+                        <HyperlinkButton x:Name="SupportButton" Content="{loc:Tr Key=Support__Development}" Click="OnSupport" Padding="0"
+                                         AutomationProperties.HelpText="{loc:Tr Key=Support__Development__Help}"/>
+                        <HyperlinkButton Content="{loc:Tr Key=Nav__UpstreamProject}" NavigateUri="https://github.com/ntdevlabs/tiny11builder" Padding="0"/>
                     </StackPanel>
                 </StackPanel>
             </Grid>
@@ -56,11 +59,11 @@
                 <Grid x:Name="ShellRow" Padding="28,0,28,0" ColumnSpacing="16">
                     <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                     <Button x:Name="BackButton" Click="OnBack" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,12,0,0"
-                            Background="Transparent" BorderThickness="0" Padding="12,8" AutomationProperties.Name="Back">
+                            Background="Transparent" BorderThickness="0" Padding="12,8" AutomationProperties.Name="{loc:Tr Key=Common__Back}">
                         <Button.Content>
                             <StackPanel Orientation="Horizontal" Spacing="10">
                                 <FontIcon Glyph="&#xE72B;" FontSize="16" Opacity="{ThemeResource SubtleIconOpacity}"/>
-                                <TextBlock Text="Back" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                <TextBlock Text="{loc:Tr Key=Common__Back}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
                             </StackPanel>
                         </Button.Content>
                         <Button.KeyboardAccelerators>
@@ -71,10 +74,10 @@
                                Style="{StaticResource Secondary}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
                                FontSize="12" Visibility="Collapsed" AutomationProperties.LiveSetting="Polite"/>
                     <Button x:Name="CancelButton" Grid.Column="2" Style="{StaticResource CriticalButtonStyle}" Visibility="Collapsed" Click="OnCancel"
-                            VerticalAlignment="Top" Margin="0,12,0,0" Padding="14,8" AutomationProperties.Name="Cancel safely">
+                            VerticalAlignment="Top" Margin="0,12,0,0" Padding="14,8" AutomationProperties.Name="{loc:Tr Key=Common__CancelSafely}">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <FontIcon Glyph="&#xE711;" FontSize="14"/>
-                            <TextBlock Text="Cancel safely"/>
+                            <TextBlock Text="{loc:Tr Key=Common__CancelSafely}"/>
                         </StackPanel>
                     </Button>
                 </Grid>
@@ -93,15 +96,15 @@
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
                             <StackPanel Spacing="8">
-                                <TextBlock x:Name="WelcomeTitle" Text="Welcome" FontSize="56" FontWeight="Light" Opacity="{ThemeResource WelcomeTitleOpacity}"
+                                <TextBlock x:Name="WelcomeTitle" Text="{loc:Tr Key=Welcome__Title}" FontSize="56" FontWeight="Light" Opacity="{ThemeResource WelcomeTitleOpacity}"
                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}" TextWrapping="Wrap"
                                            AutomationProperties.HeadingLevel="Level1"/>
-                                <TextBlock Text="Create a customized Windows 11 ISO. Select an image, choose what to remove, and build the ISO."
+                                <TextBlock Text="{loc:Tr Key=Welcome__Lead}"
                                            FontSize="16" Style="{StaticResource Secondary}"/>
                             </StackPanel>
                             <Grid Grid.Row="1" RowSpacing="12">
                                 <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-                                <TextBlock Text="Build modes" FontSize="18" FontWeight="SemiBold"/>
+                                <TextBlock Text="{loc:Tr Key=Welcome__BuildModes}" FontSize="18" FontWeight="SemiBold"/>
                                 <Grid x:Name="ModeCards" Grid.Row="1" ColumnSpacing="16">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/>
@@ -110,47 +113,47 @@
                                         <RowDefinition Height="*"/><RowDefinition Height="0"/><RowDefinition Height="0"/>
                                     </Grid.RowDefinitions>
                                     <Button x:Name="RegularModeCard" Style="{StaticResource ModeCard}" Tag="Tiny11" Click="OnModeCardClick"
-                                            AutomationProperties.Name="Tiny11" AutomationProperties.HelpText="Select Tiny11 and choose a Windows ISO.">
+                                            AutomationProperties.Name="{loc:Tr Key=Mode__Tiny11}" AutomationProperties.HelpText="{loc:Tr Key=Welcome__ModeHelp__Tiny11}">
                                         <Grid RowSpacing="12">
                                             <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
                                             <FontIcon Glyph="&#xE7F4;" FontSize="64" HorizontalAlignment="Left"
                                                       Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
                                             <StackPanel Grid.Row="1" Spacing="10">
-                                                <TextBlock Text="Tiny11" FontSize="20" FontWeight="SemiBold" TextWrapping="Wrap"/>
-                                                <TextBlock Text="Use the original Tiny11 removals. Keep Windows Update and recovery."
+                                                <TextBlock Text="{loc:Tr Key=Mode__Tiny11}" FontSize="20" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                                <TextBlock Text="{loc:Tr Key=Welcome__Tiny11__Description}"
                                                            Style="{StaticResource Secondary}" FontSize="13"/>
                                             </StackPanel>
-                                            <TextBlock Grid.Row="2" Text="Update support retained" FontSize="12" TextWrapping="Wrap"
+                                            <TextBlock Grid.Row="2" Text="{loc:Tr Key=Welcome__Tiny11__Badge}" FontSize="12" TextWrapping="Wrap"
                                                        Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
                                         </Grid>
                                     </Button>
                                     <Button x:Name="CoreModeCard" Grid.Column="1" Style="{StaticResource ModeCard}" Tag="Tiny11Core" Click="OnModeCardClick"
-                                            AutomationProperties.Name="Tiny11 Core" AutomationProperties.HelpText="Select Tiny11 Core and choose a Windows ISO.">
+                                            AutomationProperties.Name="{loc:Tr Key=Mode__Core}" AutomationProperties.HelpText="{loc:Tr Key=Welcome__ModeHelp__Core}">
                                         <Grid RowSpacing="12">
                                             <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
                                             <FontIcon Glyph="&#xE8B7;" FontSize="64" HorizontalAlignment="Left"
                                                       Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
                                             <StackPanel Grid.Row="1" Spacing="10">
-                                                <TextBlock Text="Tiny11 Core" FontSize="20" FontWeight="SemiBold" TextWrapping="Wrap"/>
-                                                <TextBlock Text="Remove update and recovery support and disable Defender."
+                                                <TextBlock Text="{loc:Tr Key=Mode__Core}" FontSize="20" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                                <TextBlock Text="{loc:Tr Key=Welcome__Core__Description}"
                                                            Style="{StaticResource Secondary}" FontSize="13"/>
                                             </StackPanel>
-                                            <TextBlock Grid.Row="2" Text="For test VMs only" FontSize="12" TextWrapping="Wrap"
+                                            <TextBlock Grid.Row="2" Text="{loc:Tr Key=Welcome__Core__Badge}" FontSize="12" TextWrapping="Wrap"
                                                        Foreground="{ThemeResource SystemFillColorCautionBrush}"/>
                                         </Grid>
                                     </Button>
                                     <Button x:Name="CustomModeCard" Grid.Column="2" Style="{StaticResource ModeCard}" Tag="Custom" Click="OnModeCardClick"
-                                            AutomationProperties.Name="Custom" AutomationProperties.HelpText="Select Custom and choose a Windows ISO.">
+                                            AutomationProperties.Name="{loc:Tr Key=Mode__Custom}" AutomationProperties.HelpText="{loc:Tr Key=Welcome__ModeHelp__Custom}">
                                         <Grid RowSpacing="12">
                                             <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
                                             <FontIcon Glyph="&#xE713;" FontSize="64" HorizontalAlignment="Left"
                                                       Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
                                             <StackPanel Grid.Row="1" Spacing="10">
-                                                <TextBlock Text="Custom" FontSize="20" FontWeight="SemiBold" TextWrapping="Wrap"/>
-                                                <TextBlock Text="Select individual apps, components and services to remove."
+                                                <TextBlock Text="{loc:Tr Key=Mode__Custom}" FontSize="20" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                                <TextBlock Text="{loc:Tr Key=Welcome__Custom__Description}"
                                                            Style="{StaticResource Secondary}" FontSize="13"/>
                                             </StackPanel>
-                                            <TextBlock Grid.Row="2" Text="Protected items included" FontSize="12" TextWrapping="Wrap"
+                                            <TextBlock Grid.Row="2" Text="{loc:Tr Key=Welcome__Custom__Badge}" FontSize="12" TextWrapping="Wrap"
                                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
                                         </Grid>
                                     </Button>
@@ -158,102 +161,102 @@
                             </Grid>
                             <Grid Grid.Row="2" Padding="0,16,0,0">
                                 <StackPanel Spacing="8">
-                                    <TextBlock Text="Windows 11 22H2 or newer · x64 and ARM64 · Insider / Canary" FontSize="13" TextWrapping="Wrap"/>
-                                    <TextBlock Text="Test Core and custom images in a VM before use."
+                                    <TextBlock Text="{loc:Tr Key=Welcome__Compatibility}" FontSize="13" TextWrapping="Wrap"/>
+                                    <TextBlock Text="{loc:Tr Key=Welcome__TestWarning}"
                                                Style="{StaticResource Secondary}" FontSize="12"/>
                                 </StackPanel>
                             </Grid>
                         </Grid>
                         <StackPanel x:Name="SourcePanel" Visibility="Collapsed" Spacing="20">
-                            <TextBlock Text="Windows image" Style="{StaticResource PageHeading}"/>
+                            <TextBlock Text="{loc:Tr Key=Source__Heading}" Style="{StaticResource PageHeading}"/>
                             <TextBlock x:Name="SourceMode" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" FontSize="13"/>
-                            <TextBlock Text="Download the latest Windows 11 from Microsoft, or select an ISO or extracted installation folder. Inspect the image to select an edition."
+                            <TextBlock Text="{loc:Tr Key=Source__Lead}"
                                        Style="{StaticResource Secondary}"/>
                             <Grid x:Name="SourceCards" ColumnSpacing="16" RowSpacing="20">
                             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="0"/></Grid.ColumnDefinitions>
                             <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
                             <Border x:Name="LocalMediaCard" Grid.Row="1" Style="{StaticResource Card}">
                                 <StackPanel Spacing="12">
-                                    <TextBlock Text="Local installation media" Style="{StaticResource BodyStrongTextBlockStyle}"/>
-                                    <TextBox x:Name="SourcePathBox" Header="Windows ISO or installation-media folder" TextChanged="OnSourceChanged" PlaceholderText="Choose a Windows 11 image"/>
+                                    <TextBlock Text="{loc:Tr Key=Source__Local__Title}" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+                                    <TextBox x:Name="SourcePathBox" Header="{loc:Tr Key=Source__Local__PathHeader}" TextChanged="OnSourceChanged" PlaceholderText="{loc:Tr Key=Source__Local__PathPlaceholder}"/>
                                     <StackPanel Orientation="Horizontal" Spacing="10">
-                                        <Button Content="Choose ISO" Click="OnChooseIso"/>
-                                        <Button Content="Choose folder" Click="OnChooseSourceFolder"/>
-                                        <Button Content="Inspect image" Click="OnInspect" Style="{StaticResource AccentButtonStyle}"/>
+                                        <Button Content="{loc:Tr Key=Source__Local__ChooseIso}" Click="OnChooseIso"/>
+                                        <Button Content="{loc:Tr Key=Source__Local__ChooseFolder}" Click="OnChooseSourceFolder"/>
+                                        <Button Content="{loc:Tr Key=Source__Local__Inspect}" Click="OnInspect" Style="{StaticResource AccentButtonStyle}"/>
                                     </StackPanel>
-                                    <ComboBox x:Name="EditionChoice" Header="Edition to build" DisplayMemberPath="Summary"
+                                    <ComboBox x:Name="EditionChoice" Header="{loc:Tr Key=Source__Local__EditionHeader}" DisplayMemberPath="Summary"
                                               SelectionChanged="OnEditionChanged" HorizontalAlignment="Stretch"/>
                                 </StackPanel>
                             </Border>
                             <Grid x:Name="DownloadCard" RowSpacing="12">
                                 <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-                                <Button Style="{StaticResource ModeCard}" MinHeight="150" Click="OnDownloadLatest" AutomationProperties.Name="Download latest Windows 11">
+                                <Button Style="{StaticResource ModeCard}" MinHeight="150" Click="OnDownloadLatest" AutomationProperties.Name="{loc:Tr Key=Source__Download__Title}">
                                     <Grid ColumnSpacing="24" VerticalAlignment="Center">
                                         <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                                         <FontIcon Glyph="&#xE896;" FontSize="52" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
                                         <StackPanel Grid.Column="1" Spacing="8">
-                                            <TextBlock Text="Download latest Windows 11" FontSize="22" FontWeight="SemiBold" TextWrapping="Wrap"/>
-                                            <TextBlock x:Name="LatestDownloadDescription" Text="Official Microsoft ISO. Architecture and language selected automatically." Style="{StaticResource Secondary}"/>
+                                            <TextBlock Text="{loc:Tr Key=Source__Download__Title}" FontSize="22" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                            <TextBlock x:Name="LatestDownloadDescription" Text="{loc:Tr Key=Source__Download__Description}" Style="{StaticResource Secondary}"/>
                                         </StackPanel>
                                         <FontIcon Grid.Column="2" Glyph="&#xE72A;" FontSize="24" Opacity="{ThemeResource CardArrowOpacity}"/>
                                     </Grid>
                                 </Button>
-                                <ProgressBar Grid.Row="1" x:Name="DownloadBar" Minimum="0" Maximum="100" Value="0" AutomationProperties.Name="Download progress"/>
-                                <TextBlock Grid.Row="2" x:Name="DownloadStatus" Text="Or use an ISO you already have." Style="{StaticResource Secondary}"/>
+                                <ProgressBar Grid.Row="1" x:Name="DownloadBar" Minimum="0" Maximum="100" Value="0" AutomationProperties.Name="{loc:Tr Key=Common__DownloadProgress}"/>
+                                <TextBlock Grid.Row="2" x:Name="DownloadStatus" Text="{loc:Tr Key=Source__Download__InitialStatus}" Style="{StaticResource Secondary}"/>
                             </Grid>
                             </Grid>
-                            <Expander Header="Other official downloads" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                            <Expander Header="{loc:Tr Key=Source__Other__Header}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
                                 <StackPanel Spacing="14">
-                                    <TextBlock Text="Choose a language on Microsoft's download page, then paste the ISO download link here. Links usually expire after 24 hours."
+                                    <TextBlock Text="{loc:Tr Key=Source__Other__Lead}"
                                                Style="{StaticResource Secondary}"/>
                                     <StackPanel Orientation="Horizontal" Spacing="12">
-                                        <HyperlinkButton Content="Microsoft x64 downloads ↗" NavigateUri="https://www.microsoft.com/software-download/windows11"/>
-                                        <HyperlinkButton Content="Microsoft ARM64 downloads ↗" NavigateUri="https://www.microsoft.com/software-download/windows11arm64"/>
+                                        <HyperlinkButton Content="{loc:Tr Key=Source__Other__X64}" NavigateUri="https://www.microsoft.com/software-download/windows11"/>
+                                        <HyperlinkButton Content="{loc:Tr Key=Source__Other__Arm64}" NavigateUri="https://www.microsoft.com/software-download/windows11arm64"/>
                                     </StackPanel>
-                                    <HyperlinkButton Content="Official Insider / Canary ISO selection ↗" NavigateUri="https://www.microsoft.com/software-download/windowsinsiderpreviewiso" Padding="0"/>
-                                    <TextBox x:Name="DownloadUrlBox" Header="Microsoft direct ISO link" PlaceholderText="https://software.download.prss.microsoft.com/...iso?..."/>
-                                    <TextBox x:Name="PublishedHashBox" Header="Published SHA-256 (recommended)" PlaceholderText="Copy from Microsoft's Verify your download section"/>
-                                    <Button Content="Download ISO / resume partial" Click="OnDownload" Style="{StaticResource AccentButtonStyle}" HorizontalAlignment="Left"/>
+                                    <HyperlinkButton Content="{loc:Tr Key=Source__Other__Insider}" NavigateUri="https://www.microsoft.com/software-download/windowsinsiderpreviewiso" Padding="0"/>
+                                    <TextBox x:Name="DownloadUrlBox" Header="{loc:Tr Key=Source__Other__UrlHeader}" PlaceholderText="https://software.download.prss.microsoft.com/...iso?..."/>
+                                    <TextBox x:Name="PublishedHashBox" Header="{loc:Tr Key=Source__Other__HashHeader}" PlaceholderText="{loc:Tr Key=Source__Other__HashPlaceholder}"/>
+                                    <Button Content="{loc:Tr Key=Source__Other__Download}" Click="OnDownload" Style="{StaticResource AccentButtonStyle}" HorizontalAlignment="Left"/>
                                 </StackPanel>
                             </Expander>
                         </StackPanel>
                         <StackPanel x:Name="CleanupPanel" Visibility="Collapsed" Spacing="18">
-                            <TextBlock Text="Components" Style="{StaticResource PageHeading}"/>
-                            <TextBlock Text="Choose Tiny11, Tiny11 Core, or select your own removals with Custom. Every change is recorded in the build log." Style="{StaticResource Secondary}"/>
+                            <TextBlock Text="{loc:Tr Key=Components__Heading}" Style="{StaticResource PageHeading}"/>
+                            <TextBlock Text="{loc:Tr Key=Components__Lead}" Style="{StaticResource Secondary}"/>
                             <Border Style="{StaticResource Card}">
                                 <StackPanel Spacing="14">
                                     <ComboBox x:Name="ModeChoice" Visibility="Collapsed" SelectionChanged="OnModeChanged" SelectedIndex="0">
-                                        <ComboBoxItem Content="Tiny11"/>
-                                        <ComboBoxItem Content="Tiny11 Core"/>
-                                        <ComboBoxItem Content="Custom"/>
+                                        <ComboBoxItem Content="{loc:Tr Key=Mode__Tiny11}"/>
+                                        <ComboBoxItem Content="{loc:Tr Key=Mode__Core}"/>
+                                        <ComboBoxItem Content="{loc:Tr Key=Mode__Custom}"/>
                                     </ComboBox>
                                     <Grid x:Name="RemovalModeCards" ColumnSpacing="16">
                                         <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                                         <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="0"/><RowDefinition Height="0"/></Grid.RowDefinitions>
-                                        <Button x:Name="Tiny11Selection" Style="{StaticResource ModeCard}" MinHeight="140" Click="OnRemovalModeClick" Tag="Tiny11" AutomationProperties.Name="Use Tiny11">
-                                            <StackPanel Spacing="12"><FontIcon Glyph="&#xE7F4;" FontSize="48" HorizontalAlignment="Left"/><TextBlock Text="Tiny11" FontSize="20" FontWeight="SemiBold"/><TextBlock Text="Original removals. Keep update support." Style="{StaticResource Secondary}"/></StackPanel>
+                                        <Button x:Name="Tiny11Selection" Style="{StaticResource ModeCard}" MinHeight="140" Click="OnRemovalModeClick" Tag="Tiny11" AutomationProperties.Name="{loc:Tr Key=Components__Use__Tiny11}">
+                                            <StackPanel Spacing="12"><FontIcon Glyph="&#xE7F4;" FontSize="48" HorizontalAlignment="Left"/><TextBlock Text="{loc:Tr Key=Mode__Tiny11}" FontSize="20" FontWeight="SemiBold"/><TextBlock Text="{loc:Tr Key=Components__Card__Tiny11__Description}" Style="{StaticResource Secondary}"/></StackPanel>
                                         </Button>
-                                        <Button x:Name="CoreSelection" Grid.Column="1" Style="{StaticResource ModeCard}" MinHeight="140" Click="OnRemovalModeClick" Tag="Tiny11Core" AutomationProperties.Name="Use Tiny11 Core">
-                                            <StackPanel Spacing="12"><FontIcon Glyph="&#xE8B7;" FontSize="48" HorizontalAlignment="Left"/><TextBlock Text="Tiny11 Core" FontSize="20" FontWeight="SemiBold"/><TextBlock Text="Essentials only. For test VMs." Style="{StaticResource Secondary}"/></StackPanel>
+                                        <Button x:Name="CoreSelection" Grid.Column="1" Style="{StaticResource ModeCard}" MinHeight="140" Click="OnRemovalModeClick" Tag="Tiny11Core" AutomationProperties.Name="{loc:Tr Key=Components__Use__Core}">
+                                            <StackPanel Spacing="12"><FontIcon Glyph="&#xE8B7;" FontSize="48" HorizontalAlignment="Left"/><TextBlock Text="{loc:Tr Key=Mode__Core}" FontSize="20" FontWeight="SemiBold"/><TextBlock Text="{loc:Tr Key=Components__Card__Core__Description}" Style="{StaticResource Secondary}"/></StackPanel>
                                         </Button>
-                                        <Button x:Name="CustomSelection" Grid.Column="2" Style="{StaticResource ModeCard}" MinHeight="140" Click="OnRemovalModeClick" Tag="Custom" AutomationProperties.Name="Use Custom">
-                                            <StackPanel Spacing="12"><FontIcon Glyph="&#xE713;" FontSize="48" HorizontalAlignment="Left"/><TextBlock Text="Custom" FontSize="20" FontWeight="SemiBold"/><TextBlock Text="Choose individual removals." Style="{StaticResource Secondary}"/></StackPanel>
+                                        <Button x:Name="CustomSelection" Grid.Column="2" Style="{StaticResource ModeCard}" MinHeight="140" Click="OnRemovalModeClick" Tag="Custom" AutomationProperties.Name="{loc:Tr Key=Components__Use__Custom}">
+                                            <StackPanel Spacing="12"><FontIcon Glyph="&#xE713;" FontSize="48" HorizontalAlignment="Left"/><TextBlock Text="{loc:Tr Key=Mode__Custom}" FontSize="20" FontWeight="SemiBold"/><TextBlock Text="{loc:Tr Key=Components__Card__Custom__Description}" Style="{StaticResource Secondary}"/></StackPanel>
                                         </Button>
                                     </Grid>
                                     <TextBlock x:Name="ModeDescription" Style="{StaticResource Secondary}"/>
-                                    <InfoBar x:Name="CoreWarning" IsOpen="False" IsClosable="False" Severity="Warning" Title="Core removes update and recovery support."
-                                             Message="Core deletes component files and WinRE, and disables Windows Update and Defender. You cannot add updates, languages or features afterward. Test the image in a VM."/>
-                                    <TextBlock x:Name="CoreConsentStatus" Visibility="Collapsed" Text="You will be asked to accept Core's limitations before continuing." Style="{StaticResource Secondary}"/>
+                                    <InfoBar x:Name="CoreWarning" IsOpen="False" IsClosable="False" Severity="Warning" Title="{loc:Tr Key=Components__CoreWarning__Title}"
+                                             Message="{loc:Tr Key=Components__CoreWarning__Message}"/>
+                                    <TextBlock x:Name="CoreConsentStatus" Visibility="Collapsed" Text="{loc:Tr Key=Components__CoreConsent__Pending}" Style="{StaticResource Secondary}"/>
                                     <TextBlock x:Name="SelectionCount" Style="{StaticResource Secondary}"/>
                                 </StackPanel>
                             </Border>
                             <StackPanel x:Name="CustomChoices" Visibility="Collapsed" Spacing="18">
-                            <ToggleSwitch x:Name="CustomCoreCheck" Header="Apply Core removals" OffContent="Keep servicing, recovery and Defender" OnContent="Remove servicing, recovery and Defender" Toggled="OnCustomCoreChanged"/>
-                            <TextBlock Text="Checked groups are removed or disabled. Unchecked groups are kept. For individual items, use the component list below."
+                            <ToggleSwitch x:Name="CustomCoreCheck" Header="{loc:Tr Key=Components__CustomCore__Header}" OffContent="{loc:Tr Key=Components__CustomCore__Off}" OnContent="{loc:Tr Key=Components__CustomCore__On}" Toggled="OnCustomCoreChanged"/>
+                            <TextBlock Text="{loc:Tr Key=Components__GroupsHelp}"
                                        Style="{StaticResource Secondary}"/>
-                            <ComboBox x:Name="OptionFilter" Header="Show choices" SelectedIndex="0" SelectionChanged="OnOptionFilterChanged" HorizontalAlignment="Stretch">
-                                <ComboBoxItem Content="All"/><ComboBoxItem Content="Bundled apps"/><ComboBoxItem Content="Optional features"/>
-                                <ComboBoxItem Content="Windows settings"/><ComboBoxItem Content="Advanced / original builder"/>
+                            <ComboBox x:Name="OptionFilter" Header="{loc:Tr Key=Components__Filter__Header}" SelectedIndex="0" SelectionChanged="OnOptionFilterChanged" HorizontalAlignment="Stretch">
+                                <ComboBoxItem Content="{loc:Tr Key=Common__All}"/><ComboBoxItem Content="{loc:Tr Key=Catalog__Category__Apps}"/><ComboBoxItem Content="{loc:Tr Key=Catalog__Category__Features}"/>
+                                <ComboBoxItem Content="{loc:Tr Key=Catalog__Category__Settings}"/><ComboBoxItem Content="{loc:Tr Key=Catalog__Category__Advanced}"/>
                             </ComboBox>
                             <ItemsControl x:Name="OptionsList">
                                 <ItemsControl.ItemTemplate>
@@ -272,26 +275,26 @@
                             </ItemsControl>
                             <Border Style="{StaticResource Card}">
                                 <StackPanel Spacing="14">
-                                    <TextBlock Text="Advanced removals" Style="{StaticResource Section}"/>
-                                    <TextBlock Text="List the image's apps, packages, features, services and component files, including protected items. Removing a service deletes its registry entry, not shared executables. Protected packages may refuse removal."
+                                    <TextBlock Text="{loc:Tr Key=Components__Advanced__Title}" Style="{StaticResource Section}"/>
+                                    <TextBlock Text="{loc:Tr Key=Components__Advanced__Lead}"
                                                Style="{StaticResource Secondary}"/>
-                                    <Button Content="List all components…" Click="OnOpenExpert" HorizontalAlignment="Left"/>
+                                    <Button Content="{loc:Tr Key=Components__Advanced__ListAll}" Click="OnOpenExpert" HorizontalAlignment="Left"/>
                                     <StackPanel x:Name="ExpertPanel" Visibility="Collapsed" Spacing="12">
-                                        <InfoBar IsOpen="True" IsClosable="False" Severity="Warning" Title="Unsupported removals"
-                                                 Message="Removing protected or boot-critical items can create an unbootable or insecure image. Direct payload removal bypasses servicing. No dependency solver or boot guarantee is provided."/>
-                                        <CheckBox x:Name="ExpertConsent" Content="I accept the risk of an unbootable, unserviceable or insecure custom image." Checked="OnChoicesChanged" Unchecked="OnChoicesChanged"/>
-                                        <TextBox x:Name="InventorySearch" PlaceholderText="Search components" TextChanged="OnInventoryFilterChanged"
-                                                 AutomationProperties.Name="Search components"/>
+                                        <InfoBar IsOpen="True" IsClosable="False" Severity="Warning" Title="{loc:Tr Key=Components__Advanced__WarningTitle}"
+                                                 Message="{loc:Tr Key=Components__Advanced__WarningMessage}"/>
+                                        <CheckBox x:Name="ExpertConsent" Content="{loc:Tr Key=Components__Advanced__Consent}" Checked="OnChoicesChanged" Unchecked="OnChoicesChanged"/>
+                                        <TextBox x:Name="InventorySearch" PlaceholderText="{loc:Tr Key=Common__SearchComponents}" TextChanged="OnInventoryFilterChanged"
+                                                 AutomationProperties.Name="{loc:Tr Key=Common__SearchComponents}"/>
                                         <ComboBox x:Name="InventoryFilter" SelectedIndex="0" SelectionChanged="OnInventoryFilterSelection" HorizontalAlignment="Stretch"
-                                                  AutomationProperties.Name="Component type">
-                                            <ComboBoxItem Content="All"/><ComboBoxItem Content="ProvisionedApp"/><ComboBoxItem Content="SystemApp"/>
+                                                  AutomationProperties.Name="{loc:Tr Key=Common__ComponentType}">
+                                            <ComboBoxItem Content="{loc:Tr Key=Common__All}"/><ComboBoxItem Content="ProvisionedApp"/><ComboBoxItem Content="SystemApp"/>
                                             <ComboBoxItem Content="Feature"/><ComboBoxItem Content="Capability"/><ComboBoxItem Content="Package"/>
                                             <ComboBoxItem Content="Service"/><ComboBoxItem Content="ComponentPayload"/>
                                         </ComboBox>
                                         <TextBlock x:Name="ExpertCount" Style="{StaticResource Secondary}"/>
-                                        <TextBlock Text="Individual removals add to the selected groups. To keep a component, leave both its group and its individual entry unchecked."
+                                        <TextBlock Text="{loc:Tr Key=Components__Advanced__IndividualHelp}"
                                                    Style="{StaticResource Secondary}" FontSize="12"/>
-                                        <ListView x:Name="InventoryList" Height="420" SelectionMode="None" AutomationProperties.Name="Image components">
+                                        <ListView x:Name="InventoryList" Height="420" SelectionMode="None" AutomationProperties.Name="{loc:Tr Key=Common__ImageComponents}">
                                             <ListView.ItemTemplate>
                                                 <DataTemplate>
                                                     <Grid ColumnSpacing="12" Padding="0,8">
@@ -311,27 +314,27 @@
                                                 </DataTemplate>
                                             </ListView.ItemTemplate>
                                         </ListView>
-                                        <Button Content="Clear custom selections" Click="OnClearExpert" HorizontalAlignment="Left"/>
+                                        <Button Content="{loc:Tr Key=Components__Advanced__Clear}" Click="OnClearExpert" HorizontalAlignment="Left"/>
                                     </StackPanel>
                                 </StackPanel>
                             </Border>
                             </StackPanel>
                         </StackPanel>
                         <StackPanel x:Name="SettingsPanel" Visibility="Collapsed" Spacing="20">
-                            <TextBlock Text="Build settings" Style="{StaticResource PageHeading}"/>
-                            <TextBlock Text="Choose where to build and how to compress your image."
+                            <TextBlock Text="{loc:Tr Key=Settings__Heading}" Style="{StaticResource PageHeading}"/>
+                            <TextBlock Text="{loc:Tr Key=Settings__Lead}"
                                        Style="{StaticResource Secondary}"/>
                             <Border Style="{StaticResource Card}">
                                 <StackPanel Spacing="14">
-                                    <StackPanel Orientation="Horizontal" Spacing="16"><FontIcon Glyph="&#xE8B7;" FontSize="32"/><TextBlock Text="Files and workspace" FontSize="22" FontWeight="SemiBold"/></StackPanel>
-                                    <TextBox x:Name="WorkspaceBox" Header="Workspace (NTFS, typically 40 to 70 GiB free)"/>
-                                    <Button Content="Choose workspace" Click="OnChooseWorkspace" HorizontalAlignment="Left"/>
-                                    <TextBox x:Name="OutputBox" Header="New output ISO file"/>
-                                    <Button Content="Choose output" Click="OnChooseOutput" HorizontalAlignment="Left"/>
-                                    <ComboBox x:Name="CompressionChoice" Header="Installation-image compression" SelectedIndex="0" HorizontalAlignment="Stretch">
-                                        <ComboBoxItem Content="Recovery ESD (smaller, slower to compress)"/>
-                                        <ComboBoxItem Content="Maximum WIM (easier to service later)"/>
-                                        <ComboBoxItem Content="Fast WIM (fastest build, larger ISO)"/>
+                                    <StackPanel Orientation="Horizontal" Spacing="16"><FontIcon Glyph="&#xE8B7;" FontSize="32"/><TextBlock Text="{loc:Tr Key=Settings__Files__Title}" FontSize="22" FontWeight="SemiBold"/></StackPanel>
+                                    <TextBox x:Name="WorkspaceBox" Header="{loc:Tr Key=Settings__Workspace__Header}"/>
+                                    <Button Content="{loc:Tr Key=Settings__Workspace__Choose}" Click="OnChooseWorkspace" HorizontalAlignment="Left"/>
+                                    <TextBox x:Name="OutputBox" Header="{loc:Tr Key=Settings__Output__Header}"/>
+                                    <Button Content="{loc:Tr Key=Settings__Output__Choose}" Click="OnChooseOutput" HorizontalAlignment="Left"/>
+                                    <ComboBox x:Name="CompressionChoice" Header="{loc:Tr Key=Settings__Compression__Header}" SelectedIndex="0" HorizontalAlignment="Stretch">
+                                        <ComboBoxItem Content="{loc:Tr Key=Settings__Compression__Recovery}"/>
+                                        <ComboBoxItem Content="{loc:Tr Key=Settings__Compression__Maximum}"/>
+                                        <ComboBoxItem Content="{loc:Tr Key=Settings__Compression__Fast}"/>
                                     </ComboBox>
                                 </StackPanel>
                             </Border>
@@ -340,10 +343,10 @@
                                     <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                                     <FontIcon Glyph="&#xE945;" FontSize="36" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
                                     <StackPanel Grid.Column="1" Spacing="6">
-                                        <TextBlock Text="Turbo mode" FontSize="18" FontWeight="SemiBold"/>
-                                        <TextBlock Text="Batch feature and capability removals and reduce log overhead. Core and Fast WIM builds use a faster working image. Uses more CPU and temporary space; final compression stays as selected." Style="{StaticResource Secondary}"/>
+                                        <TextBlock Text="{loc:Tr Key=Settings__Turbo__Title}" FontSize="18" FontWeight="SemiBold"/>
+                                        <TextBlock Text="{loc:Tr Key=Settings__Turbo__Description}" Style="{StaticResource Secondary}"/>
                                     </StackPanel>
-                                    <ToggleSwitch x:Name="TurboCheck" Grid.Column="2" OffContent="Off" OnContent="On" AutomationProperties.Name="Turbo mode"/>
+                                    <ToggleSwitch x:Name="TurboCheck" Grid.Column="2" OffContent="{loc:Tr Key=Common__Off}" OnContent="{loc:Tr Key=Common__On}" AutomationProperties.Name="{loc:Tr Key=Settings__Turbo__Title}"/>
                                 </Grid>
                             </Border>
                             <Border Style="{StaticResource Card}">
@@ -351,10 +354,10 @@
                                     <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                                     <FontIcon Glyph="&#xE74D;" FontSize="36" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
                                     <StackPanel Grid.Column="1" Spacing="6">
-                                        <TextBlock Text="Remove redundant image data" FontSize="18" FontWeight="SemiBold"/>
-                                        <TextBlock Text="Remove downloaded update caches, archived servicing logs, temporary files and crash reports. Pending servicing data, drivers and installers are kept." Style="{StaticResource Secondary}"/>
+                                        <TextBlock Text="{loc:Tr Key=Settings__Redundant__Title}" FontSize="18" FontWeight="SemiBold"/>
+                                        <TextBlock Text="{loc:Tr Key=Settings__Redundant__Description}" Style="{StaticResource Secondary}"/>
                                     </StackPanel>
-                                    <ToggleSwitch x:Name="RedundantDataCheck" Grid.Column="2" OffContent="Keep" OnContent="Remove" AutomationProperties.Name="Remove redundant image data"/>
+                                    <ToggleSwitch x:Name="RedundantDataCheck" Grid.Column="2" OffContent="{loc:Tr Key=Common__Keep}" OnContent="{loc:Tr Key=Common__Remove}" AutomationProperties.Name="{loc:Tr Key=Settings__Redundant__Title}"/>
                                 </Grid>
                             </Border>
                             <Border Style="{StaticResource Card}">
@@ -362,69 +365,69 @@
                                     <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                                     <FontIcon Glyph="&#xE8B7;" FontSize="36" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
                                     <StackPanel Grid.Column="1" Spacing="6">
-                                        <TextBlock Text="Omit .NET 3.5 setup payload" FontSize="18" FontWeight="SemiBold"/>
-                                        <TextBlock Text="Leave sources\sxs out of the ISO. You can still include .NET 3.5 now; enabling it later requires separate matching media or Windows Update. Core cannot add it later." Style="{StaticResource Secondary}"/>
+                                        <TextBlock Text="{loc:Tr Key=Settings__OmitSetup__Title}" FontSize="18" FontWeight="SemiBold"/>
+                                        <TextBlock Text="{loc:Tr Key=Settings__OmitSetup__Description}" Style="{StaticResource Secondary}"/>
                                     </StackPanel>
-                                    <ToggleSwitch x:Name="OmitSetupCheck" Grid.Column="2" OffContent="Keep" OnContent="Omit" AutomationProperties.Name="Omit .NET 3.5 setup payload"/>
+                                    <ToggleSwitch x:Name="OmitSetupCheck" Grid.Column="2" OffContent="{loc:Tr Key=Common__Keep}" OnContent="{loc:Tr Key=Common__Omit}" AutomationProperties.Name="{loc:Tr Key=Settings__OmitSetup__Title}"/>
                                 </Grid>
                             </Border>
                             <Border Style="{StaticResource Card}">
                                 <Grid ColumnSpacing="20"><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                                     <FontIcon Glyph="&#xE8B9;" FontSize="36" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
-                                    <StackPanel Grid.Column="1" Spacing="6"><TextBlock Text="Compact installation" FontSize="18" FontWeight="SemiBold"/><TextBlock Text="Install Windows using compressed system files to reduce disk usage." Style="{StaticResource Secondary}"/></StackPanel>
-                                    <ToggleSwitch x:Name="CompactCheck" Grid.Column="2" IsOn="True" OffContent="Off" OnContent="On" AutomationProperties.Name="Compact installation"/>
+                                    <StackPanel Grid.Column="1" Spacing="6"><TextBlock Text="{loc:Tr Key=Settings__Compact__Title}" FontSize="18" FontWeight="SemiBold"/><TextBlock Text="{loc:Tr Key=Settings__Compact__Description}" Style="{StaticResource Secondary}"/></StackPanel>
+                                    <ToggleSwitch x:Name="CompactCheck" Grid.Column="2" IsOn="True" OffContent="{loc:Tr Key=Common__Off}" OnContent="{loc:Tr Key=Common__On}" AutomationProperties.Name="{loc:Tr Key=Settings__Compact__Title}"/>
                                 </Grid>
                             </Border>
                             <Border Style="{StaticResource Card}">
                                 <Grid ColumnSpacing="20"><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                                     <FontIcon Glyph="&#xE943;" FontSize="36" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
-                                    <StackPanel Grid.Column="1" Spacing="6"><TextBlock Text=".NET Framework 3.5" FontSize="18" FontWeight="SemiBold"/><TextBlock Text="Include support for older apps. Required source files must be present in the ISO." Style="{StaticResource Secondary}"/></StackPanel>
-                                    <ToggleSwitch x:Name="NetFxCheck" Grid.Column="2" OffContent="Off" OnContent="On" AutomationProperties.Name=".NET Framework 3.5"/>
+                                    <StackPanel Grid.Column="1" Spacing="6"><TextBlock Text="{loc:Tr Key=Settings__NetFx__Title}" FontSize="18" FontWeight="SemiBold"/><TextBlock Text="{loc:Tr Key=Settings__NetFx__Description}" Style="{StaticResource Secondary}"/></StackPanel>
+                                    <ToggleSwitch x:Name="NetFxCheck" Grid.Column="2" OffContent="{loc:Tr Key=Common__Off}" OnContent="{loc:Tr Key=Common__On}" AutomationProperties.Name="{loc:Tr Key=Settings__NetFx__Title}"/>
                                 </Grid>
                             </Border>
                             <Border Style="{StaticResource Card}">
                                 <Grid ColumnSpacing="20"><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                                     <FontIcon Glyph="&#xE77B;" FontSize="36" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
-                                    <StackPanel Grid.Column="1" Spacing="6"><TextBlock Text="Local-account setup" FontSize="18" FontWeight="SemiBold"/><TextBlock Text="Prefer local sign-in during setup. Some newer builds may still request a Microsoft account." Style="{StaticResource Secondary}"/></StackPanel>
-                                    <ToggleSwitch x:Name="LocalAccountCheck" Grid.Column="2" OffContent="Off" OnContent="On" AutomationProperties.Name="Local-account setup"/>
+                                    <StackPanel Grid.Column="1" Spacing="6"><TextBlock Text="{loc:Tr Key=Settings__LocalAccount__Title}" FontSize="18" FontWeight="SemiBold"/><TextBlock Text="{loc:Tr Key=Settings__LocalAccount__Description}" Style="{StaticResource Secondary}"/></StackPanel>
+                                    <ToggleSwitch x:Name="LocalAccountCheck" Grid.Column="2" OffContent="{loc:Tr Key=Common__Off}" OnContent="{loc:Tr Key=Common__On}" AutomationProperties.Name="{loc:Tr Key=Settings__LocalAccount__Title}"/>
                                 </Grid>
                             </Border>
                             <Border Style="{StaticResource Card}">
                                 <Grid ColumnSpacing="20"><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                                     <FontIcon Glyph="&#xE8B7;" FontSize="36" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
-                                    <StackPanel Grid.Column="1" Spacing="6"><TextBlock Text="Keep working files" FontSize="18" FontWeight="SemiBold"/><TextBlock Text="Retain the modified installation media after the ISO is saved. Uses more disk space." Style="{StaticResource Secondary}"/></StackPanel>
-                                    <ToggleSwitch x:Name="KeepFilesCheck" Grid.Column="2" OffContent="Off" OnContent="On" AutomationProperties.Name="Keep working files"/>
+                                    <StackPanel Grid.Column="1" Spacing="6"><TextBlock Text="{loc:Tr Key=Settings__KeepFiles__Title}" FontSize="18" FontWeight="SemiBold"/><TextBlock Text="{loc:Tr Key=Settings__KeepFiles__Description}" Style="{StaticResource Secondary}"/></StackPanel>
+                                    <ToggleSwitch x:Name="KeepFilesCheck" Grid.Column="2" OffContent="{loc:Tr Key=Common__Off}" OnContent="{loc:Tr Key=Common__On}" AutomationProperties.Name="{loc:Tr Key=Settings__KeepFiles__Title}"/>
                                 </Grid>
                             </Border>
-                            <TextBlock x:Name="ToolStatus" Text="Image and ISO tools are prepared automatically." Style="{StaticResource Secondary}"/>
+                            <TextBlock x:Name="ToolStatus" Text="{loc:Tr Key=Settings__Tools__Initial}" Style="{StaticResource Secondary}"/>
                         </StackPanel>
                         <StackPanel x:Name="ReviewPanel" Visibility="Collapsed" Spacing="20">
-                            <TextBlock Text="Review" Style="{StaticResource PageHeading}"/>
-                            <TextBlock Text="Check your image, removal set and output before building." Style="{StaticResource Secondary}"/>
+                            <TextBlock Text="{loc:Tr Key=Review__Heading}" Style="{StaticResource PageHeading}"/>
+                            <TextBlock Text="{loc:Tr Key=Review__Lead}" Style="{StaticResource Secondary}"/>
                             <Grid x:Name="ReviewCards" ColumnSpacing="16" RowSpacing="16">
                                 <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                                 <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="0"/><RowDefinition Height="0"/></Grid.RowDefinitions>
-                                <Border x:Name="ReviewImageCard" Style="{StaticResource Card}"><StackPanel Spacing="12"><FontIcon Glyph="&#xE7F4;" FontSize="40" HorizontalAlignment="Left" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/><TextBlock Text="Windows image" FontSize="18" FontWeight="SemiBold"/><TextBlock x:Name="ReviewImage" Style="{StaticResource Secondary}"/></StackPanel></Border>
+                                <Border x:Name="ReviewImageCard" Style="{StaticResource Card}"><StackPanel Spacing="12"><FontIcon Glyph="&#xE7F4;" FontSize="40" HorizontalAlignment="Left" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/><TextBlock Text="{loc:Tr Key=Review__Image__Title}" FontSize="18" FontWeight="SemiBold"/><TextBlock x:Name="ReviewImage" Style="{StaticResource Secondary}"/></StackPanel></Border>
                                 <Border x:Name="ReviewModeCard" Grid.Column="1" Style="{StaticResource Card}"><StackPanel Spacing="12"><FontIcon Glyph="&#xE713;" FontSize="40" HorizontalAlignment="Left" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/><TextBlock x:Name="ReviewMode" FontSize="18" FontWeight="SemiBold"/><TextBlock x:Name="ReviewRemovals" Style="{StaticResource Secondary}"/></StackPanel></Border>
-                                <Border x:Name="ReviewPathsCard" Grid.Row="1" Style="{StaticResource Card}"><StackPanel Spacing="12"><FontIcon Glyph="&#xE8B7;" FontSize="40" HorizontalAlignment="Left" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/><TextBlock Text="Output and workspace" FontSize="18" FontWeight="SemiBold"/><TextBlock x:Name="ReviewPaths" Style="{StaticResource Secondary}" IsTextSelectionEnabled="True"/></StackPanel></Border>
-                                <Border x:Name="ReviewOptionsCard" Grid.Row="1" Grid.Column="1" Style="{StaticResource Card}"><StackPanel Spacing="12"><FontIcon Glyph="&#xE8B9;" FontSize="40" HorizontalAlignment="Left" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/><TextBlock Text="Installation options" FontSize="18" FontWeight="SemiBold"/><TextBlock x:Name="ReviewOptions" Style="{StaticResource Secondary}"/></StackPanel></Border>
+                                <Border x:Name="ReviewPathsCard" Grid.Row="1" Style="{StaticResource Card}"><StackPanel Spacing="12"><FontIcon Glyph="&#xE8B7;" FontSize="40" HorizontalAlignment="Left" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/><TextBlock Text="{loc:Tr Key=Review__Paths__Title}" FontSize="18" FontWeight="SemiBold"/><TextBlock x:Name="ReviewPaths" Style="{StaticResource Secondary}" IsTextSelectionEnabled="True"/></StackPanel></Border>
+                                <Border x:Name="ReviewOptionsCard" Grid.Row="1" Grid.Column="1" Style="{StaticResource Card}"><StackPanel Spacing="12"><FontIcon Glyph="&#xE8B9;" FontSize="40" HorizontalAlignment="Left" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/><TextBlock Text="{loc:Tr Key=Review__Options__Title}" FontSize="18" FontWeight="SemiBold"/><TextBlock x:Name="ReviewOptions" Style="{StaticResource Secondary}"/></StackPanel></Border>
                             </Grid>
                             <Border Style="{StaticResource Card}">
-                                <Expander Header="Selected removals and full recipe" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                                <Expander Header="{loc:Tr Key=Review__Details__Header}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
                                     <TextBox x:Name="ReviewText" IsReadOnly="True" TextWrapping="Wrap" BorderThickness="0" Background="Transparent" FontSize="13"/>
                                 </Expander>
                             </Border>
-                            <InfoBar IsOpen="True" IsClosable="False" Severity="Informational" Title="Build-dependent settings"
-                                     Message="Some policies apply only to particular editions or builds. Feature updates can reinstall apps. Local-account and hardware bypasses are best effort. Test the resulting ISO before relying on it."/>
+                            <InfoBar IsOpen="True" IsClosable="False" Severity="Informational" Title="{loc:Tr Key=Review__Warning__Title}"
+                                     Message="{loc:Tr Key=Review__Warning__Message}"/>
                             <StackPanel Orientation="Horizontal" Spacing="12">
-                                <Button Content="Save recipe" Click="OnSaveRecipe"/>
-                                <Button Content="Load recipe" Click="OnLoadRecipe"/>
+                                <Button Content="{loc:Tr Key=Review__SaveRecipe}" Click="OnSaveRecipe"/>
+                                <Button Content="{loc:Tr Key=Review__LoadRecipe}" Click="OnLoadRecipe"/>
                             </StackPanel>
                         </StackPanel>
                         <StackPanel x:Name="BuildPanel" Visibility="Collapsed" Spacing="32">
                             <StackPanel Spacing="12">
-                                <TextBlock x:Name="BuildHeading" Text="Build" Style="{StaticResource PageHeading}"/>
-                                <TextBlock x:Name="BuildDescription" Text="The selected edition will be copied, modified, compressed and saved as a bootable ISO."
+                                <TextBlock x:Name="BuildHeading" Text="{loc:Tr Key=Build__Heading}" Style="{StaticResource PageHeading}"/>
+                                <TextBlock x:Name="BuildDescription" Text="{loc:Tr Key=Build__Description}"
                                            Style="{StaticResource Secondary}" FontSize="16"/>
                             </StackPanel>
                             <Border Style="{StaticResource Card}" Padding="32">
@@ -432,34 +435,34 @@
                                     <Grid ColumnSpacing="24">
                                         <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                                         <Grid Width="64" Height="64" VerticalAlignment="Center">
-                                            <ProgressRing x:Name="BuildActivity" IsActive="False" Width="64" Height="64" AutomationProperties.Name="Build activity"/>
+                                            <ProgressRing x:Name="BuildActivity" IsActive="False" Width="64" Height="64" AutomationProperties.Name="{loc:Tr Key=Common__BuildActivity}"/>
                                             <FontIcon x:Name="BuildGlyph" Glyph="&#xE7C5;" FontSize="28" HorizontalAlignment="Center" VerticalAlignment="Center"
                                                       Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
                                         </Grid>
                                         <StackPanel Grid.Column="1" Spacing="8" VerticalAlignment="Center">
-                                            <TextBlock x:Name="CurrentStage" Text="Waiting to start" FontSize="24" FontWeight="SemiBold" TextWrapping="Wrap"/>
-                                            <TextBlock x:Name="CurrentMessage" Style="{StaticResource Secondary}" Text="No changes have been made."/>
+                                            <TextBlock x:Name="CurrentStage" Text="{loc:Tr Key=Build__Waiting}" FontSize="24" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                            <TextBlock x:Name="CurrentMessage" Style="{StaticResource Secondary}" Text="{loc:Tr Key=Build__NoChanges}"/>
                                         </StackPanel>
                                         <TextBlock x:Name="BuildPercent" Grid.Column="2" Text="0%" FontSize="48" FontWeight="Light" VerticalAlignment="Center"/>
                                     </Grid>
                                     <StackPanel Spacing="12">
                                         <Grid ColumnSpacing="16">
-                                            <TextBlock Text="Overall progress" Style="{StaticResource FieldLabel}"/>
+                                            <TextBlock Text="{loc:Tr Key=Build__Overall}" Style="{StaticResource FieldLabel}"/>
                                             <TextBlock x:Name="OverallStep" HorizontalAlignment="Right" Style="{StaticResource Hint}"/>
                                         </Grid>
-                                        <ProgressBar x:Name="OverallBar" Minimum="0" Maximum="100" MinHeight="10" AutomationProperties.Name="Overall progress">
+                                        <ProgressBar x:Name="OverallBar" Minimum="0" Maximum="100" MinHeight="10" AutomationProperties.Name="{loc:Tr Key=Common__OverallProgress}">
                                             <ProgressBar.Resources><x:Double x:Key="ProgressBarTrackHeight">10</x:Double></ProgressBar.Resources>
                                         </ProgressBar>
                                     </StackPanel>
                                     <StackPanel Spacing="12">
                                         <Grid ColumnSpacing="16">
-                                            <TextBlock Text="Current operation" Style="{StaticResource Secondary}" FontSize="14"/>
+                                            <TextBlock Text="{loc:Tr Key=Build__CurrentOperation}" Style="{StaticResource Secondary}" FontSize="14"/>
                                             <TextBlock x:Name="CurrentPercent" HorizontalAlignment="Right" Style="{StaticResource Hint}"/>
                                         </Grid>
-                                        <ProgressBar x:Name="BuildBar" Minimum="0" Maximum="100" AutomationProperties.Name="Current operation progress"/>
+                                        <ProgressBar x:Name="BuildBar" Minimum="0" Maximum="100" AutomationProperties.Name="{loc:Tr Key=Common__CurrentOperationProgress}"/>
                                     </StackPanel>
                                     <TextBlock x:Name="CancelHint" Visibility="Collapsed" Style="{StaticResource Hint}"
-                                               Text="To stop, use Cancel safely at the top right. It stops at the next safe point. Your source is never changed; working files, saved progress and logs are kept."/>
+                                               Text="{loc:Tr Key=Build__CancelHint}"/>
                                 </StackPanel>
                             </Border>
                             <Border x:Name="ResultPanel" Style="{StaticResource Card}" Padding="32" Visibility="Collapsed">
@@ -468,34 +471,34 @@
                                         <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                                         <FontIcon Glyph="&#xE73E;" FontSize="32" VerticalAlignment="Top" Foreground="{ThemeResource SystemFillColorSuccessBrush}"/>
                                         <StackPanel Grid.Column="1" Spacing="8">
-                                            <TextBlock Text="ISO created" Style="{StaticResource SectionTitle}"/>
+                                            <TextBlock Text="{loc:Tr Key=Build__IsoCreated}" Style="{StaticResource SectionTitle}"/>
                                             <TextBlock x:Name="ResultMetrics" Style="{StaticResource Secondary}"/>
                                         </StackPanel>
                                     </Grid>
-                                    <InfoBar x:Name="ResultWarnings" IsOpen="False" IsClosable="False" Severity="Warning" Title="Finished with warnings"/>
+                                    <InfoBar x:Name="ResultWarnings" IsOpen="False" IsClosable="False" Severity="Warning" Title="{loc:Tr Key=Build__FinishedWithWarnings}"/>
                                     <StackPanel Spacing="16">
-                                        <TextBox x:Name="ResultPath" Header="Output ISO" IsReadOnly="True"/>
-                                        <TextBox x:Name="ResultHash" Header="SHA-256" IsReadOnly="True" FontFamily="Consolas"/>
+                                        <TextBox x:Name="ResultPath" Header="{loc:Tr Key=Build__OutputIso}" IsReadOnly="True"/>
+                                        <TextBox x:Name="ResultHash" Header="{loc:Tr Key=Build__Sha256}" IsReadOnly="True" FontFamily="Consolas"/>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Spacing="12">
-                                        <Button Content="Open output folder" Click="OnOpenOutputFolder"/>
-                                        <Button Content="Open logs and report" Click="OnOpenLogs"/>
+                                        <Button Content="{loc:Tr Key=Build__OpenOutputFolder}" Click="OnOpenOutputFolder"/>
+                                        <Button Content="{loc:Tr Key=Build__OpenLogsAndReport}" Click="OnOpenLogs"/>
                                     </StackPanel>
-                                    <TextBlock Text="Test the ISO in a VM before installing Windows." Style="{StaticResource Hint}"/>
+                                    <TextBlock Text="{loc:Tr Key=Build__TestIso}" Style="{StaticResource Hint}"/>
                                     <StackPanel Spacing="4">
-                                        <TextBlock Text="If Tiny11 Builder saved you time, you can support its development." Style="{StaticResource Hint}"/>
-                                        <HyperlinkButton Content="Support development" Click="OnSupport" Padding="0"
-                                                         AutomationProperties.HelpText="Optional support. Opens support choices, not a payment."/>
+                                        <TextBlock Text="{loc:Tr Key=Build__SupportPrompt}" Style="{StaticResource Hint}"/>
+                                        <HyperlinkButton Content="{loc:Tr Key=Support__Development}" Click="OnSupport" Padding="0"
+                                                         AutomationProperties.HelpText="{loc:Tr Key=Support__Development__Help__Short}"/>
                                     </StackPanel>
                                 </StackPanel>
                             </Border>
                             <StackPanel Spacing="16">
                                 <Grid ColumnSpacing="16">
                                     <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <TextBlock Text="Operation history" Style="{StaticResource SectionTitle}"/>
-                                    <TextBlock x:Name="HistoryCount" Grid.Column="1" VerticalAlignment="Center" Style="{StaticResource Secondary}" Text="0 of 7 stages done"/>
+                                    <TextBlock Text="{loc:Tr Key=Build__History}" Style="{StaticResource SectionTitle}"/>
+                                    <TextBlock x:Name="HistoryCount" Grid.Column="1" VerticalAlignment="Center" Style="{StaticResource Secondary}" Text="{loc:Tr Key=Build__Stages__Initial}"/>
                                 </Grid>
-                                <TextBlock Text="Expand a stage to see each step and any error details." Style="{StaticResource Hint}"/>
+                                <TextBlock Text="{loc:Tr Key=Build__ExpandStage}" Style="{StaticResource Hint}"/>
                                 <ItemsControl x:Name="BuildStages">
                                     <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Spacing="12"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate><DataTemplate>
@@ -537,11 +540,11 @@
                                     </DataTemplate></ItemsControl.ItemTemplate>
                                 </ItemsControl>
                             </StackPanel>
-                            <Expander x:Name="BuildDetails" Header="Build details" IsExpanded="False" Expanding="OnDetailsExpanding"
+                            <Expander x:Name="BuildDetails" Header="{loc:Tr Key=Build__Details}" IsExpanded="False" Expanding="OnDetailsExpanding"
                                       HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
                                 <TextBox x:Name="BuildLog" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap"
                                          Height="300" FontFamily="Consolas" FontSize="11" ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                         SelectionChanged="OnLogSelectionChanged" AutomationProperties.Name="Build log"/>
+                                         SelectionChanged="OnLogSelectionChanged" AutomationProperties.Name="{loc:Tr Key=Common__BuildLog}"/>
                             </Expander>
                         </StackPanel>
                     </Grid>
@@ -553,12 +556,12 @@
                 <Grid x:Name="ActionArea" Grid.Row="3" Padding="32,8,32,24" ColumnSpacing="16">
                     <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
-                        <Button x:Name="ResumeRunButton" Visibility="Collapsed" Content="Resume build" Click="OnResumeStopped"
-                                AutomationProperties.HelpText="Continue this build from the progress it saved."/>
+                        <Button x:Name="ResumeRunButton" Visibility="Collapsed" Content="{loc:Tr Key=Action__ResumeBuild}" Click="OnResumeStopped"
+                                AutomationProperties.HelpText="{loc:Tr Key=Action__ResumeBuild__Help__Stopped}"/>
                     </StackPanel>
                     <Button Grid.Column="2" x:Name="NextButton" MinWidth="140" Click="OnNext" Background="Transparent" BorderThickness="0" Padding="8,4">
                         <StackPanel Orientation="Horizontal" Spacing="16">
-                            <TextBlock x:Name="ActionLabel" Text="Start" FontSize="32" FontWeight="Light" Opacity="{ThemeResource ActionLabelOpacity}"/>
+                            <TextBlock x:Name="ActionLabel" Text="{loc:Tr Key=Common__Start}" FontSize="32" FontWeight="Light" Opacity="{ThemeResource ActionLabelOpacity}"/>
                             <FontIcon x:Name="ActionArrow" Glyph="&#xE72A;" FontSize="24" Opacity="{ThemeResource ActionArrowOpacity}"/>
                         </StackPanel>
                     </Button>
@@ -566,31 +569,31 @@
                 </Grid>
                 <!-- Drawn over the pane so showing it never moves the page. -->
                 <ProgressBar x:Name="BusyBar" IsIndeterminate="True" VerticalAlignment="Top" Margin="16,0,0,0" IsHitTestVisible="False"
-                             Visibility="Collapsed" AutomationProperties.Name="Working"/>
+                             Visibility="Collapsed" AutomationProperties.Name="{loc:Tr Key=Common__Working}"/>
             </Grid>
         </Grid>
-        <ContentDialog x:Name="SupportDialog" Title="Support Tiny11 Builder" CloseButtonText="Close"
+        <ContentDialog x:Name="SupportDialog" Title="{loc:Tr Key=Support__Title}" CloseButtonText="{loc:Tr Key=Common__Close}"
                        DefaultButton="Close">
             <StackPanel Spacing="20" MaxWidth="440">
                 <TextBlock x:Name="SupportPurpose" TextWrapping="Wrap"/>
                 <StackPanel Spacing="8">
-                    <TextBlock Text="Monthly support" FontSize="18" FontWeight="SemiBold"/>
-                    <TextBlock Text="Help keep the project maintained over time." Style="{StaticResource Secondary}"/>
-                    <HyperlinkButton x:Name="SponsorsLink" Content="Support monthly on GitHub Sponsors" Click="OnSupportDestination" Tag="Sponsors" Padding="0"/>
+                    <TextBlock Text="{loc:Tr Key=Support__Monthly}" FontSize="18" FontWeight="SemiBold"/>
+                    <TextBlock Text="{loc:Tr Key=Support__Monthly__Description}" Style="{StaticResource Secondary}"/>
+                    <HyperlinkButton x:Name="SponsorsLink" Content="{loc:Tr Key=Support__Monthly__Link}" Click="OnSupportDestination" Tag="Sponsors" Padding="0"/>
                 </StackPanel>
                 <StackPanel Spacing="8">
-                    <TextBlock Text="One-time donation" FontSize="18" FontWeight="SemiBold"/>
-                    <TextBlock Text="A one-off thank-you, with no commitment." Style="{StaticResource Secondary}"/>
-                    <HyperlinkButton x:Name="KofiLink" Content="Donate once on Ko-fi" Click="OnSupportDestination" Tag="Kofi" Padding="0"/>
+                    <TextBlock Text="{loc:Tr Key=Support__OneTime}" FontSize="18" FontWeight="SemiBold"/>
+                    <TextBlock Text="{loc:Tr Key=Support__OneTime__Description}" Style="{StaticResource Secondary}"/>
+                    <HyperlinkButton x:Name="KofiLink" Content="{loc:Tr Key=Support__OneTime__Link}" Click="OnSupportDestination" Tag="Kofi" Padding="0"/>
                 </StackPanel>
                 <StackPanel Spacing="8">
-                    <TextBlock Text="Prefer another service?" Style="{StaticResource Hint}"/>
+                    <TextBlock Text="{loc:Tr Key=Support__Other}" Style="{StaticResource Hint}"/>
                     <StackPanel Orientation="Horizontal" Spacing="20">
-                        <HyperlinkButton Content="Patreon" Click="OnSupportDestination" Tag="Patreon" Padding="0"/>
-                        <HyperlinkButton Content="PayPal" Click="OnSupportDestination" Tag="PayPal" Padding="0"/>
+                        <HyperlinkButton Content="{loc:Tr Key=Support__Patreon}" Click="OnSupportDestination" Tag="Patreon" Padding="0"/>
+                        <HyperlinkButton Content="{loc:Tr Key=Support__PayPal}" Click="OnSupportDestination" Tag="PayPal" Padding="0"/>
                     </StackPanel>
                 </StackPanel>
-                <TextBlock Text="Links open in your browser. Nothing is charged or subscribed to in the app." Style="{StaticResource Hint}"/>
+                <TextBlock Text="{loc:Tr Key=Support__LinksNote}" Style="{StaticResource Hint}"/>
                 <InfoBar x:Name="SupportError" IsOpen="False" IsClosable="True" Severity="Error"/>
             </StackPanel>
         </ContentDialog>

@@ -15,7 +15,10 @@
     <Compile Include="..\..\src\Tiny11Builder.App\Choices.cs" Link="AppLogic\Choices.cs"/>
     <Compile Include="..\..\src\Tiny11Builder.App\OperationFlow.cs" Link="AppLogic\OperationFlow.cs"/>
     <Compile Include="..\..\src\Tiny11Builder.App\ProjectSupport.cs" Link="AppLogic\ProjectSupport.cs"/>
+    <Compile Include="..\..\src\Tiny11Builder.App\Localization.cs" Link="AppLogic\Localization.cs"/>
+    <Compile Include="..\..\src\Tiny11Builder.App\LanguageCatalog.cs" Link="AppLogic\LanguageCatalog.cs"/>
     <None Include="..\..\src\Tiny11Builder.App\MainWindow.xaml" Link="Deployment\MainWindow.xaml" CopyToOutputDirectory="PreserveNewest"/>
     <None Include="..\..\src\Tiny11Builder.App\app.manifest" Link="Deployment\app.manifest" CopyToOutputDirectory="PreserveNewest"/>
+    <None Include="..\..\src\Tiny11Builder.App\Strings\**\*.resw" Link="Strings\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest"/>
   </ItemGroup>
 </Project>

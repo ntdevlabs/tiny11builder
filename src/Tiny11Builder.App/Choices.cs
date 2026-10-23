@@ -24,9 +24,16 @@ public sealed class OptionChoice(CleanupOption option) : ObservableChoice
 {
     private bool selected = option.Balanced;
     public CleanupOption Option { get; } = option;
-    public string Title => Option.Title;
-    public string Description => Option.Description;
-    public string Category => Option.Category;
+    public string Title => Loc.Get($"Catalog__{Option.Id}__Title");
+    public string Description => Loc.Get($"Catalog__{Option.Id}__Description");
+    public string Category => Option.Category switch
+    {
+        "Bundled apps" => Loc.Get("Catalog__Category__Apps"),
+        "Optional features" => Loc.Get("Catalog__Category__Features"),
+        "Windows settings" => Loc.Get("Catalog__Category__Settings"),
+        "Advanced / original builder" => Loc.Get("Catalog__Category__Advanced"),
+        _ => Option.Category
+    };
     public bool Selected { get => selected; set => Set(ref selected, value); }
 }
 
@@ -37,10 +44,10 @@ public sealed class InventoryChoice(ImageInventoryItem item) : ObservableChoice
     public ImageInventoryItem Item { get; } = item;
     public string Title => Item.Identity;
     public string Detail => $"{Item.Kind} · {Item.Detail}";
-    public string Risk => Item.Protected ? "Protected / potentially boot-critical" : "Application";
-    public string ModeLabel => $"Action for {Title}";
+    public string Risk => Loc.Get(Item.Protected ? "Components__Inventory__Protected" : "Components__Inventory__Application");
+    public string ModeLabel => Loc.Format("Components__Inventory__ActionFor", Title);
     public bool HasModes => Item.Kind is ImageItemKind.Service or ImageItemKind.Feature;
-    public string[] Modes { get; } = ["Disable", "Remove"];
+    public string[] Modes { get; } = [Loc.Get("Components__Inventory__Disable"), Loc.Get("Components__Inventory__Remove")];
     public bool Selected { get => selected; set => Set(ref selected, value); }
     public int ModeIndex { get => modeIndex; set => Set(ref modeIndex, value); }
     public ExpertAction Action => new(Item.Kind, Item.Identity, ModeIndex == 0 ? ExpertActionMode.Disable : ExpertActionMode.Remove);
@@ -52,8 +59,8 @@ public sealed class BuildStageBoard
 {
     public BuildStageChoice[] Stages { get; } =
     [
-        new("Prepare media", "\uE8B7"), new("Export and mount", "\uE7C5"), new("Remove components", "\uE74D"),
-        new("Commit image", "\uE74E"), new("Compress image", "\uE8B9"), new("Create ISO", "\uE958"), new("Verify output", "\uE73E")
+        new(Loc.Get("Build__Board__Prepare"), "\uE8B7"), new(Loc.Get("Build__Board__Export"), "\uE7C5"), new(Loc.Get("Build__Board__Remove"), "\uE74D"),
+        new(Loc.Get("Build__Board__Commit"), "\uE74E"), new(Loc.Get("Build__Board__Compress"), "\uE8B9"), new(Loc.Get("Build__Board__Iso"), "\uE958"), new(Loc.Get("Build__Board__Verify"), "\uE73E")
     ];
 
     // Returns the phase the event belongs to, or -1 when it is not a displayed operation.

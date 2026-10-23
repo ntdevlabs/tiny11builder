@@ -46,6 +46,7 @@ Windows. Test your ISO in a VM before installing it.**
 ## More information
 
 [Usage, compatibility and build instructions](docs/usage.md) ·
+[Interface translations](docs/translations.md) ·
 [Attribution and distribution notes](NOTICE.md)
 
 The original PowerShell builders remain in this repository.

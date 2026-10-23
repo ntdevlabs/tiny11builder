@@ -341,6 +341,17 @@ as an unsupported operation. Removing a service deletes its offline registry
 registration; shared `svchost.exe` and other shared binaries are never blindly
 deleted. Test aggressive images in an isolated VM and keep known-good media.
 
+## Interface languages
+
+The app ships with English, Traditional Chinese (`zh-Hant`) and Simplified
+Chinese (`zh-Hans`). Choose a language under **Language** in the sidebar; the
+choice is saved and applied after a restart. The interface, removal catalog and
+user-facing notices are translated. Build-engine operation names, stage status
+words, the raw recipe and the build log remain English technical text.
+
+See [translations.md](translations.md) for the resource layout and the steps to
+add another language.
+
 ## Build and run
 
 Requirements: Windows 10 2004 or newer as the host, .NET 8 SDK and a Windows SDK
