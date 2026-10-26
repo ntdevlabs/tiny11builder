@@ -43,6 +43,35 @@ Windows. Test your ISO in a VM before installing it.**
 
 ![Build settings with Turbo mode and optional image cleanup](docs/images/ui-build-settings.png)
 
+## Booting from Ventoy
+
+ISOs built here boot from Ventoy in its default (non-wimboot) mode — no Rufus,
+no extracted USB stick, no manual patching. If an older build stops at
+**"A media driver your computer needs is missing"**, the wording is misleading:
+it is not a missing disk driver, it means Setup never saw its installation
+media. Rebuild the ISO; nothing about the Ventoy stick needs to change.
+
+Ventoy does not extract a Windows ISO. It boots the ISO's own `boot.wim` and
+injects `vtoyjump.exe` so the ISO can be mounted as a virtual drive before
+`setup.exe` runs. Two builder behaviours broke that:
+
+| Change | Why it broke Ventoy |
+| --- | --- |
+| The WinPE launch chain forced to a fixed `X:\sources\setup.exe` (`Setup\CmdLine` in the scripts, `winpeshl.ini` in the app) | Setup takes the boot RAM disk as its media root, finds no `install.wim` beside it and stops. Core only. |
+| `oscdimg -udfver102` | UDF 1.02 cannot describe a file larger than 4 GB, so a trimmed `install.wim` is written with metadata that lean readers mis-parse. |
+
+Both are fixed: the stock WinPE launch chain is left alone, so the boot image's
+own `setup.exe` bootstrap locates the media before running that media's
+`sources\setup.exe`, and ISOs are built with `-udfver150`. A build also refuses
+to emit an ISO whose `sources\` has no usable `install.wim`/`install.esd`,
+because that failure looks identical to this one.
+
+If a rebuilt ISO still fails, press `Shift+F10` at the error and run `diskpart`,
+then `list volume`. No virtual DVD drive means `vtoyjump` never ran;
+`X:\Windows\System32\ventoy\vtoype.log` records why a mount failed. `Ctrl+W` at
+the Ventoy menu switches to wimboot mode, a different boot path. Also check that
+Ventoy is 1.1.07 or newer and that its data partition is NTFS rather than exFAT.
+
 ## More information
 
 [Usage, compatibility and build instructions](docs/usage.md) ·

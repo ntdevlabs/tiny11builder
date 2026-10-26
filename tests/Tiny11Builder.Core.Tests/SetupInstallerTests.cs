@@ -48,6 +48,23 @@ public sealed class SetupInstallerTests
     }
 
     [Fact]
+    public void Legacy_startup_uses_the_media_bootstrap_so_Setup_finds_its_media_outside_the_ram_disk()
+    {
+        using var fixture = new BuildFixture();
+        var mount = NativeTests.CreateOwnedMount(fixture.Root);
+        Directory.CreateDirectory(Path.Combine(mount, "sources"));
+        File.WriteAllText(Path.Combine(mount, @"sources\setup.exe"), "same-build classic binary");
+        File.WriteAllText(Path.Combine(mount, "setup.exe"), "stock media bootstrap");
+        var messages = new List<string>();
+        SetupInstaller.ApplyLegacy(mount, messages.Add);
+        var ini = File.ReadAllText(Path.Combine(mount, @"Windows\System32\winpeshl.ini"));
+        // A fixed X:\sources\setup.exe makes Setup treat the RAM disk as the media root, which is empty under
+        // Ventoy until vtoyjump mounts the ISO. The bootstrap locates the real media first.
+        Assert.Equal("[LaunchApps]\r\n%SYSTEMROOT%\\System32\\wpeinit.exe\r\n%SYSTEMDRIVE%\\setup.exe\r\n", ini);
+        Assert.Single(messages);
+    }
+
+    [Fact]
     public void Missing_classic_installer_is_a_loud_failure_not_a_new_installer_fallback()
     {
         using var fixture = new BuildFixture();

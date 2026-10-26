@@ -394,6 +394,14 @@ Write-Output "Unmounting image..."
 Dismount-WindowsImage -Path $ScratchDisk\scratchdir -Save
 Write-Host "Exporting image..."
 Dism.exe /Export-Image /SourceImageFile:"$ScratchDisk\tiny11\sources\install.wim" /SourceIndex:$index /DestinationImageFile:"$ScratchDisk\tiny11\sources\install2.wim" /Compress:recovery
+
+# Never delete the source image unless the export actually produced one. A failed export that still deletes
+# install.wim leaves the ISO with no installation image at all, and Windows Setup reports that as
+# "A media driver your computer needs is missing" - which looks like a USB or driver fault and hides the cause.
+if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath "$ScratchDisk\tiny11\sources\install2.wim")) {
+    throw "DISM /Export-Image failed (exit code $LASTEXITCODE). Refusing to delete install.wim."
+}
+
 Remove-Item -Path "$ScratchDisk\tiny11\sources\install.wim" -Force | Out-Null
 Rename-Item -Path "$ScratchDisk\tiny11\sources\install2.wim" -NewName "install.wim" | Out-Null
 Write-Output "Windows image completed. Continuing with boot.wim."
@@ -439,6 +447,31 @@ Write-Output "The tiny11 image is now completed. Proceeding with the making of t
 Write-Output "Copying unattended file for bypassing MS account on OOBE..."
 Copy-Item -Path "$PSScriptRoot\autounattend.xml" -Destination "$ScratchDisk\tiny11\autounattend.xml" -Force | Out-Null
 Write-Output "Creating ISO image..."
+
+# Guard: an ISO with no usable installation image produces exactly the symptom "A media driver your computer needs
+# is missing" when Setup looks for its media, which is easy to misread as a USB or driver fault. Fail here instead.
+$installImages = @("$ScratchDisk\tiny11\sources\install.wim", "$ScratchDisk\tiny11\sources\install.esd") |
+    Where-Object { Test-Path -LiteralPath $_ }
+if (-not $installImages) {
+    throw "No install.wim or install.esd in $ScratchDisk\tiny11\sources - the image export step failed. Refusing to build an ISO that Setup cannot install from."
+}
+foreach ($img in $installImages) {
+    $imgMB = [math]::Round((Get-Item -LiteralPath $img).Length / 1MB, 1)
+    Write-Output "Install image $([System.IO.Path]::GetFileName($img)): ${imgMB}MB"
+    if ($imgMB -lt 500) {
+        throw "Install image $img is only ${imgMB}MB - it looks truncated. Refusing to build the ISO."
+    }
+}
+
+# A leftover export would confuse Setup's media detection.
+foreach ($stray in @('install2.wim', 'install2.esd')) {
+    $strayPath = Join-Path "$ScratchDisk\tiny11\sources" $stray
+    if (Test-Path -LiteralPath $strayPath) {
+        Write-Output "Removing leftover $stray from sources\"
+        Remove-Item -Path $strayPath -Force -ErrorAction SilentlyContinue
+    }
+}
+
 $ADKDepTools = "C:\Program Files (x86)\Windows Kits\10\Assessment and Deployment Kit\Deployment Tools\$hostarchitecture\Oscdimg"
 $localOSCDIMGPath = "$PSScriptRoot\oscdimg.exe"
 
@@ -466,7 +499,12 @@ if ([System.IO.Directory]::Exists($ADKDepTools)) {
     $OSCDIMG = $localOSCDIMGPath
 }
 
-& "$OSCDIMG" '-m' '-o' '-u2' '-udfver102' "-bootdata:2#p0,e,b$ScratchDisk\tiny11\boot\etfsboot.com#pEF,e,b$ScratchDisk\tiny11\efi\microsoft\boot\efisys.bin" "$ScratchDisk\tiny11" "$PSScriptRoot\tiny11.iso"
+# ---- ISO container --------------------------------------------------------
+# -u2        ISO9660 + Joliet + UDF, the layout Microsoft's own retail media uses. ISO9660 alone cannot hold a
+#            >4 GB file, so the UDF layer is what carries install.wim.
+# -udfver150 UDF 1.50 rather than 1.02. UDF 1.02 cannot describe a single file larger than 4 GB and a trimmed
+#            install.wim can exceed that. This is a large-file robustness fix; it is not what stopped Ventoy booting.
+& "$OSCDIMG" '-m' '-o' '-u2' '-udfver150' "-bootdata:2#p0,e,b$ScratchDisk\tiny11\boot\etfsboot.com#pEF,e,b$ScratchDisk\tiny11\efi\microsoft\boot\efisys.bin" "$ScratchDisk\tiny11" "$PSScriptRoot\tiny11.iso"
 
 # Finishing up
 Write-Output "Creation completed! Press any key to exit the script..."

@@ -332,11 +332,11 @@ Rename-Item -Path $mainOSDrive\scratchdir\Windows\WinSxS_edit -NewName $mainOSDr
 Write-Host "Complete!"
 
 Write-Host "Loading registry..."
-reg load HKLM\zCOMPONENTS $ScratchDisk\scratchdir\Windows\System32\config\COMPONENTS | Out-Null
-reg load HKLM\zDEFAULT $ScratchDisk\scratchdir\Windows\System32\config\default | Out-Null
-reg load HKLM\zNTUSER $ScratchDisk\scratchdir\Users\Default\ntuser.dat | Out-Null
-reg load HKLM\zSOFTWARE $ScratchDisk\scratchdir\Windows\System32\config\SOFTWARE | Out-Null
-reg load HKLM\zSYSTEM $ScratchDisk\scratchdir\Windows\System32\config\SYSTEM | Out-Null
+reg load HKLM\zCOMPONENTS $mainOSDrive\scratchdir\Windows\System32\config\COMPONENTS | Out-Null
+reg load HKLM\zDEFAULT $mainOSDrive\scratchdir\Windows\System32\config\default | Out-Null
+reg load HKLM\zNTUSER $mainOSDrive\scratchdir\Users\Default\ntuser.dat | Out-Null
+reg load HKLM\zSOFTWARE $mainOSDrive\scratchdir\Windows\System32\config\SOFTWARE | Out-Null
+reg load HKLM\zSYSTEM $mainOSDrive\scratchdir\Windows\System32\config\SYSTEM | Out-Null
 Write-Host "Bypassing system requirements(on the system image):"
 & 'reg' 'add' 'HKLM\zDEFAULT\Control Panel\UnsupportedHardwareNotificationCache' '/v' 'SV1' '/t' 'REG_DWORD' '/d' '0' '/f' | Out-Null
 & 'reg' 'add' 'HKLM\zDEFAULT\Control Panel\UnsupportedHardwareNotificationCache' '/v' 'SV2' '/t' 'REG_DWORD' '/d' '0' '/f' | Out-Null
@@ -380,7 +380,7 @@ Write-Host "Disabling Sponsored Apps:"
 & 'reg' 'add' 'HKLM\zSOFTWARE\Policies\Microsoft\Windows\CloudContent' '/v' 'DisableCloudOptimizedContent' '/t' 'REG_DWORD' '/d' '1' '/f' | Out-Null
 Write-Host "Enabling Local Accounts on OOBE:"
 & 'reg' 'add' 'HKLM\zSOFTWARE\Microsoft\Windows\CurrentVersion\OOBE' '/v' 'BypassNRO' '/t' 'REG_DWORD' '/d' '1' '/f' | Out-Null
-Copy-Item -Path "$PSScriptRoot\autounattend.xml" -Destination "$ScratchDisk\scratchdir\Windows\System32\Sysprep\autounattend.xml" -Force | Out-Null
+Copy-Item -Path "$PSScriptRoot\autounattend.xml" -Destination "$mainOSDrive\scratchdir\Windows\System32\Sysprep\autounattend.xml" -Force | Out-Null
 Write-Host "Disabling Reserved Storage:"
 & 'reg' 'add' 'HKLM\zSOFTWARE\Microsoft\Windows\CurrentVersion\ReserveManager' '/v' 'ShippedWithReserves' '/t' 'REG_DWORD' '/d' '0' '/f' | Out-Null
 Write-Host "Disabling BitLocker Device Encryption"
@@ -483,6 +483,14 @@ Write-Host "Unmounting image..."
 & 'dism' '/English' '/unmount-image' "/mountdir:$mainOSDrive\scratchdir" '/commit'
 Write-Host "Exporting image..."
 & 'dism' '/English' '/Export-Image' "/SourceImageFile:$mainOSDrive\tiny11\sources\install.wim" "/SourceIndex:$index" "/DestinationImageFile:$mainOSDrive\tiny11\sources\install2.wim" '/compress:max'
+
+# Never delete the source image unless the export actually produced one. A failed export that still deletes
+# install.wim leaves the ISO with no installation image at all, and Windows Setup reports that as
+# "A media driver your computer needs is missing" - which looks like a USB or driver fault and hides the cause.
+if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath "$mainOSDrive\tiny11\sources\install2.wim")) {
+    throw "DISM /Export-Image failed (exit code $LASTEXITCODE). Refusing to delete install.wim."
+}
+
 Remove-Item -Path "$mainOSDrive\tiny11\sources\install.wim" -Force >null
 Rename-Item -Path "$mainOSDrive\tiny11\sources\install2.wim" -NewName "install.wim" >null
 Write-Host "Windows image completed. Continuing with boot.wim."
@@ -511,7 +519,20 @@ Write-Host "Bypassing system requirements(on the setup image):"
 & 'reg' 'add' 'HKLM\zSYSTEM\Setup\LabConfig' '/v' 'BypassStorageCheck' '/t' 'REG_DWORD' '/d' '1' '/f' >null
 & 'reg' 'add' 'HKLM\zSYSTEM\Setup\LabConfig' '/v' 'BypassTPMCheck' '/t' 'REG_DWORD' '/d' '1' '/f' >null
 & 'reg' 'add' 'HKLM\zSYSTEM\Setup\MoSetup' '/v' 'AllowUpgradesWithUnsupportedTPMOrCPU' '/t' 'REG_DWORD' '/d' '1' '/f' >null
-& 'reg' 'add' 'HKEY_LOCAL_MACHINE\zSYSTEM\Setup' '/v' 'CmdLine' '/t' 'REG_SZ' '/d' 'X:\sources\setup.exe' '/f' >null
+
+# NOTE: this build deliberately does NOT rewrite HKLM\SYSTEM\Setup\CmdLine.
+#
+# It used to be forced to a bare 'X:\sources\setup.exe'. That value is the WinPE setup launch chain a third-party
+# boot manager has to hook in order to work:
+#
+#   Ventoy does not extract an ISO. It boots the ISO's own boot.wim and injects vtoyjump.exe so that vtoyjump can
+#   mount the ISO as a virtual drive before setup.exe runs. Setup started as X:\sources\setup.exe takes the
+#   directory it was loaded from - the boot RAM disk - as the media root, finds no install.wim beside it, and stops
+#   with "A media driver your computer needs is missing". That reads like a missing storage driver but only means
+#   Setup never saw its media.
+#
+# The stock value launches the boot image's own setup bootstrap, which locates the real media (the USB stick, or
+# the drive Ventoy mounted) and then runs that media's matching sources\setup.exe. Leave it alone.
 Write-Host "Tweaking complete!"
 Write-Host "Unmounting Registry..."
 reg unload HKLM\zCOMPONENTS >null
@@ -524,9 +545,40 @@ Write-Host "Unmounting image..."
 Clear-Host
 Write-Host "Exporting ESD. This may take a while..."
 & dism /Export-Image /SourceImageFile:"$mainOSDrive\tiny11\sources\install.wim" /SourceIndex:1 /DestinationImageFile:"$mainOSDrive\tiny11\sources\install.esd" /Compress:recovery
+
+# Same guard as the WIM export: never delete the source WIM unless the ESD export actually succeeded.
+if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath "$mainOSDrive\tiny11\sources\install.esd")) {
+    throw "DISM /Export-Image to install.esd failed (exit code $LASTEXITCODE). Refusing to delete install.wim."
+}
+
 Remove-Item "$mainOSDrive\tiny11\sources\install.wim" > $null 2>&1
 Write-Host "The tiny11 image is now completed. Proceeding with the making of the ISO..."
 Write-Host "Creating ISO image..."
+
+# Guard: an ISO with no usable installation image produces exactly the symptom "A media driver your computer needs
+# is missing" when Setup looks for its media, which is easy to misread as a USB or driver fault. Fail here instead.
+$installImages = @("$mainOSDrive\tiny11\sources\install.wim", "$mainOSDrive\tiny11\sources\install.esd") |
+    Where-Object { Test-Path -LiteralPath $_ }
+if (-not $installImages) {
+    throw "No install.wim or install.esd in $mainOSDrive\tiny11\sources - the image export step failed. Refusing to build an ISO that Setup cannot install from."
+}
+foreach ($img in $installImages) {
+    $imgMB = [math]::Round((Get-Item -LiteralPath $img).Length / 1MB, 1)
+    Write-Host "Install image $([System.IO.Path]::GetFileName($img)): ${imgMB}MB"
+    if ($imgMB -lt 500) {
+        throw "Install image $img is only ${imgMB}MB - it looks truncated. Refusing to build the ISO."
+    }
+}
+
+# A leftover export would confuse Setup's media detection.
+foreach ($stray in @('install2.wim', 'install2.esd')) {
+    $strayPath = Join-Path "$mainOSDrive\tiny11\sources" $stray
+    if (Test-Path -LiteralPath $strayPath) {
+        Write-Host "Removing leftover $stray from sources\"
+        Remove-Item -Path $strayPath -Force -ErrorAction SilentlyContinue
+    }
+}
+
 $ADKDepTools = "C:\Program Files (x86)\Windows Kits\10\Assessment and Deployment Kit\Deployment Tools\$hostarchitecture\Oscdimg"
 $localOSCDIMGPath = "$PSScriptRoot\oscdimg.exe"
 
@@ -556,7 +608,12 @@ if ([System.IO.Directory]::Exists($ADKDepTools)) {
     $OSCDIMG = $localOSCDIMGPath
 }
 
-& "$OSCDIMG" '-m' '-o' '-u2' '-udfver102' "-bootdata:2#p0,e,b$ScratchDisk\tiny11\boot\etfsboot.com#pEF,e,b$ScratchDisk\tiny11\efi\microsoft\boot\efisys.bin" "$ScratchDisk\tiny11" "$PSScriptRoot\tiny11.iso"
+# ---- ISO container --------------------------------------------------------
+# -u2        ISO9660 + Joliet + UDF, the layout Microsoft's own retail media uses. ISO9660 alone cannot hold a
+#            >4 GB file, so the UDF layer is what carries install.esd.
+# -udfver150 UDF 1.50 rather than 1.02. UDF 1.02 cannot describe a single file larger than 4 GB and a trimmed
+#            install.esd can exceed that. This is a large-file robustness fix; it is not what stopped Ventoy booting.
+& "$OSCDIMG" '-m' '-o' '-u2' '-udfver150' "-bootdata:2#p0,e,b$mainOSDrive\tiny11\boot\etfsboot.com#pEF,e,b$mainOSDrive\tiny11\efi\microsoft\boot\efisys.bin" "$mainOSDrive\tiny11" "$PSScriptRoot\tiny11.iso"
 
 # Finishing up
 Write-Host "Creation completed! Press any key to exit the script..."

@@ -304,6 +304,7 @@ public sealed partial class BuildEngine
     private async Task CreateIsoAsync(BuildSession s, CancellationToken token)
     {
         s.Stage("Create ISO", "Creating a UEFI-bootable ISO using Microsoft's oscdimg.", token);
+        RequireInstallableMedia(s);
         if (File.Exists(s.TemporaryIso))
         {
             PathSafety.RejectReparsePoints(s.TemporaryIso);
@@ -313,10 +314,50 @@ public sealed partial class BuildEngine
         var efi = Path.Combine(s.Staging, s.EfiRelative);
         var boot = s.Image.Architecture == "x64" && File.Exists(bios) ?
             $"-bootdata:2#p0,e,b{bios}#pEF,e,b{efi}" : $"-bootdata:1#pEF,e,b{efi}";
+        // -u2 is the ISO9660 + Joliet + UDF layout Microsoft's own retail media uses; ISO9660 alone cannot hold a
+        // file larger than 4 GB, so the UDF layer is what carries install.wim. -udfver150 rather than the default
+        // UDF 1.02: 1.02 cannot describe a single file larger than 4 GB, and a trimmed install.wim routinely exceeds
+        // that. oscdimg still writes such a file, but the on-disc metadata ends up in a form lenient readers accept
+        // and lean ones mis-parse. This is a large-file robustness fix; it is not what stopped Ventoy booting.
         var isoResult = await runner.RunAsync(s.Recipe.OscdimgPath,
-            ["-m", "-o", "-u2", "-udfver102", boot, s.Staging, s.TemporaryIso], s.Log, token, finishOnCancellation: false).ConfigureAwait(false);
+            ["-m", "-o", "-u2", "-udfver150", boot, s.Staging, s.TemporaryIso], s.Log, token, finishOnCancellation: false).ConfigureAwait(false);
         if (isoResult.ExitCode != 0 || !File.Exists(s.TemporaryIso) || new FileInfo(s.TemporaryIso).Length < 34816)
             throw new IOException($"oscdimg did not produce an ISO (exit {isoResult.ExitCode}). {isoResult.Output}");
+    }
+
+    /// <summary>
+    /// Refuses to publish media that Windows Setup cannot install from. Every failure below looks identical to the
+    /// user - "A media driver your computer needs is missing" - while the real cause is an ISO with no installation
+    /// image, so the build has to stop here and name it instead of shipping a disc that cannot install.
+    /// </summary>
+    private static void RequireInstallableMedia(BuildSession s)
+    {
+        var sources = Path.Combine(s.Staging, "sources");
+        // An export interrupted between writing and renaming can leave a second image behind. Setup picks the first
+        // image it finds in sources\, so a stale partial one would silently win over the finished one.
+        foreach (var stray in new[] { "install2.wim", "install2.esd" })
+        {
+            var file = Path.Combine(sources, stray);
+            if (!File.Exists(file)) continue;
+            PathSafety.RejectReparsePoints(file);
+            File.Delete(file);
+            s.Warn($"Removed a leftover {stray} from the sources folder; Setup would have detected it as the installation image.");
+        }
+        var images = new[] { "install.wim", "install.esd" }.Select(name => Path.Combine(sources, name))
+            .Where(File.Exists).ToArray();
+        if (images.Length == 0)
+            throw new IOException("The media has no sources\\install.wim or install.esd, so Windows Setup would stop " +
+                "with \"A media driver your computer needs is missing\" even though no driver is involved. The image " +
+                "export step failed; no ISO was created.");
+        // The export stage already proved each image is complete (DISM lists its single edition and its WIM header and
+        // footer parse), so only the size is worth reporting here.
+        foreach (var image in images)
+            s.Log($"Install image {Path.GetFileName(image)}: {new FileInfo(image).Length / (1024d * 1024d):0} MB");
+        // Ventoy only applies its Windows boot patch to an ISO it recognises as standard installation media; without
+        // these it is treated as a generic image and never mounts itself as the drive Setup reads from.
+        foreach (var required in new[] { @"setup.exe", @"sources\boot.wim", @"boot\bcd", @"boot\boot.sdi" })
+            if (!File.Exists(Path.Combine(s.Staging, required)))
+                s.Log($"Ventoy compatibility: the staged media has no {required}, so Ventoy will not recognise this ISO as Windows media.");
     }
 
     private static async Task<BuildResult> VerifyAndPublishAsync(BuildSession s, CancellationToken token)

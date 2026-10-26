@@ -63,9 +63,14 @@ The six-step wizard provides:
   acknowledgement before a build.
 - Core and Custom WinSxS/component-payload removals always use the legacy
   Windows installer, including on 24H2 and newer media. The private Setup
-  boot image starts `wpeinit.exe`, then its matching `sources\setup.exe`
-  (`setup_old.exe` when present), instead of the newer SetupHost workflow.
-  This is automatic, not a hardware-bypass option; no installer from a
+  boot image starts `wpeinit.exe`, then the boot image's own `setup.exe`
+  bootstrap, which locates the installation media and runs that media's
+  matching `sources\setup.exe` (`setup_old.exe` when present) instead of the
+  newer SetupHost workflow. Starting a fixed `X:\sources\setup.exe` instead
+  would make Setup treat the boot RAM disk as the media root and stop with
+  "A media driver your computer needs is missing" — including under Ventoy,
+  which mounts the ISO as a virtual drive only after its own WinPE hook has
+  run. This is automatic, not a hardware-bypass option; no installer from a
   different Windows release is downloaded. Media without the classic
   executable fails explicitly. A resumed Core job also receives this change
   even if its final installation image was already compressed.
@@ -93,6 +98,44 @@ The six-step wizard provides:
 - Recipe import/export, live logs, safe-boundary cancellation, persistent job
   state, verified saved progress for **Resume build**, an output SHA-256, a JSON
   report, and separate interrupted-workspace discard/recovery.
+
+## Booting from Ventoy
+
+Output ISOs boot from Ventoy in its default (non-wimboot) mode, for both Tiny11
+and Tiny11 Core. Ventoy does not extract a Windows ISO: it boots the ISO's own
+`boot.wim` and injects `vtoyjump.exe`, which mounts the ISO as a virtual drive
+before `setup.exe` runs. Setup only reads `sources\install.wim` after that
+mount, so anything that stops the hook from running, or that hides the media
+from Setup, surfaces as the same misleading message:
+
+> A media driver your computer needs is missing. This could be a DVD, USB, or Hard disk driver.
+
+That message is not about a driver. It means Setup never saw its installation
+media. Three build-time causes are handled:
+
+| Cause | Handling |
+| --- | --- |
+| The WinPE launch chain forced to a fixed `X:\sources\setup.exe` (`Setup\CmdLine` in the scripts, `winpeshl.ini` in the app) | The stock launch chain is left alone. The boot image's own `setup.exe` bootstrap locates the media and runs that media's `sources\setup.exe`. |
+| `oscdimg -udfver102` | ISOs are built with `-udfver150`. UDF 1.02 cannot describe a file larger than 4 GB, which a trimmed `install.wim` exceeds. |
+| A failed image export that still deleted the old image | The build refuses to create an ISO whose `sources\` has no usable `install.wim`/`install.esd`, and removes leftover `install2.wim`/`install2.esd`. |
+
+If a current ISO still stops at that message, press `Shift+F10` and run:
+
+```
+diskpart
+list volume
+type X:\Windows\System32\ventoy\vtoype.log
+```
+
+- **No virtual DVD drive in `list volume`** — `vtoyjump` never ran, so the
+  problem is the boot image patch rather than the ISO contents.
+- **`vtoype.log`** records what `vtoyjump` did and why a mount failed.
+- **`Ctrl+W`** at the Ventoy menu switches to wimboot mode, a different boot
+  path worth trying as a workaround.
+
+Also check that Ventoy is **1.1.07 or newer**, that its data partition is
+**NTFS** rather than exFAT, and that the ISO sits on the first, large Ventoy
+partition rather than the 32 MB `VTOYEFI` one.
 
 ## Turbo mode and smaller images
 
