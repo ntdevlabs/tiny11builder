@@ -39,14 +39,14 @@ public static class CleanupCatalog
         App("terminal", "Windows Terminal", "Remove Terminal. PowerShell and Command Prompt remain.", false, false, "Microsoft.WindowsTerminal"),
         App("oem", "OEM promotional apps", "Remove Intel management status and Dolby promotional applications, not drivers.", false, false,
             "AppUp.IntelManagementandSecurityStatus", "DolbyLaboratories.DolbyAccess", "DolbyLaboratories.DolbyDigitalPlusDecoderOEM"),
-        new("edge-files", "Remove Edge and WebView2", "Delete Edge and WebView2 files. Apps that require WebView2 may stop working. Updates may reinstall Edge.",
+        new("edge-files", L10n.T("edge-files.Title", "Remove Edge and WebView2"), L10n.T("edge-files.Description", "Delete Edge and WebView2 files. Apps that require WebView2 may stop working. Updates may reinstall Edge."),
             "Advanced / original builder", OptionKind.File, false, false, []),
-        new("onedrive-files", "Remove OneDrive setup binaries", "Remove both architecture-specific OneDrive installers from the offline image.",
+        new("onedrive-files", L10n.T("onedrive-files.Title", "Remove OneDrive setup binaries"), L10n.T("onedrive-files.Description", "Remove both architecture-specific OneDrive installers from the offline image."),
             "Advanced / original builder", OptionKind.File, false, false, []),
-        new("language-extras", "Speech, OCR and handwriting payloads", "Remove optional language capabilities in every image language; retain basic language support.",
+        new("language-extras", L10n.T("language-extras.Title", "Speech, OCR and handwriting payloads"), L10n.T("language-extras.Description", "Remove optional language capabilities in every image language; retain basic language support."),
             "Optional features", OptionKind.Capability, false, false,
             ["Language.Handwriting", "Language.OCR", "Language.Speech", "Language.TextToSpeech"]),
-        new("legacy-capabilities", "Retired accessories and wallpaper payloads", "Remove WordPad, Steps Recorder, Math Recognizer, legacy Media Player and extended wallpapers where installed.",
+        new("legacy-capabilities", L10n.T("legacy-capabilities.Title", "Retired accessories and wallpaper payloads"), L10n.T("legacy-capabilities.Description", "Remove WordPad, Steps Recorder, Math Recognizer, legacy Media Player and extended wallpapers where installed."),
             "Optional features", OptionKind.Capability, false, true,
             ["Microsoft.Windows.WordPad", "App.StepsRecorder", "MathRecognizer", "Media.WindowsMediaPlayer", "Microsoft.Windows.Wallpaper.Extended"]),
         Feature("xps", "XPS printing", "Disable optional XPS printing and remove its payload.", false, true, "Printing-XPSServices-Features"),
@@ -69,11 +69,11 @@ public static class CleanupCatalog
     ];
 
     private static CleanupOption App(string id, string title, string description, bool balanced, bool minimal, params string[] targets)
-        => new(id, title, description, "Bundled apps", OptionKind.App, balanced, minimal, targets);
+        => new(id, L10n.T(id + ".Title", title), L10n.T(id + ".Description", description), "Bundled apps", OptionKind.App, balanced, minimal, targets);
     private static CleanupOption Feature(string id, string title, string description, bool balanced, bool minimal, params string[] targets)
-        => new(id, title, description, "Optional features", OptionKind.Feature, balanced, minimal, targets);
+        => new(id, L10n.T(id + ".Title", title), L10n.T(id + ".Description", description), "Optional features", OptionKind.Feature, balanced, minimal, targets);
     private static CleanupOption Policy(string id, string title, string description, bool balanced, bool minimal)
-        => new(id, title, description, "Windows settings", OptionKind.Policy, balanced, minimal, []);
+        => new(id, L10n.T(id + ".Title", title), L10n.T(id + ".Description", description), "Windows settings", OptionKind.Policy, balanced, minimal, []);
 
     public static string[] ForPreset(CleanupPreset preset) => Options
         .Where(o => preset switch

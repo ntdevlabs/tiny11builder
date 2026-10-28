@@ -1,5 +1,7 @@
 # Tiny11 Builder: usage and development
 
+English | [简体中文](usage.zh-CN.md)
+
 Run the commands below from the repository root. For downloads, the video and
 screenshots, see the [project page](../README.md).
 

@@ -5,6 +5,7 @@
     <TargetPlatformMinVersion>10.0.19041.0</TargetPlatformMinVersion>
     <AssemblyName>Tiny11Builder</AssemblyName>
     <Version>0.1.3</Version>
+    <DefaultLanguage>en-US</DefaultLanguage>
     <RootNamespace>Tiny11Builder.App</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <Platforms>x64;ARM64</Platforms>

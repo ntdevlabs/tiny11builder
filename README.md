@@ -1,5 +1,7 @@
 # Tiny11 Builder
 
+English | [简体中文](README.zh-CN.md)
+
 Build a smaller Windows 11 ISO with a native WinUI app. Download an official
 Windows image or use your own, choose what to remove, and create your ISO.
 

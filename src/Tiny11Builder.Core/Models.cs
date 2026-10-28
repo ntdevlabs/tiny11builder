@@ -33,7 +33,7 @@ public sealed record WindowsImage(
     {
         if (!IsSupported)
             throw new InvalidDataException(
-                "Choose a Windows 11 client image, build 22621 (22H2) or newer, in x64 or ARM64 format.");
+                L10n.T("ImageUnsupported", "Choose a Windows 11 client image, build 22621 (22H2) or newer, in x64 or ARM64 format."));
     }
 }
 
@@ -77,36 +77,36 @@ public sealed record BuildRecipe
     {
         if (SchemaVersion != 1 || !Enum.IsDefined(Compression) || !Enum.IsDefined(Flavor) ||
             (Mode is { } mode && !Enum.IsDefined(mode)))
-            throw new InvalidDataException("This recipe version or compression mode is not supported.");
+            throw new InvalidDataException(L10n.T("RecipeUnsupported", "This recipe version or compression mode is not supported."));
         if (Flavor == BuildFlavor.Core && !CoreAcknowledged)
-            throw new InvalidDataException("Core requires acknowledgement of the loss of updates, recovery and antivirus protection.");
+            throw new InvalidDataException(L10n.T("CoreAckRequired", "Core requires acknowledgement of the loss of updates, recovery and antivirus protection."));
         if (ExpertActions is null || ExpertActions.Any(action => action is null) ||
             (ExpertActions.Length > 0 && !ExpertAcknowledged))
-            throw new InvalidDataException("Custom removals require acknowledgement of the risk of an unbootable image.");
+            throw new InvalidDataException(L10n.T("ExpertAckRequired", "Custom removals require acknowledgement of the risk of an unbootable image."));
         if (ExpertActions.Select(a => (a.Kind, a.Identity)).Distinct().Count() != ExpertActions.Length)
-            throw new InvalidDataException("Duplicate custom image actions.");
+            throw new InvalidDataException(L10n.T("DuplicateActions", "Duplicate custom image actions."));
         foreach (var action in ExpertActions)
             if (!Enum.IsDefined(action.Kind) || !Enum.IsDefined(action.Mode) || string.IsNullOrWhiteSpace(action.Identity) ||
                 action.Identity.Contains('\\') || action.Identity.Contains('/') ||
                 (action.Mode == ExpertActionMode.Disable && action.Kind is not (ImageItemKind.Feature or ImageItemKind.Service)))
-                throw new InvalidDataException("Invalid custom image action.");
+                throw new InvalidDataException(L10n.T("InvalidAction", "Invalid custom image action."));
         if (ImageIndex < 1 || SelectedOptions is null ||
             SelectedOptions.Length != SelectedOptions.Distinct(StringComparer.Ordinal).Count())
-            throw new InvalidDataException("Invalid image index or duplicate cleanup options.");
+            throw new InvalidDataException(L10n.T("InvalidOptions", "Invalid image index or duplicate cleanup options."));
         foreach (var id in SelectedOptions)
             if (!CleanupCatalog.Options.Any(o => o.Id == id))
-                throw new InvalidDataException($"Unknown cleanup option: {id}");
+                throw new InvalidDataException(string.Format(L10n.T("UnknownOption", "Unknown cleanup option: {0}"), id));
         if (Mode is BuildMode.Tiny11 or BuildMode.Tiny11Core &&
             (Flavor != (Mode == BuildMode.Tiny11Core ? BuildFlavor.Core : BuildFlavor.Regular) ||
              ExpertActions.Length > 0 ||
              !SelectedOptions.ToHashSet(StringComparer.Ordinal).SetEquals(CleanupCatalog.ForMode(Mode.Value))))
-            throw new InvalidDataException("Use Custom for changes to the Tiny11 or Tiny11 Core removal sets.");
+            throw new InvalidDataException(L10n.T("UseCustomMode", "Use Custom for changes to the Tiny11 or Tiny11 Core removal sets."));
     }
 
     public static BuildRecipe Read(string path)
     {
         var recipe = JsonSerializer.Deserialize<BuildRecipe>(File.ReadAllText(path), JsonDefaults.Options)
-            ?? throw new InvalidDataException("The recipe is empty.");
+            ?? throw new InvalidDataException(L10n.T("RecipeEmpty", "The recipe is empty."));
         recipe.ValidateOptions();
         return recipe;
     }

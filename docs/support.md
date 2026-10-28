@@ -1,5 +1,7 @@
 # Support Tiny11 Builder
 
+English | [简体中文](support.zh-CN.md)
+
 Tiny11 Builder is free, including all build modes and removal options.
 Optional support helps fund development time, testing across Windows
 releases and fixes for reported problems.

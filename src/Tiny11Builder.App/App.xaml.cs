@@ -8,6 +8,7 @@ public partial class App : Application
     public App() => InitializeComponent();
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
+        Localization.Initialize();
         window = new MainWindow();
         window.Activate();
     }

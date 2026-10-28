@@ -35,6 +35,7 @@ public sealed partial class MainWindow : Window
     private bool completed;
     private bool coreAcknowledged;
     private bool modalOpen;
+    private int _appliedLanguageIndex;
     private enum NoticeAction { None, OpenLogs, CopyDetails, OpenTools, OpenOfficialDownload }
     private string officialDownloadPage = OfficialImageDownloader.DownloadPage;
     // The run RunOperation is executing and the cancel prompt open for it; both are null when nothing is happening.
@@ -74,11 +75,11 @@ public sealed partial class MainWindow : Window
         {
             if (!busy) return;
             args.Cancel = true;
-            ShowNotice("An operation is still running.", cancelRequested ? "It is being cancelled. Wait for it to stop before closing." :
-                $"Choose {CancelPrompts.ButtonLabel} and wait for the image operation to finish before closing.", InfoBarSeverity.Warning);
+            ShowNotice(L10n.T("OpStillRunning", "An operation is still running."), cancelRequested ? L10n.T("OpCancellingWait", "It is being cancelled. Wait for it to stop before closing.") :
+                string.Format(L10n.T("OpFinishWait", "Choose {0} and wait for the image operation to finish before closing."), CancelPrompts.ButtonLabel), InfoBarSeverity.Warning);
         };
         WorkspaceBox.Text = @"C:\tiny11";
-        SupportPurpose.Text = ProjectSupport.Purpose;
+        SupportPurpose.Text = L10n.T("SupportPurpose", ProjectSupport.Purpose);
         OutputBox.Text = Path.Combine(WorkspaceBox.Text, $"tiny11-{DateTime.Now:yyyyMMdd-HHmmss}.iso");
         BuildStages.ItemsSource = board.Stages;
         progressTimer.Tick += (_, _) => { FlushBuildProgress(); DrainDownload(); };
@@ -87,7 +88,7 @@ public sealed partial class MainWindow : Window
         Root.ActualThemeChanged += (_, _) => ApplyContrast();
         Activated += (_, _) => ApplyContrast();
         Closed += (_, _) => progressTimer.Stop();
-        LatestDownloadDescription.Text = $"Official Microsoft ISO · {HostArchitecture.ToUpperInvariant()} · {CultureInfo.CurrentUICulture.NativeName}";
+        LatestDownloadDescription.Text = string.Format(L10n.T("OfficialIsoFmt", "Official Microsoft ISO · {0} · {1}"), HostArchitecture.ToUpperInvariant(), CultureInfo.CurrentUICulture.NativeName);
         foreach (var choice in options) choice.PropertyChanged += (_, _) => UpdateCounts();
         initialized = true;
         ApplyContrast();
@@ -103,11 +104,24 @@ public sealed partial class MainWindow : Window
                 var recipe = JsonSerializer.Deserialize<BuildRecipe>(File.ReadAllText(args[restoreIndex + 1]), JsonDefaults.Options)
                     ?? throw new InvalidDataException("The saved session is empty.");
                 RestoreRecipe(recipe);
-                ShowNotice("Session restored.", "Inspect the image again before continuing. No build starts automatically.");
+                ShowNotice(L10n.T("SessionRestored", "Session restored."), L10n.T("SessionRestoredMsg", "Inspect the image again before continuing. No build starts automatically."));
             }
-            catch (Exception error) { ShowNotice("Session could not be restored.", ErrorText.Reason(error), InfoBarSeverity.Error); }
+            catch (Exception error) { ShowNotice(L10n.T("SessionRestoreFail", "Session could not be restored."), ErrorText.Reason(error), InfoBarSeverity.Error); }
         }
         UpdateCounts();
+        ApplyLanguageSelection();
+    }
+
+    private void ApplyLanguageSelection()
+    {
+        _appliedLanguageIndex = Localization.Current switch
+        {
+            "zh-CN" => 2,
+            "en-US" => 1,
+            _ => 0
+        };
+        if (LanguageChoice.SelectedIndex != _appliedLanguageIndex)
+            LanguageChoice.SelectedIndex = _appliedLanguageIndex;
     }
 
     private FrameworkElement[] Panels => [WelcomePanel, SourcePanel, CleanupPanel, SettingsPanel, ReviewPanel, BuildPanel];
@@ -202,9 +216,9 @@ public sealed partial class MainWindow : Window
         NextButton.IsEnabled = !busy && canAdvance;
         // After a build stops, the primary action says what it will do: start over, or continue the resume.
         var retry = step == 5 && !completed && stoppedRun is not null;
-        ActionLabel.Text = completed ? "Build another" : retry ? (stoppedRun == OperationKind.Resume ? "Resume again" : "Build again") : step switch
+        ActionLabel.Text = completed ? L10n.T("ActionBuildAnother", "Build another") : retry ? (stoppedRun == OperationKind.Resume ? L10n.T("ActionResumeAgain", "Resume again") : L10n.T("ActionBuildAgain", "Build again")) : step switch
         {
-            0 => "Start", 1 => "Next", 2 => "Next", 3 => "Review", 4 => "Continue", _ => "Build"
+            0 => L10n.T("ActionStart", "Start"), 1 => L10n.T("ActionNext", "Next"), 2 => L10n.T("ActionNext", "Next"), 3 => L10n.T("ActionReview", "Review"), 4 => L10n.T("ActionContinue", "Continue"), _ => L10n.T("ActionBuild", "Build")
         };
         ActionLabel.FontSize = 32;
         Grid.SetColumn(NextButton, 2);
@@ -253,7 +267,7 @@ public sealed partial class MainWindow : Window
         if (busy || modalOpen) return;
         if (sender is not Button { Tag: string tag } || !Enum.TryParse<BuildMode>(tag, out var mode) || !Enum.IsDefined(mode))
         {
-            ShowNotice("Build mode could not be selected.", "The selected card does not identify a valid build mode.", InfoBarSeverity.Error);
+            ShowNotice(L10n.T("ModeSelectFail", "Build mode could not be selected."), L10n.T("ModeSelectFailMsg", "The selected card does not identify a valid build mode."), InfoBarSeverity.Error);
             return;
         }
         ModeChoice.SelectedIndex = (int)mode;
@@ -286,16 +300,16 @@ public sealed partial class MainWindow : Window
         }
         if (step == 2 && UsesCore && !coreAcknowledged)
         {
-            coreAcknowledged = await Confirm("Core is not serviceable",
-                "No Windows Update\nNo Microsoft Defender\nNo recovery environment\nNo added languages or features\n\n" +
-                "Use only in an isolated test VM.\nThe image may not boot.",
-                "I agree");
-            CoreConsentStatus.Text = coreAcknowledged ? "Core limitations accepted for this build." : "Core limitations have not been accepted.";
+            coreAcknowledged = await Confirm(L10n.T("CoreConfirmTitle", "Core is not serviceable"),
+                L10n.T("CoreConfirmBody", "No Windows Update\nNo Microsoft Defender\nNo recovery environment\nNo added languages or features\n\n" +
+                "Use only in an isolated test VM.\nThe image may not boot."),
+                L10n.T("CoreConfirmButton", "I agree"));
+            CoreConsentStatus.Text = coreAcknowledged ? L10n.T("CoreConsentAccepted", "Core limitations accepted for this build.") : L10n.T("CoreConsentNotAccepted", "Core limitations have not been accepted.");
             if (!coreAcknowledged) return;
         }
         await RunOperation(OperationKind.Check, async token =>
         {
-            Working("Checking your choices…");
+            Working(L10n.T("CheckingChoices", "Checking your choices…"));
             if (step >= 1 && image is null) throw new InvalidOperationException("Inspect the selected Windows image first.");
             image?.Validate();
             if (step >= 2) CreateRecipe().ValidateOptions();
@@ -373,7 +387,7 @@ public sealed partial class MainWindow : Window
                 }
                 catch (Exception display)
                 {
-                    try { ShowNotice("The operation did not complete.", ErrorText.Reason(error) + " " + display.Message, InfoBarSeverity.Error); }
+                    try { ShowNotice(L10n.T("OpNotComplete", "The operation did not complete."), ErrorText.Reason(error) + " " + display.Message, InfoBarSeverity.Error); }
                     catch (Exception) { ReportUiFailure("The outcome could not be shown.", display); }
                 }
             }
@@ -418,7 +432,7 @@ public sealed partial class MainWindow : Window
             var text = what + " " + ErrorText.Reason(error);
             liveLog.Add("[App] " + text);
             if (Notice.IsOpen) Notice.Message = ErrorText.Summary(Notice.Message + " " + text, 400);
-            else ShowNotice("Part of the page could not be updated.", text, InfoBarSeverity.Warning, NoticeAction.CopyDetails, error.ToString());
+            else ShowNotice(L10n.T("PageUpdateFail", "Part of the page could not be updated."), text, InfoBarSeverity.Warning, NoticeAction.CopyDetails, error.ToString());
         }
         catch (Exception) { /* even the notice cannot be drawn; the debugger output above is all that is left */ }
     }
@@ -453,8 +467,10 @@ public sealed partial class MainWindow : Window
             // First, so that whatever below fails to draw, the page is not left spinning.
             StopBuildActivity();
             board.Stop(outcome.Cancelled);
-            var noun = kind == OperationKind.Resume ? "Resume" : "Build";
-            BuildHeading.Text = outcome.Cancelled ? $"{noun} cancelled" : $"{noun} stopped";
+            var noun = kind == OperationKind.Resume ? L10n.T("ResumeNoun", "Resume") : L10n.T("BuildNoun", "Build");
+            BuildHeading.Text = outcome.Cancelled
+                ? string.Format(L10n.T("HeadingCancelled", "{0} cancelled"), noun)
+                : string.Format(L10n.T("HeadingStopped", "{0} stopped"), noun);
             CurrentMessage.Text = outcome.FullMessage;
             HistoryCount.Text = StageSummary.Describe(board);
         }
@@ -480,8 +496,8 @@ public sealed partial class MainWindow : Window
         NoticeButton.Visibility = action == NoticeAction.None ? Visibility.Collapsed : Visibility.Visible;
         var label = action switch
         {
-            NoticeAction.OpenLogs => "Open logs", NoticeAction.OpenTools => "Get image tools",
-            NoticeAction.OpenOfficialDownload => "Open Microsoft download page", _ => "Copy details"
+            NoticeAction.OpenLogs => L10n.T("NoticeOpenLogs", "Open logs"), NoticeAction.OpenTools => L10n.T("NoticeOpenTools", "Get image tools"),
+            NoticeAction.OpenOfficialDownload => L10n.T("NoticeOpenDownload", "Open Microsoft download page"), _ => L10n.T("NoticeCopyDetails", "Copy details")
         };
         NoticeButton.Content = label;
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(NoticeButton, label);
@@ -503,13 +519,13 @@ public sealed partial class MainWindow : Window
             }
             catch (Exception error) when (error is IOException or InvalidDataException or System.ComponentModel.Win32Exception or InvalidOperationException)
             {
-                ShowNotice("Could not open the download page.", page + "\n" +
+                ShowNotice(L10n.T("NoticeDownloadPageFailTitle", "Could not open the download page."), page + "\n" +
                     ErrorText.Reason(error), InfoBarSeverity.Error, NoticeAction.CopyDetails, error.ToString());
             }
             return;
         }
         if (noticeAction != NoticeAction.CopyDetails || noticeDetails.Length == 0) return;
-        NoticeButton.Content = CopyToClipboard(noticeDetails) ? "Copied" : "Could not copy";
+        NoticeButton.Content = CopyToClipboard(noticeDetails) ? L10n.T("CopiedLabel", "Copied") : L10n.T("CopyFailLabel", "Could not copy");
     }
 
     // A clipboard that is locked or unavailable is reported to the caller, never thrown into the page or a dialog.
@@ -574,7 +590,7 @@ public sealed partial class MainWindow : Window
             var dialog = new ContentDialog
             {
                 XamlRoot = Root.XamlRoot, RequestedTheme = DialogTheme(),
-                Title = title, Content = content, PrimaryButtonText = action, CloseButtonText = "Cancel",
+                Title = title, Content = content, PrimaryButtonText = action, CloseButtonText = L10n.T("DialogCancel", "Cancel"),
                 DefaultButton = ContentDialogButton.Close
             };
             return await dialog.ShowAsync() == ContentDialogResult.Primary;
@@ -600,7 +616,7 @@ public sealed partial class MainWindow : Window
         }
         catch (Exception error)
         {
-            ShowNotice("Support options could not be opened.", ErrorText.Reason(error),
+            ShowNotice(L10n.T("SupportOptionsFailTitle", "Support options could not be opened."), ErrorText.Reason(error),
                 InfoBarSeverity.Error, NoticeAction.CopyDetails, error.ToString());
         }
         finally
@@ -616,15 +632,15 @@ public sealed partial class MainWindow : Window
         {
             if (sender is not FrameworkElement { Tag: string tag } ||
                 !Enum.TryParse<SupportDestination>(tag, out var destination))
-                throw new InvalidDataException("This support link has no valid destination.");
+                throw new InvalidDataException(L10n.T("SupportLinkInvalid", "This support link has no valid destination."));
             var uri = ProjectSupport.Link(destination);
             if (!await Windows.System.Launcher.LaunchUriAsync(uri))
-                throw new IOException($"Your browser could not open {uri}. No payment was made.");
+                throw new IOException(string.Format(L10n.T("BrowserOpenFailMsg", "Your browser could not open {0}. No payment was made."), uri));
             SupportError.IsOpen = false;
         }
         catch (Exception error)
         {
-            SupportError.Title = "Could not open the support page";
+            SupportError.Title = L10n.T("SupportOpenFailTitle", "Could not open the support page");
             SupportError.Message = ErrorText.Reason(error);
             SupportError.IsOpen = true;
         }
@@ -653,7 +669,7 @@ public sealed partial class MainWindow : Window
     private Task<string?> SaveFile(string filename, string extension)
     {
         var picker = new FileSavePicker(AppWindow.Id) { SuggestedFileName = filename };
-        picker.FileTypeChoices.Add(extension == ".iso" ? "ISO image" : "Image recipe", new List<string> { extension });
+        picker.FileTypeChoices.Add(extension == ".iso" ? L10n.T("FileTypeIso", "ISO image") : L10n.T("FileTypeRecipe", "Image recipe"), new List<string> { extension });
         return Pick(async () => (await picker.PickSaveFileAsync())?.Path);
     }
 
@@ -673,7 +689,7 @@ public sealed partial class MainWindow : Window
         pendingImageIndex = null;
         pendingSourcePath = "";
         EditionChoice.ItemsSource = null;
-        ImageBadge.Text = "No image selected";
+        ImageBadge.Text = L10n.T("ImageBadgeNone", "No image selected");
         ClearInventory();
         UpdateNavigation();
     }
@@ -686,9 +702,9 @@ public sealed partial class MainWindow : Window
               SourcePathBox.Text.Trim().Equals(pendingSourcePath, StringComparison.OrdinalIgnoreCase)))
             ClearInventory();
         image = selected;
-        ImageBadge.Text = image is null ? "No image selected" : $"{image.Name}\n{image.Architecture} · build {image.Version.Build}";
+        ImageBadge.Text = image is null ? L10n.T("ImageBadgeNone", "No image selected") : $"{image.Name}\n{image.Architecture} · build {image.Version.Build}";
         if (image is not null && !image.IsSupported)
-            ShowNotice("This edition is not supported.", "Choose a Windows 11 client image, 22H2 or newer, in x64 or ARM64 format.", InfoBarSeverity.Warning);
+            ShowNotice(L10n.T("EditionNotSupported", "This edition is not supported."), L10n.T("EditionNotSupportedMsg", "Choose a Windows 11 client image, 22H2 or newer, in x64 or ARM64 format."), InfoBarSeverity.Warning);
         UpdateNavigation();
     }
 
@@ -696,7 +712,7 @@ public sealed partial class MainWindow : Window
     {
         if (!ToolLocator.IsAdministrator)
         {
-            ShowNotice("Administrator privileges required.", "Close and reopen Tiny11Builder.exe, then approve the Windows administrator prompt.", InfoBarSeverity.Warning);
+            ShowNotice(L10n.T("AdminRequired", "Administrator privileges required."), L10n.T("AdminRequiredMsg", "Close and reopen Tiny11Builder.exe, then approve the Windows administrator prompt."), InfoBarSeverity.Warning);
             return;
         }
         await RunOperation(OperationKind.Inspect, InspectSourceAsync);
@@ -706,10 +722,10 @@ public sealed partial class MainWindow : Window
     {
         if (!ToolLocator.IsAdministrator)
         {
-            ShowNotice("Image selected.", "Close and reopen Tiny11Builder.exe with administrator approval to inspect its editions.");
+            ShowNotice(L10n.T("ImageSelectedNotice", "Image selected."), L10n.T("ImageSelectedMsg", "Close and reopen Tiny11Builder.exe with administrator approval to inspect its editions."));
             return;
         }
-        Working("Inspecting the image…");
+        Working(L10n.T("InspectingImage", "Inspecting the image…"));
         var source = SourcePathBox.Text.Trim();
         servicingTool = ToolLocator.FindDism();
         await Task.Run(() => ToolLocator.Validate(servicingTool, "dism.exe"), token);
@@ -717,7 +733,7 @@ public sealed partial class MainWindow : Window
         var restored = source.Equals(pendingSourcePath, StringComparison.OrdinalIgnoreCase) ? pendingImageIndex : null;
         EditionChoice.ItemsSource = images;
         EditionChoice.SelectedIndex = ImageDefaults.SelectPosition(images, restored);
-        ShowNotice("Image inspected.", $"{images.Count} editions found. {image?.Name} is selected.");
+        ShowNotice(L10n.T("ImageInspected", "Image inspected."), string.Format(L10n.T("ImageInspectedFmt", "{0} editions found. {1} is selected."), images.Count, image?.Name));
     }
 
     private void BeginDownloadText(Func<DownloadProgress, string> format)
@@ -754,7 +770,7 @@ public sealed partial class MainWindow : Window
         var hash = OfficialImageDownloader.ValidateHash(PublishedHashBox.Text);
         var path = await SaveFile(Path.GetFileName(uri.AbsolutePath), ".iso");
         if (path is null) return;
-        Working("Downloading from Microsoft…");
+        Working(L10n.T("DownloadingMicrosoft", "Downloading from Microsoft…"));
         using var client = OfficialImageDownloader.CreateClient();
         DownloadBar.IsIndeterminate = true;
         BeginDownloadText(p => FormatDownload(p, ""));
@@ -765,16 +781,16 @@ public sealed partial class MainWindow : Window
             DrainDownload();
             SourcePathBox.Text = downloaded.Path;
             DownloadStatus.Text = $"SHA-256: {downloaded.Sha256}";
-            ShowNotice(downloaded.VerifiedAgainstPublishedHash ? "Official ISO downloaded and hash-verified." : "Microsoft-hosted ISO downloaded.",
-                downloaded.VerifiedAgainstPublishedHash ? "The file matches the supplied published SHA-256. Inspect it to select an edition." :
-                "No published hash was supplied. The computed hash is shown, but authenticity has not been independently verified.", InfoBarSeverity.Informational);
+            ShowNotice(downloaded.VerifiedAgainstPublishedHash ? L10n.T("DownloadVerified", "Official ISO downloaded and hash-verified.") : L10n.T("DownloadMicrosoft", "Microsoft-hosted ISO downloaded."),
+                downloaded.VerifiedAgainstPublishedHash ? L10n.T("DownloadVerifiedMsg", "The file matches the supplied published SHA-256. Inspect it to select an edition.") :
+                L10n.T("DownloadUnverifiedMsg", "No published hash was supplied. The computed hash is shown, but authenticity has not been independently verified."), InfoBarSeverity.Informational);
         }
         finally { EndDownloadText(); }
     });
 
     private async void OnDownloadLatest(object sender, RoutedEventArgs args) => await RunOperation(OperationKind.Download, async token =>
     {
-        Working("Finding the latest Windows 11…");
+        Working(L10n.T("FindingLatest", "Finding the latest Windows 11…"));
         DownloadBar.IsIndeterminate = true;
         try
         {
@@ -790,27 +806,27 @@ public sealed partial class MainWindow : Window
             var hashFile = path + ".sha256";
             if (File.Exists(path) && File.Exists(hashFile))
             {
-                Working("Checking the downloaded ISO…");
+                Working(L10n.T("CheckingDownloaded", "Checking the downloaded ISO…"));
                 await using var input = File.OpenRead(path);
                 await IsoStructure.ValidateAsync(input, token);
                 var actual = Convert.ToHexString(await SHA256.HashDataAsync(input, token));
                 if (actual != (await File.ReadAllTextAsync(hashFile, token)).Trim() ||
                     (media.Sha256 is not null && actual != media.Sha256))
-                    throw new InvalidDataException("The cached ISO has changed. It has not been accepted.");
-                DownloadStatus.Text = "Previously downloaded ISO verified.";
+                    throw new InvalidDataException(L10n.T("CachedIsoChanged", "The cached ISO has changed. It has not been accepted."));
+                DownloadStatus.Text = L10n.T("PreviouslyVerified", "Previously downloaded ISO verified.");
             }
             else
             {
                 if (File.Exists(path)) path = Path.Combine(folder, Path.GetFileNameWithoutExtension(media.FileName) + "-" + Guid.NewGuid().ToString("N")[..8] + ".iso");
-                Working("Downloading from Microsoft…");
+                Working(L10n.T("DownloadingMicrosoft", "Downloading from Microsoft…"));
                 using var downloadClient = OfficialImageDownloader.CreateClient();
                 BeginDownloadText(p => FormatDownload(p, $"{media.Language} · "));
                 var download = await new OfficialImageDownloader(downloadClient).DownloadAsync(media.Url.AbsoluteUri,
                     path, media.Sha256, downloadUpdates, token, status: catalogProgress);
                 DrainDownload();
                 await File.WriteAllTextAsync(path + ".sha256", download.Sha256, token);
-                DownloadStatus.Text = $"Downloaded {media.Description}. SHA-256: {download.Sha256}" +
-                    (download.VerifiedAgainstPublishedHash ? " (published hash verified)" : " (computed hash; Microsoft supplied no published hash)");
+                DownloadStatus.Text = string.Format(L10n.T("DownloadedFmt", "Downloaded {0}. SHA-256: {1}"), media.Description, download.Sha256) +
+                    (download.VerifiedAgainstPublishedHash ? L10n.T("HashPublished", " (published hash verified)") : L10n.T("HashComputed", " (computed hash; Microsoft supplied no published hash)"));
             }
             SourcePathBox.Text = path;
             await InspectSourceAsync(token);
@@ -825,7 +841,7 @@ public sealed partial class MainWindow : Window
         client.Timeout = TimeSpan.FromSeconds(60);
         isoTool = await new OscdimgAcquirer(client).EnsureAsync(Path.Combine(dataDirectory, "tools"),
             new UiProgress<string>(text => DispatcherQueue.TryEnqueue(() => ToolStatus.Text = text)), token);
-        ToolStatus.Text = "Image and ISO tools ready.";
+        ToolStatus.Text = L10n.T("ToolsReady", "Image and ISO tools ready.");
     }
 
     private void OnModeChanged(object sender, SelectionChangedEventArgs args)
@@ -852,14 +868,14 @@ public sealed partial class MainWindow : Window
         CustomChoices.Visibility = SelectedMode == BuildMode.Custom ? Visibility.Visible : Visibility.Collapsed;
         CoreWarning.IsOpen = UsesCore;
         CoreConsentStatus.Visibility = UsesCore ? Visibility.Visible : Visibility.Collapsed;
-        CoreConsentStatus.Text = coreAcknowledged ? "Core limitations accepted for this build." : "You will be asked to accept Core's limitations before continuing.";
+        CoreConsentStatus.Text = coreAcknowledged ? L10n.T("CoreConsentAccepted", "Core limitations accepted for this build.") : L10n.T("CoreConsentPending", "You will be asked to accept Core's limitations before continuing.");
         ModeDescription.Text = SelectedMode switch
         {
-            BuildMode.Tiny11 => "Original Tiny11 removals, including Edge/WebView2 and OneDrive binaries. Windows Update, Defender and recovery are kept. Choose Custom to change individual removals.",
-            BuildMode.Tiny11Core => "Tiny11 Core removals, including irreversible component pruning. Choose Custom to change individual removals.",
-            _ => "Start with nothing selected, then choose what to remove or disable. You can also list individual components, including protected items."
+            BuildMode.Tiny11 => L10n.T("ModeDescTiny", "Original Tiny11 removals, including Edge/WebView2 and OneDrive binaries. Windows Update, Defender and recovery are kept. Choose Custom to change individual removals."),
+            BuildMode.Tiny11Core => L10n.T("ModeDescCore", "Tiny11 Core removals, including irreversible component pruning. Choose Custom to change individual removals."),
+            _ => L10n.T("ModeDescCustom", "Start with nothing selected, then choose what to remove or disable. You can also list individual components, including protected items.")
         };
-        SourceMode.Text = $"Build mode: {(ModeChoice.SelectedItem as ComboBoxItem)?.Content}";
+        SourceMode.Text = string.Format(L10n.T("ModeLine", "Build mode: {0}"), (ModeChoice.SelectedItem as ComboBoxItem)?.Content);
         MarkChoice(Tiny11Selection, SelectedMode == BuildMode.Tiny11);
         MarkChoice(CoreSelection, SelectedMode == BuildMode.Tiny11Core);
         MarkChoice(CustomSelection, SelectedMode == BuildMode.Custom);
@@ -893,21 +909,22 @@ public sealed partial class MainWindow : Window
     {
         if (!initialized) return;
         var custom = inventory.Count > 0 ? inventory.Count(i => i.Selected) : pendingActions.Length;
-        SelectionCount.Text = $"{options.Count(o => o.Selected)} removal groups selected · {custom} advanced actions";
-        ExpertCount.Text = $"{inventory.Count:N0} components listed · {custom:N0} advanced actions selected.";
+        SelectionCount.Text = string.Format(L10n.T("SelCountFmt", "{0} removal groups selected · {1} advanced actions"), options.Count(o => o.Selected), custom);
+        ExpertCount.Text = string.Format(L10n.T("ExpCountFmt", "{0} components listed · {1} advanced actions selected."),
+            inventory.Count.ToString("N0", CultureInfo.InvariantCulture), custom.ToString("N0", CultureInfo.InvariantCulture));
         UpdateNavigation();
     }
 
     private async void OnOpenExpert(object sender, RoutedEventArgs args)
     {
         if (busy || modalOpen || SelectedMode != BuildMode.Custom) return;
-        if (image is null) { ShowNotice("Inspect an image first.", "Select an edition before listing its components.", InfoBarSeverity.Warning); return; }
-        if (!await Confirm("Protected components are included",
-            "This inventory includes boot drivers, security, licensing, system apps and component payloads. Removing them can make Windows unbootable, insecure or impossible to update. Protected packages may refuse removal. Direct payload removal is unsupported.\n\nContinue only for isolated testing, with backups and a known-good installer.",
-            "Inspect components")) return;
+        if (image is null) { ShowNotice(L10n.T("InspectFirstTitle", "Inspect an image first."), L10n.T("InspectFirstMsg", "Select an edition before listing its components."), InfoBarSeverity.Warning); return; }
+        if (!await Confirm(L10n.T("ProtectedConfirmTitle", "Protected components are included"),
+            L10n.T("ProtectedConfirmBody", "This inventory includes boot drivers, security, licensing, system apps and component payloads. Removing them can make Windows unbootable, insecure or impossible to update. Protected packages may refuse removal. Direct payload removal is unsupported.\n\nContinue only for isolated testing, with backups and a known-good installer."),
+            L10n.T("ProtectedConfirmAction", "Inspect components"))) return;
         await RunOperation(OperationKind.Inventory, async token =>
         {
-            Working("Listing image components…");
+            Working(L10n.T("ListingComponents", "Listing image components…"));
             var recipe = CreateRecipe() with { CoreAcknowledged = true, ExpertAcknowledged = true };
             var items = await Task.Run(() => engine.InventoryAsync(recipe, BuildProgressReporter(), token), token);
             var previous = inventory.Count > 0 ? inventory.Where(i => i.Selected).Select(i => i.Action).ToArray() : pendingActions;
@@ -925,11 +942,11 @@ public sealed partial class MainWindow : Window
             FilterInventory();
             UpdateCounts();
             if (!ToolLocator.SupportsServicing(recipe.DismPath, image!))
-                ShowNotice("Component list loaded read-only.", "The installed tools could list this image, but building it requires newer " +
-                    "Windows ADK Deployment Tools. Install them and reopen the app before building.",
+                ShowNotice(L10n.T("ComponentListReadOnly", "Component list loaded read-only."),
+                    L10n.T("ComponentListReadOnlyMsg", "The installed tools could list this image, but building it requires newer Windows ADK Deployment Tools. Install them and reopen the app before building."),
                     InfoBarSeverity.Warning, NoticeAction.OpenTools);
             else
-                ShowNotice("Component list loaded.", "Existing selections were preserved. Check the individual items you want to remove or disable.");
+                ShowNotice(L10n.T("ComponentListLoaded", "Component list loaded."), L10n.T("ComponentListLoadedMsg", "Existing selections were preserved. Check the individual items you want to remove or disable."));
         });
     }
 
@@ -963,9 +980,9 @@ public sealed partial class MainWindow : Window
     {
         var recipe = CreateRecipe();
         var text = new StringBuilder();
-        text.AppendLine($"IMAGE       {image?.Summary ?? "Not inspected"}");
-        text.AppendLine($"MODE        {(ModeChoice.SelectedItem as ComboBoxItem)?.Content}");
-        if (SelectedMode == BuildMode.Custom) text.AppendLine($"CORE REMOVALS {UsesCore}");
+        text.AppendLine($"IMAGE       {image?.Summary ?? L10n.T("ReviewNotInspected", "Not inspected")}");
+        text.AppendLine(string.Format(L10n.T("ReviewModeLabelFmt", "MODE        {0}"), (ModeChoice.SelectedItem as ComboBoxItem)?.Content));
+        if (SelectedMode == BuildMode.Custom) text.AppendLine(string.Format(L10n.T("ReviewCoreRemovalsFmt", "CORE REMOVALS {0}"), UsesCore ? L10n.T("TurboOn", "On") : L10n.T("TurboOff", "Off")));
         text.AppendLine($"SOURCE      {recipe.SourcePath}");
         text.AppendLine($"OUTPUT      {recipe.OutputPath}");
         text.AppendLine($"WORKSPACE   {recipe.WorkspacePath}");
@@ -979,15 +996,15 @@ public sealed partial class MainWindow : Window
         text.AppendLine($".NET 3.5    {recipe.EnableNetFx3}");
         text.AppendLine($"LOCAL OOBE  {recipe.PreferLocalAccount} (best effort)");
         if (SetupLabels.LegacyReason(recipe) is { } legacyReason) text.AppendLine($"LEGACY SETUP automatic, needed for {legacyReason}");
-        text.AppendLine("\nREMOVE / DISABLE");
+        text.AppendLine("\n" + L10n.T("ReviewRemoveHeader", "REMOVE / DISABLE"));
         foreach (var option in options.Where(o => o.Selected)) text.AppendLine($"  {option.Title}");
-        foreach (var action in recipe.ExpertActions) text.AppendLine($"  EXPERT {action.Mode} {action.Kind}: {action.Identity}");
-        text.AppendLine("\nUNSELECTED ITEMS ARE KEPT.");
+        foreach (var action in recipe.ExpertActions) text.AppendLine(string.Format(L10n.T("ReviewExpertItemFmt", "  EXPERT {0} {1}: {2}"), action.Mode, action.Kind, action.Identity));
+        text.AppendLine("\n" + L10n.T("ReviewUnselectedKept", "UNSELECTED ITEMS ARE KEPT."));
         if (recipe.Flavor == BuildFlavor.Core)
-            text.AppendLine("\nCORE: irreversible component pruning, WinRE removed, Update and Defender disabled. Install optional features now, not after creation.");
+            text.AppendLine("\n" + L10n.T("ReviewCoreNote", "CORE: irreversible component pruning, WinRE removed, Update and Defender disabled. Install optional features now, not after creation."));
         if (recipe.ExpertActions.Length > 0)
-            text.AppendLine("\nEXPERT: dependencies are not resolved. Protected and boot-critical removals may produce an unbootable image.");
-        text.AppendLine("\nPolicies may be ignored by a particular Windows build/edition or changed by updates. VM boot validation is required.");
+            text.AppendLine("\n" + L10n.T("ReviewExpertNote", "EXPERT: dependencies are not resolved. Protected and boot-critical removals may produce an unbootable image."));
+        text.AppendLine("\n" + L10n.T("ReviewPoliciesNote", "Policies may be ignored by a particular Windows build/edition or changed by updates. VM boot validation is required."));
         return text.ToString();
     }
 
@@ -995,44 +1012,55 @@ public sealed partial class MainWindow : Window
     {
         var recipe = CreateRecipe();
         ReviewText.Text = CreateReview();
-        ReviewImage.Text = image?.Summary ?? "No image selected";
+        ReviewImage.Text = image?.Summary ?? L10n.T("ImageBadgeNone", "No image selected");
         ReviewMode.Text = (ModeChoice.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
-        ReviewRemovals.Text = $"{recipe.SelectedOptions.Length} removal groups · {recipe.ExpertActions.Length} individual actions\n" +
-            (UsesCore ? "No servicing, recovery or Defender." : SelectedMode == BuildMode.Custom ?
-                "Custom removals may affect servicing, recovery or security." : "Windows Update, recovery and Defender retained.");
-        ReviewPaths.Text = $"ISO\n{recipe.OutputPath}\n\nWorkspace\n{recipe.WorkspacePath}";
-        var compression = recipe.Compression switch { Compression.Recovery => "Recovery ESD", Compression.Maximum => "Maximum WIM", _ => "Fast WIM" };
-        ReviewOptions.Text = $"{compression} compression\nTurbo mode: {(recipe.TurboMode ? "On" : "Off")}\n" +
-            $"Redundant data: {(recipe.RemoveRedundantData ? "Remove" : "Keep")}\n.NET setup payload: {(recipe.OmitNetFx3SetupPayload ? "Omit" : "Keep")}\n" +
-            $"Compact installation: {(recipe.CompactInstallation ? "On" : "Off")}\n.NET 3.5: {(recipe.EnableNetFx3 ? "Included" : "Not included")}\n" +
-            $"Local-account setup: {(recipe.PreferLocalAccount ? "Preferred" : "Default")}\nWorking files: {(recipe.KeepWorkingFiles ? "Keep" : "Clean after build")}" +
+        ReviewRemovals.Text = string.Format(L10n.T("ReviewRemovalsFmt", "{0} removal groups · {1} individual actions"),
+            recipe.SelectedOptions.Length, recipe.ExpertActions.Length) + "\n" +
+            (UsesCore ? L10n.T("ReviewNoService", "No servicing, recovery or Defender.") : SelectedMode == BuildMode.Custom ?
+                L10n.T("ReviewCustomWarn", "Custom removals may affect servicing, recovery or security.") : L10n.T("ReviewRetained", "Windows Update, recovery and Defender retained."));
+        ReviewPaths.Text = L10n.T("PathIso", "ISO") + "\n" + recipe.OutputPath + "\n\n" + L10n.T("PathWorkspace", "Workspace") + "\n" + recipe.WorkspacePath;
+        var compressionWord = recipe.Compression switch
+        {
+            Compression.Recovery => L10n.T("CompRecovery", "Recovery ESD"),
+            Compression.Maximum => L10n.T("CompMaximum", "Maximum WIM"),
+            _ => L10n.T("CompFastWim", "Fast WIM")
+        };
+        ReviewOptions.Text = string.Format(L10n.T("ReviewOptionsCompFmt", "{0} compression"), compressionWord) + "\n" +
+            string.Format(L10n.T("ReviewTurboLine", "Turbo mode: {0}"), recipe.TurboMode ? L10n.T("TurboOn", "On") : L10n.T("TurboOff", "Off")) + "\n" +
+            string.Format(L10n.T("ReviewRedundantLine", "Redundant data: {0}"), recipe.RemoveRedundantData ? L10n.T("RedundantRemove", "Remove") : L10n.T("RedundantKeep", "Keep")) + "\n" +
+            string.Format(L10n.T("ReviewNetSetupLine", ".NET setup payload: {0}"), recipe.OmitNetFx3SetupPayload ? L10n.T("NetSetupOmit", "Omit") : L10n.T("NetSetupKeep", "Keep")) + "\n" +
+            string.Format(L10n.T("ReviewCompactLine", "Compact installation: {0}"), recipe.CompactInstallation ? L10n.T("TurboOn", "On") : L10n.T("TurboOff", "Off")) + "\n" +
+            string.Format(L10n.T("ReviewNetFxLine", ".NET 3.5: {0}"), recipe.EnableNetFx3 ? L10n.T("NetFxIncluded", "Included") : L10n.T("NetFxNotIncluded", "Not included")) + "\n" +
+            string.Format(L10n.T("ReviewLocalLine", "Local-account setup: {0}"), recipe.PreferLocalAccount ? L10n.T("LocalPreferred", "Preferred") : L10n.T("LocalDefault", "Default")) + "\n" +
+            string.Format(L10n.T("ReviewFilesLine", "Working files: {0}"), recipe.KeepWorkingFiles ? L10n.T("FilesKeep", "Keep") : L10n.T("FilesClean", "Clean after build")) +
             (SetupLabels.Legacy(recipe) is { } legacy ? "\n" + legacy : "");
     }
 
-    private const string BuildDescriptionText = "The selected edition will be copied, modified, compressed and saved as a bootable ISO.";
+    private static string BuildDescriptionText => L10n.T("BuildDescText", "The selected edition will be copied, modified, compressed and saved as a bootable ISO.");
 
     // The legacy installer is derived from the removals, never chosen, so this only reports it.
     private void UpdateBuildDescription(BuildRecipe recipe) => BuildDescription.Text = BuildDescriptionText +
-        (SetupLabels.LegacyReason(recipe) is { } reason ? $" The legacy installer is turned on automatically for {reason}." : "");
+        (SetupLabels.LegacyReason(recipe) is { } reason ? string.Format(L10n.T("BuildDescLegacyFmt", " The legacy installer is turned on automatically for {0}."), reason) : "");
 
     private async Task StartBuildAsync()
     {
         BuildRecipe recipe;
         try { recipe = CreateRecipe(); recipe.ValidateOptions(); PathSafety.Validate(recipe); }
-        catch (Exception error) { ShowNotice("The recipe is not ready.", ErrorText.Reason(error), InfoBarSeverity.Error); return; }
-        if (!await Confirm("Create this offline Windows image?",
-            $"Output: {recipe.OutputPath}\n\nMode: {(ModeChoice.SelectedItem as ComboBoxItem)?.Content}\nRemoval groups: {recipe.SelectedOptions.Length}\nIndividual actions: {recipe.ExpertActions.Length}" +
+        catch (Exception error) { ShowNotice(L10n.T("RecipeNotReadyTitle", "The recipe is not ready."), ErrorText.Reason(error), InfoBarSeverity.Error); return; }
+        if (!await Confirm(L10n.T("ConfirmBuildTitle", "Create this offline Windows image?"),
+            string.Format(L10n.T("ConfirmBuildBodyFmt", "Output: {0}\n\nMode: {1}\nRemoval groups: {2}\nIndividual actions: {3}"),
+                recipe.OutputPath, (ModeChoice.SelectedItem as ComboBoxItem)?.Content, recipe.SelectedOptions.Length, recipe.ExpertActions.Length) +
             (SetupLabels.Legacy(recipe) is { } legacy ? "\n" + legacy : ""),
-            "Build")) return;
+            L10n.T("ActionBuild", "Build"))) return;
         await RunOperation(OperationKind.Build, async token =>
         {
             ResetBuildPage();
             BuildActivity.IsActive = true;
             BuildBar.IsIndeterminate = true;
-            CurrentMessage.Text = "Preparing image tools…";
+            CurrentMessage.Text = L10n.T("PreparingTools", "Preparing image tools…");
             await EnsureToolsAsync(token);
             recipe = CreateRecipe();
-            BeginBuildRun("Building");
+            BeginBuildRun(L10n.T("BuildingHeading", "Building"));
             var reporter = BuildProgressReporter();
             var built = await Task.Run(() => engine.BuildAsync(recipe, reporter, token), token);
             ShowBuildResult(built, resumed: false, turbo: recipe.TurboMode);
@@ -1054,9 +1082,9 @@ public sealed partial class MainWindow : Window
         ResultWarnings.IsOpen = false;
         liveLog.Clear();
         RefreshLog(force: true);
-        BuildHeading.Text = "Build";
-        CurrentStage.Text = "Waiting to start";
-        CurrentMessage.Text = "No changes have been made.";
+        BuildHeading.Text = L10n.T("BuildNoun", "Build");
+        CurrentStage.Text = L10n.T("WaitingToStart", "Waiting to start");
+        CurrentMessage.Text = L10n.T("NoChanges", "No changes have been made.");
         BuildGlyph.Glyph = "\uE7C5";
         BuildActivity.IsActive = false;
         BuildBar.IsIndeterminate = false;
@@ -1083,40 +1111,45 @@ public sealed partial class MainWindow : Window
         ResultPath.Text = built.IsoPath;
         ResultHash.Text = built.Sha256;
         var size = File.Exists(built.IsoPath) ? $" · {new FileInfo(built.IsoPath).Length / (1024d * 1024 * 1024):N2} GiB ISO" : "";
+        var typeWord = resumed ? L10n.T("MetricResumedBuild", "Resumed build")
+            : turbo ? L10n.T("MetricTurboBuild", "Turbo build") : L10n.T("MetricStandardBuild", "Standard build");
+        var minutes = string.Format(L10n.T("MetricMinutes", "{0} minutes"), built.Duration.TotalMinutes.ToString("N1", CultureInfo.InvariantCulture));
+        var total = resumed ? L10n.T("MetricInTotal", " in total") : "";
         var metrics = new List<string>
         {
-            $"{(resumed ? "Resumed build" : turbo ? "Turbo build" : "Standard build")} · {built.Duration.TotalMinutes:N1} minutes{(resumed ? " in total" : "")}{size}"
+            $"{typeWord} · {minutes}{total}{size}"
         };
         if (!resumed || built.RemovedLogicalBytes > 0 || built.OmittedSetupBytes > 0)
-            metrics.Add($"Redundant data removed: {built.RemovedLogicalBytes / (1024d * 1024):N1} MiB logical · " +
-                $"Setup payload omitted: {built.OmittedSetupBytes / (1024d * 1024):N1} MiB");
-        metrics.Add("Detailed stage timings are saved with the build report.");
+            metrics.Add(string.Format(L10n.T("MetricRedundantFmt", "Redundant data removed: {0} logical · Setup payload omitted: {1}"),
+                (built.RemovedLogicalBytes / (1024d * 1024)).ToString("N1", CultureInfo.InvariantCulture),
+                (built.OmittedSetupBytes / (1024d * 1024)).ToString("N1", CultureInfo.InvariantCulture)));
+        metrics.Add(L10n.T("MetricTimingsSaved", "Detailed stage timings are saved with the build report."));
         ResultMetrics.Text = string.Join("\n", metrics);
         var warnings = built.Warnings;
         // A cancel prompt open for this run reports the warning too, instead of calling the end clean.
         if (warnings.Count > 0)
-            active?.NoteWarning("The ISO was saved with warnings. See the warnings on the page.");
+            active?.NoteWarning(L10n.T("WarnNoteDetail", "The ISO was saved with warnings. See the warnings on the page."));
         ResultWarnings.IsOpen = warnings.Count > 0;
         if (warnings.Count > 0)
             ResultWarnings.Message = string.Join("\n", warnings.Take(4).Select(w => "• " + ErrorText.Summary(w, 200))) +
-                (warnings.Count > 4 ? $"\n• {warnings.Count - 4} more in the build log" : "");
+                (warnings.Count > 4 ? string.Format(L10n.T("WarnMoreFmt", "\n• {0} more in the build log"), warnings.Count - 4) : "");
         ResultPanel.Visibility = Visibility.Visible;
-        BuildHeading.Text = "ISO created";
-        CurrentStage.Text = "Complete";
+        BuildHeading.Text = L10n.T("IsoCreated", "ISO created");
+        CurrentStage.Text = L10n.T("Complete", "Complete");
         BuildActivity.IsActive = false;
         BuildGlyph.Glyph = "\uE73E";
         if (resumed) board.MarkEarlierPhasesDone();
         board.Complete();
         OverallBar.Value = 100;
         BuildPercent.Text = "100%";
-        OverallStep.Text = "All stages done";
+        OverallStep.Text = L10n.T("AllStagesDone", "All stages done");
         CurrentPercent.Text = "100%";
         HistoryCount.Text = StageSummary.Describe(board);
         BuildBar.IsIndeterminate = false;
         BuildBar.Value = 100;
         CurrentMessage.Text = warnings.Count > 0 ?
-            "The ISO was saved with warnings. See the skipped work and other details below." :
-            "The ISO and build report have been saved. Test the ISO in a VM before use.";
+            L10n.T("ResultWarnMsg", "The ISO was saved with warnings. See the skipped work and other details below.") :
+            L10n.T("ResultOkMsg", "The ISO and build report have been saved. Test the ISO in a VM before use.");
         stoppedRun = null;
         stoppedHasCheckpoint = false;
         completed = true;
@@ -1139,7 +1172,7 @@ public sealed partial class MainWindow : Window
                 // the build, so it must not move the page's stage, bars or history.
                 if (!string.IsNullOrWhiteSpace(p.Message) && !BuildProgressText.IsConsoleProgress(p.Message))
                 {
-                    if (running is OperationKind.Build or OperationKind.Resume) CurrentMessage.Text = $"Cancellation requested. {p.Message}…";
+                    if (running is OperationKind.Build or OperationKind.Resume) CurrentMessage.Text = string.Format(L10n.T("CancelRequestedFmt", "Cancellation requested. {0}…"), p.Message);
                     liveLog.Add($"[{p.Stage}] {BuildProgressText.ForDisplay(p.Message)}");
                 }
                 continue;
@@ -1156,7 +1189,7 @@ public sealed partial class MainWindow : Window
                 // Once cancellation has been requested, that status stays until the run actually stops.
                 if (!cancelRequested)
                     CurrentMessage.Text = p.State == BuildOperationState.Failed ?
-                        p.Message + " failed. Expand this stage for error details." : p.Message;
+                        string.Format(L10n.T("FailedDetailFmt", "{0} failed. Expand this stage for error details."), p.Message) : p.Message;
             }
             BuildBar.IsIndeterminate = p.Percent is null && p.State is not (BuildOperationState.Completed or BuildOperationState.Failed or BuildOperationState.Cancelled);
             if (p.Percent is double percent) BuildBar.Value = percent;
@@ -1174,7 +1207,7 @@ public sealed partial class MainWindow : Window
                 var overall = start + (end - start) * stage.Fraction(p);
                 OverallBar.Value = Math.Max(OverallBar.Value, overall);
                 BuildPercent.Text = $"{OverallBar.Value:0}%";
-                OverallStep.Text = $"Stage {phase + 1} of {board.Stages.Length}";
+                OverallStep.Text = string.Format(L10n.T("StageOfFmt", "Stage {0} of {1}"), phase + 1, board.Stages.Length);
                 BuildGlyph.Glyph = stage.Glyph;
             }
             var line = p.Detail ?? (p.State is null ? null : p.Message);
@@ -1287,8 +1320,8 @@ public sealed partial class MainWindow : Window
     private void AfterCancelRequested()
     {
         if (running is OperationKind.Build or OperationKind.Resume)
-            CurrentMessage.Text = "Cancellation requested. Waiting for the current operation to finish…";
-        Working("Cancelling…");
+            CurrentMessage.Text = L10n.T("CancelWaiting", "Cancellation requested. Waiting for the current operation to finish…");
+        Working(L10n.T("Cancelling", "Cancelling…"));
         UpdateNavigation();
     }
 
@@ -1441,14 +1474,14 @@ public sealed partial class MainWindow : Window
         var recipe = CreateRecipe();
         recipe.ValidateOptions();
         var path = await SaveFile("tiny11-recipe", ".json");
-        if (path is not null) { recipe.Write(path); ShowNotice("Recipe saved.", "It contains selections and local paths, not downloaded media or credentials."); }
+        if (path is not null) { recipe.Write(path); ShowNotice(L10n.T("RecipeSaved", "Recipe saved."), L10n.T("RecipeSavedMsg", "It contains selections and local paths, not downloaded media or credentials.")); }
     });
     private async void OnLoadRecipe(object sender, RoutedEventArgs args) => await RunOperation(OperationKind.Recipe, async _ =>
     {
         var path = await PickFile(".json");
         if (path is null) return;
         RestoreRecipe(BuildRecipe.Read(path));
-        ShowNotice("Recipe loaded.", "Inspect the source again. Core/expert risk acknowledgements must be renewed.");
+        ShowNotice(L10n.T("RecipeLoaded", "Recipe loaded."), L10n.T("RecipeLoadedMsg", "Inspect the source again. Core/expert risk acknowledgements must be renewed."));
     });
 
     private void RestoreRecipe(BuildRecipe recipe)
@@ -1487,7 +1520,7 @@ public sealed partial class MainWindow : Window
         if (busy || modalOpen) return;
         if (!ToolLocator.IsAdministrator)
         {
-            ShowNotice("Administrator privileges required.", "Close and reopen Tiny11Builder.exe with administrator approval to recover a workspace.", InfoBarSeverity.Warning);
+            ShowNotice(L10n.T("AdminRecoverTitle", "Administrator privileges required."), L10n.T("AdminRecoverMsg", "Close and reopen Tiny11Builder.exe with administrator approval to recover a workspace."), InfoBarSeverity.Warning);
             return;
         }
         var path = await PickFile(".json");
@@ -1495,24 +1528,24 @@ public sealed partial class MainWindow : Window
         // Advisory only: the engine decides. This just avoids offering a discard it would refuse.
         if (JobCheckpoint.Exists(Path.GetDirectoryName(Path.GetFullPath(path)) ?? ""))
         {
-            if (await Confirm("This job has saved progress",
-                "Recover discards a job's working copy, and it does not do that for a job with saved progress. " +
-                "Resume continues the build from that progress instead.\n\nNothing has been changed.", "Resume instead"))
+            if (await Confirm(L10n.T("JobHasProgress", "This job has saved progress"),
+                L10n.T("JobHasProgressMsg", "Recover discards a job's working copy, and it does not do that for a job with saved progress. " +
+                "Resume continues the build from that progress instead.\n\nNothing has been changed."), L10n.T("ConfirmResumeInstead", "Resume instead")))
                 await ResumeJobAsync(path);
             return;
         }
-        if (!await Confirm("Discard this interrupted workspace?",
-            "Select only job.json from the interrupted tiny11 job. This discards that job's mounted working copy and removes its staged media. " +
+        if (!await Confirm(L10n.T("DiscardWorkspace", "Discard this interrupted workspace?"),
+            L10n.T("DiscardWorkspaceMsg", "Select only job.json from the interrupted tiny11 job. This discards that job's mounted working copy and removes its staged media. " +
             "Its logs, recipe, report and your source ISO are kept. A job whose image was already committed has saved progress and is never discarded here; " +
-            "use Resume build for it. Active builds cannot be recovered.",
-            "Discard working copy")) return;
+            "use Resume build for it. Active builds cannot be recovered."),
+            L10n.T("ConfirmDiscard", "Discard working copy"))) return;
         await RunOperation(OperationKind.Recover, async token =>
         {
-            Working("Recovering workspace…");
+            Working(L10n.T("RecoveringWorkspace", "Recovering workspace…"));
             var dism = ToolLocator.FindDism();
             ToolLocator.Validate(dism, "dism.exe");
             await Task.Run(() => engine.RecoverAsync(path, dism, token), token);
-            ShowNotice("Workspace recovered.", "The interrupted working copy was discarded. Your source and logs were preserved.");
+            ShowNotice(L10n.T("WorkspaceRecovered", "Workspace recovered."), L10n.T("WorkspaceRecoveredMsg", "The interrupted working copy was discarded. Your source and logs were preserved."));
         });
     }
 
@@ -1537,22 +1570,22 @@ public sealed partial class MainWindow : Window
         var candidate = ResumeSupport.Inspect(jobFile, JobCheckpoint.Exists, JobCheckpoint.RecipeFileName);
         if (candidate.Recipe is not { } original)
         {
-            ShowNotice("This build can't be resumed.", candidate.Problem ?? ResumeSupport.NoCheckpoint, InfoBarSeverity.Warning);
+            ShowNotice(L10n.T("ResumeNoProgress", "This build can't be resumed."), candidate.Problem ?? ResumeSupport.NoCheckpoint, InfoBarSeverity.Warning);
             return;
         }
         if (!ToolLocator.IsAdministrator)
         {
-            ShowNotice("Administrator privileges required.", "Close and reopen Tiny11Builder.exe with administrator approval, then choose Resume build. Nothing was changed.", InfoBarSeverity.Warning);
+            ShowNotice(L10n.T("AdminRequired", "Administrator privileges required."), L10n.T("ResumeAdminMsg", "Close and reopen Tiny11Builder.exe with administrator approval, then choose Resume build. Nothing was changed."), InfoBarSeverity.Warning);
             return;
         }
-        if (!await Confirm("Resume this build?", ResumeSupport.Describe(original), "Resume")) return;
+        if (!await Confirm(L10n.T("ResumeThisBuild", "Resume this build?"), ResumeSupport.Describe(original), L10n.T("ConfirmResume", "Resume"))) return;
         var recipe = original;
         if (File.Exists(recipe.OutputPath))
         {
             var picked = await SaveFile(Path.GetFileNameWithoutExtension(recipe.OutputPath), ".iso");
             if (picked is null)
             {
-                ShowNotice("Resume not started.", "The output file already exists. Choose a new file name to continue.", InfoBarSeverity.Warning);
+                ShowNotice(L10n.T("ResumeNotStarted", "Resume not started."), L10n.T("OutputExistsMsg", "The output file already exists. Choose a new file name to continue."), InfoBarSeverity.Warning);
                 return;
             }
             recipe = recipe with { OutputPath = picked };
@@ -1567,11 +1600,11 @@ public sealed partial class MainWindow : Window
             workDirectory = candidate.JobDirectory;
             BuildActivity.IsActive = true;
             BuildBar.IsIndeterminate = true;
-            CurrentMessage.Text = "Preparing image tools…";
+            CurrentMessage.Text = L10n.T("PreparingTools", "Preparing image tools…");
             await EnsureToolsAsync(token);
             recipe = recipe with { DismPath = servicingTool, OscdimgPath = isoTool };
             new BuildHost().ValidateTools(recipe);
-            BeginBuildRun("Resuming");
+            BeginBuildRun(L10n.T("ResumingHeading", "Resuming"));
             var reporter = BuildProgressReporter();
             var built = await Task.Run(() => engine.ResumeAsync(candidate.JobFile, recipe, reporter, token), token);
             ShowBuildResult(built, resumed: true, turbo: recipe.TurboMode);
@@ -1587,7 +1620,7 @@ public sealed partial class MainWindow : Window
         if (workDirectory is null) return;
         if (!Directory.Exists(workDirectory))
         {
-            ShowNotice("The job folder is gone.", $"{workDirectory} no longer exists.", InfoBarSeverity.Warning);
+            ShowNotice(L10n.T("JobFolderGoneTitle", "The job folder is gone."), string.Format(L10n.T("JobFolderGoneMsg", "{0} no longer exists."), workDirectory), InfoBarSeverity.Warning);
             return;
         }
         OpenFolder(workDirectory);
@@ -1595,10 +1628,46 @@ public sealed partial class MainWindow : Window
     private void OpenFolder(string path)
     {
         try { using var process = Process.Start(new ProcessStartInfo("explorer.exe") { UseShellExecute = true, Arguments = $"\"{path}\"" }); }
-        catch (Exception error) { ShowNotice("Folder could not be opened.", ErrorText.Reason(error), InfoBarSeverity.Error); }
+        catch (Exception error) { ShowNotice(L10n.T("FolderOpenFailTitle", "Folder could not be opened."), ErrorText.Reason(error), InfoBarSeverity.Error); }
     }
 
     private void OnThemeChanged(object sender, SelectionChangedEventArgs args) => ApplyTheme();
+
+    // Language resources are resolved when each window is created, so the cleanest way to apply a new
+    // language everywhere is to persist the choice and restart the process.
+    private void OnLanguageChanged(object sender, SelectionChangedEventArgs args)
+    {
+        if (LanguageChoice.SelectedIndex == _appliedLanguageIndex) return;
+        _appliedLanguageIndex = LanguageChoice.SelectedIndex;
+        Localization.Current = _appliedLanguageIndex switch
+        {
+            2 => "zh-CN",
+            1 => "en-US",
+            _ => string.Empty
+        };
+        RestartApplication();
+    }
+
+    private void RestartApplication()
+    {
+        string notice = L10n.T("LangAppliedNotice", "Language applied. Restart the app to see all text in the new language.");
+        try
+        {
+            var exe = Environment.ProcessPath;
+            if (!string.IsNullOrEmpty(exe))
+            {
+                Process.Start(new ProcessStartInfo(exe) { UseShellExecute = true });
+                Application.Current.Exit();
+                return;
+            }
+        }
+        catch (Exception error)
+        {
+            ShowNotice(notice, ErrorText.Reason(error), InfoBarSeverity.Warning);
+            return;
+        }
+        ShowNotice(notice, L10n.T("LangRestartCloseMsg", "Close and reopen Tiny11 Builder."), InfoBarSeverity.Warning);
+    }
 
     private bool HighContrast
     {

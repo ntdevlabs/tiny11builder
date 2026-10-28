@@ -50,7 +50,7 @@ internal static class OperationOutcomes
         var recovery = failure is not null && NeedsRecovery(failure);
         var (title, message) = cancelled ? Cancelled(kind, canResume) : Failed(kind, ErrorText.Reason(error), canResume);
         if (recovery)
-            message += " The job's mounted copy could not be discarded. Use Recover workspace and choose this job's job.json.";
+            message += " " + L10n.T("OutcomeRecoverySuffix", "The job's mounted copy could not be discarded. Use Recover workspace and choose this job's job.json.");
         return new(kind, cancelled, title, message, cancelled && !recovery ? NoticeLevel.Warning : NoticeLevel.Error,
             failure?.WorkDirectory, error.ToString(), recovery, failure is not null && !recovery ? CleanupProblems(failure) : "");
     }
@@ -77,27 +77,27 @@ internal static class OperationOutcomes
 
     private static (string Title, string Message) Cancelled(OperationKind kind, bool canResume) => kind switch
     {
-        OperationKind.Build => ("Build cancelled.", "Your source was not changed. Working files and logs are kept." +
-            (canResume ? " Saved progress can be resumed." : "")),
-        OperationKind.Resume => ("Resume cancelled.", "Saved progress and logs are kept." + (canResume ? " You can resume again." : "")),
-        OperationKind.Inspect => ("Inspection cancelled.", "The image was not changed."),
-        OperationKind.Inventory => ("Component list cancelled.", "The image was not changed."),
-        OperationKind.Download => ("Download cancelled.", "Partial downloads are kept, so you can continue later. No source media was modified."),
-        OperationKind.Recover => ("Recovery cancelled.", "Run Recover workspace again to finish cleaning up this job."),
-        OperationKind.Elevate => ("Restart cancelled.", "The app is still running without administrator privileges."),
-        _ => ("Cancelled.", "Nothing was changed.")
+        OperationKind.Build => (L10n.T("CancelBuildTitle", "Build cancelled."), L10n.T("CancelBuildMsg", "Your source was not changed. Working files and logs are kept.") +
+            (canResume ? L10n.T("OutcomeResumeSuffix", " Saved progress can be resumed.") : "")),
+        OperationKind.Resume => (L10n.T("CancelResumeTitle", "Resume cancelled."), L10n.T("CancelResumeMsg", "Saved progress and logs are kept.") + (canResume ? L10n.T("OutcomeResumeAgain", " You can resume again.") : "")),
+        OperationKind.Inspect => (L10n.T("CancelInspectTitle", "Inspection cancelled."), L10n.T("CancelInspectMsg", "The image was not changed.")),
+        OperationKind.Inventory => (L10n.T("CancelInventoryTitle", "Component list cancelled."), L10n.T("CancelInventoryMsg", "The image was not changed.")),
+        OperationKind.Download => (L10n.T("CancelDownloadTitle", "Download cancelled."), L10n.T("CancelDownloadMsg", "Partial downloads are kept, so you can continue later. No source media was modified.")),
+        OperationKind.Recover => (L10n.T("CancelRecoverTitle", "Recovery cancelled."), L10n.T("CancelRecoverMsg", "Run Recover workspace again to finish cleaning up this job.")),
+        OperationKind.Elevate => (L10n.T("CancelElevateTitle", "Restart cancelled."), L10n.T("CancelElevateMsg", "The app is still running without administrator privileges.")),
+        _ => (L10n.T("CancelDefaultTitle", "Cancelled."), L10n.T("CancelDefaultMsg", "Nothing was changed."))
     };
 
     private static (string Title, string Message) Failed(OperationKind kind, string reason, bool canResume) => kind switch
     {
-        OperationKind.Build => ("Build failed.", reason + (canResume ? " Saved progress can be resumed." : "")),
-        OperationKind.Resume => ("Resume failed.", reason + (canResume ? " Saved progress is kept, so you can resume again." : "")),
-        OperationKind.Inspect => ("The image could not be inspected.", reason),
-        OperationKind.Inventory => ("The component list could not be loaded.", reason),
-        OperationKind.Download => ("The download did not complete.", reason),
-        OperationKind.Recover => ("Recovery did not complete.", reason),
-        OperationKind.Elevate => ("The app could not restart as administrator.", reason),
-        _ => ("The operation did not complete.", reason)
+        OperationKind.Build => (L10n.T("FailBuildTitle", "Build failed."), reason + (canResume ? L10n.T("OutcomeResumeSuffix", " Saved progress can be resumed.") : "")),
+        OperationKind.Resume => (L10n.T("FailResumeTitle", "Resume failed."), reason + (canResume ? L10n.T("OutcomeResumeAgain", " Saved progress is kept, so you can resume again.") : "")),
+        OperationKind.Inspect => (L10n.T("FailInspectTitle", "The image could not be inspected."), reason),
+        OperationKind.Inventory => (L10n.T("FailInventoryTitle", "The component list could not be loaded."), reason),
+        OperationKind.Download => (L10n.T("FailDownloadTitle", "The download did not complete."), reason),
+        OperationKind.Recover => (L10n.T("FailRecoverTitle", "Recovery did not complete."), reason),
+        OperationKind.Elevate => (L10n.T("FailElevateTitle", "The app could not restart as administrator."), reason),
+        _ => (L10n.T("FailDefaultTitle", "The operation did not complete."), reason)
     };
 }
 
@@ -213,6 +213,10 @@ internal static class ResumeSupport
     public const string NoCheckpoint =
         "This build has no saved progress to resume. It was started before progress was saved, or it stopped before its image was saved, " +
         "so it can't be continued. Nothing was changed, and its logs and files are kept.";
+    // Localized form of NoCheckpoint, used at the call site.
+    public static string NoCheckpointLocalized => L10n.T("ResumeNoCheckpoint",
+        "This build has no saved progress to resume. It was started before progress was saved, or it stopped before its image was saved, " +
+        "so it can't be continued. Nothing was changed, and its logs and files are kept.");
 
     // hasCheckpoint is advisory: it only decides what to offer. The engine verifies the saved work itself.
     public static ResumeCandidate Inspect(string jobFile, Func<string, bool> hasCheckpoint, string recipeFileName = "recipe.json")
@@ -225,18 +229,18 @@ internal static class ResumeSupport
         }
         catch (Exception error) when (error is ArgumentException or NotSupportedException or PathTooLongException)
         {
-            return new(jobFile, "", null, "That is not a valid job file path.");
+            return new(jobFile, "", null, L10n.T("ResumeBadPath", "That is not a valid job file path."));
         }
         if (!Path.GetFileName(file).Equals(JobFileName, StringComparison.OrdinalIgnoreCase))
-            return new(file, directory, null, "Choose the job.json file inside the build's tiny11-… folder.");
-        if (!hasCheckpoint(directory)) return new(file, directory, null, NoCheckpoint);
+            return new(file, directory, null, L10n.T("ResumePickJob", "Choose the job.json file inside the build's tiny11-… folder."));
+        if (!hasCheckpoint(directory)) return new(file, directory, null, NoCheckpointLocalized);
         var recipeFile = Path.Combine(directory, recipeFileName);
         if (!File.Exists(recipeFile))
-            return new(file, directory, null, "This job's saved recipe is missing, so it can't be resumed.");
+            return new(file, directory, null, L10n.T("ResumeMissingRecipe", "This job's saved recipe is missing, so it can't be resumed."));
         try { return new(file, directory, BuildRecipe.Read(recipeFile), null); }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or InvalidDataException or System.Text.Json.JsonException)
         {
-            return new(file, directory, null, "This job's saved recipe could not be read. " + ErrorText.Reason(error));
+            return new(file, directory, null, L10n.T("ResumeUnreadableRecipe", "This job's saved recipe could not be read. ") + ErrorText.Reason(error));
         }
     }
 
@@ -244,26 +248,30 @@ internal static class ResumeSupport
     {
         var mode = CleanupCatalog.ModeForRecipe(recipe) switch
         {
-            BuildMode.Tiny11 => "Tiny11", BuildMode.Tiny11Core => "Tiny11 Core",
-            _ => recipe.Flavor == BuildFlavor.Core ? "Custom with Core removals" : "Custom"
+            BuildMode.Tiny11 => L10n.T("ModeTiny11", "Tiny11"),
+            BuildMode.Tiny11Core => L10n.T("ModeTiny11Core", "Tiny11 Core"),
+            _ => recipe.Flavor == BuildFlavor.Core ? L10n.T("ModeCustomCore", "Custom with Core removals") : L10n.T("ModeCustom", "Custom")
         };
         var compression = recipe.Compression switch
         {
-            Compression.Recovery => "Recovery ESD", Compression.Maximum => "Maximum WIM", _ => "Fast WIM"
+            Compression.Recovery => L10n.T("CompRecovery", "Recovery ESD"),
+            Compression.Maximum => L10n.T("CompMaximum", "Maximum WIM"),
+            _ => L10n.T("CompFastWim", "Fast WIM")
         };
         var text = new StringBuilder();
-        text.AppendLine($"Output: {recipe.OutputPath}");
-        text.AppendLine($"Mode: {mode} · {recipe.SelectedOptions.Length} removal groups · {recipe.ExpertActions.Length} individual actions");
-        text.AppendLine($"Compression: {compression}");
+        text.AppendLine(string.Format(L10n.T("ResumeHeader", "Output: {0}"), recipe.OutputPath));
+        text.AppendLine(string.Format(L10n.T("ResumeModeLine", "Mode: {0} · {1} removal groups · {2} individual actions"),
+            mode, recipe.SelectedOptions.Length, recipe.ExpertActions.Length));
+        text.AppendLine(string.Format(L10n.T("ResumeCompressionLine", "Compression: {0}"), compression));
         text.AppendLine();
-        text.AppendLine("The removal choices from the original build stay as they were. They can't be changed when resuming.");
+        text.AppendLine(L10n.T("ResumeUnchangeable", "The removal choices from the original build stay as they were. They can't be changed when resuming."));
         if (recipe.Flavor == BuildFlavor.Core)
-            text.AppendLine("Core: no Windows Update, no Microsoft Defender, no recovery environment. Use only in an isolated test VM.");
+            text.AppendLine(L10n.T("ResumeCoreNote", "Core: no Windows Update, no Microsoft Defender, no recovery environment. Use only in an isolated test VM."));
         if (SetupLabels.Legacy(recipe) is { } legacy) text.AppendLine(legacy + ".");
         if (recipe.ExpertActions.Length > 0)
-            text.AppendLine("Individual removals include protected items. The image may not boot.");
+            text.AppendLine(L10n.T("ResumeProtectedNote", "Individual removals include protected items. The image may not boot."));
         text.AppendLine();
-        text.Append("The saved progress is verified first. If anything does not match, nothing is changed.");
+        text.Append(L10n.T("ResumeVerifyFirst", "The saved progress is verified first. If anything does not match, nothing is changed."));
         return text.ToString();
     }
 }
@@ -278,12 +286,14 @@ internal static class SetupLabels
         if (!SetupInstaller.RequiresLegacy(recipe)) return null;
         var core = recipe.Flavor == BuildFlavor.Core;
         var payload = recipe.ExpertActions.Any(a => a.Kind == ImageItemKind.ComponentPayload && a.Mode == ExpertActionMode.Remove);
-        return core && payload ? "Core and component-payload removals" : core ? "Core removals" :
-            payload ? "component-payload removals" : "the selected removals";
+        return core && payload ? L10n.T("LegacyReasonCorePayload", "Core and component-payload removals")
+            : core ? L10n.T("LegacyReasonCore", "Core removals")
+            : payload ? L10n.T("LegacyReasonPayload", "component-payload removals")
+            : L10n.T("LegacyReasonSelected", "the selected removals");
     }
 
     public static string? Legacy(BuildRecipe recipe) =>
-        LegacyReason(recipe) is { } reason ? $"Legacy installer: automatic (needed for {reason})" : null;
+        LegacyReason(recipe) is { } reason ? string.Format(L10n.T("LegacyInstaller", "Legacy installer: automatic (needed for {0})"), reason) : null;
 }
 
 // "3 of 7 stages done": the count shown over the stage history, read from the same rows the history draws.
@@ -297,8 +307,12 @@ internal static class StageSummary
         var done = stages.Count(IsDone);
         var failed = stages.Count(stage => stage.Operations.Any(o => o.State == BuildOperationState.Failed));
         var cancelled = stages.Any(stage => stage.Operations.Any(o => o.State == BuildOperationState.Cancelled));
-        var text = done == stages.Length ? $"All {stages.Length} stages done" : $"{done} of {stages.Length} stages done";
-        return failed > 0 ? $"{text} · {failed} failed" : cancelled ? text + " · cancelled" : text;
+        var text = done == stages.Length
+            ? string.Format(L10n.T("StagesAllDone", "All {0} stages done"), stages.Length)
+            : string.Format(L10n.T("StagesDone", "{0} of {1} stages done"), done, stages.Length);
+        return failed > 0 ? text + string.Format(L10n.T("StagesFailed", " · {0} failed"), failed)
+            : cancelled ? text + L10n.T("StagesCancelled", " · cancelled")
+            : text;
     }
 }
 
@@ -320,15 +334,15 @@ internal sealed record OperationEnd(OperationKind Kind, RunResult Result, bool R
     public bool NeedsAttention => RecoveryRequired || Result == RunResult.Failed;
 
     public static OperationEnd Succeeded(OperationKind kind) =>
-        new(kind, RunResult.Succeeded, false, "Finished.", "", null, "");
+        new(kind, RunResult.Succeeded, false, L10n.T("OutcomeFinished", "Finished."), "", null, "");
 
     public static OperationEnd From(OperationOutcome outcome) =>
         new(outcome.Kind, outcome.Cancelled ? RunResult.Cancelled : RunResult.Failed, outcome.RecoveryRequired,
             outcome.Title, outcome.Message, outcome.WorkDirectory, outcome.Details, outcome.Warning);
 
     public static OperationEnd Unknown(OperationKind kind) =>
-        new(kind, RunResult.Failed, false, "The operation did not complete.",
-            "It ended without saying how, so it is not shown as finished. Check the logs.", null, "");
+        new(kind, RunResult.Failed, false, L10n.T("OutcomeUnknownTitle", "The operation did not complete."),
+            L10n.T("OutcomeUnknownMsg", "It ended without saying how, so it is not shown as finished. Check the logs."), null, "");
 }
 
 // One call of RunOperation as seen by whoever may cancel it. A prompt is bound to the run it was opened for, so it can

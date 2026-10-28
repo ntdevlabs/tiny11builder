@@ -37,10 +37,10 @@ public sealed class InventoryChoice(ImageInventoryItem item) : ObservableChoice
     public ImageInventoryItem Item { get; } = item;
     public string Title => Item.Identity;
     public string Detail => $"{Item.Kind} · {Item.Detail}";
-    public string Risk => Item.Protected ? "Protected / potentially boot-critical" : "Application";
-    public string ModeLabel => $"Action for {Title}";
+    public string Risk => Item.Protected ? L10n.T("RiskProtected", "Protected / potentially boot-critical") : L10n.T("RiskApp", "Application");
+    public string ModeLabel => string.Format(L10n.T("ActionFor", "Action for {0}"), Title);
     public bool HasModes => Item.Kind is ImageItemKind.Service or ImageItemKind.Feature;
-    public string[] Modes { get; } = ["Disable", "Remove"];
+    public string[] Modes { get; } = [L10n.T("ModeDisable", "Disable"), L10n.T("ModeRemove", "Remove")];
     public bool Selected { get => selected; set => Set(ref selected, value); }
     public int ModeIndex { get => modeIndex; set => Set(ref modeIndex, value); }
     public ExpertAction Action => new(Item.Kind, Item.Identity, ModeIndex == 0 ? ExpertActionMode.Disable : ExpertActionMode.Remove);
@@ -52,8 +52,8 @@ public sealed class BuildStageBoard
 {
     public BuildStageChoice[] Stages { get; } =
     [
-        new("Prepare media", "\uE8B7"), new("Export and mount", "\uE7C5"), new("Remove components", "\uE74D"),
-        new("Commit image", "\uE74E"), new("Compress image", "\uE8B9"), new("Create ISO", "\uE958"), new("Verify output", "\uE73E")
+        new(L10n.T("StagePrepare", "Prepare media"), "\uE8B7"), new(L10n.T("StageExport", "Export and mount"), "\uE7C5"), new(L10n.T("StageRemove", "Remove components"), "\uE74D"),
+        new(L10n.T("StageCommit", "Commit image"), "\uE74E"), new(L10n.T("StageCompress", "Compress image"), "\uE8B9"), new(L10n.T("StageIso", "Create ISO"), "\uE958"), new(L10n.T("StageVerify", "Verify output"), "\uE73E")
     ];
 
     // Returns the phase the event belongs to, or -1 when it is not a displayed operation.
@@ -111,7 +111,7 @@ public sealed class BuildStageChoice(string title, string glyph) : ObservableCho
         Operations.Clear();
         halted = false;
         doneEarlier = false;
-        Status = "Waiting";
+        Status = L10n.T("StatusWaiting", "Waiting");
         Expanded = false;
     }
 
@@ -171,13 +171,13 @@ public sealed class BuildStageChoice(string title, string glyph) : ObservableCho
         RefreshStatus();
     }
 
-    public void Complete() => Status = doneEarlier ? "Done earlier" : "Complete";
+    public void Complete() => Status = doneEarlier ? L10n.T("StatusDoneEarlier", "Done earlier") : L10n.T("StatusComplete", "Complete");
 
     public void MarkDoneEarlier()
     {
         if (Operations.Count > 0) return;
         doneEarlier = true;
-        Status = "Done earlier";
+        Status = L10n.T("StatusDoneEarlier", "Done earlier");
     }
 
     private int InsertIndex(string stage)
@@ -215,11 +215,16 @@ public sealed class BuildStageChoice(string title, string glyph) : ObservableCho
             if (tally.Own is BuildOperationState.Failed && tally.Items[(int)BuildOperationState.Failed] == 0) failed++;
             if (tally.Own is BuildOperationState.Cancelled && tally.Items[(int)BuildOperationState.Cancelled] == 0) cancelled++;
         }
-        var rest = pending == 0 ? "" : halted ? $" · {pending} not run" : $" · {pending} next";
-        Status = failed > 0 ? $"{(failed == 1 ? "Failed: " + ErrorText.Clip(FirstFailedTitle(), 48) : failed + " failed")} · {done} done{rest}" :
-            cancelled > 0 ? $"Cancelled · {done} done{rest}" :
-            running ? $"In progress · {done} done{rest}" :
-            pending > 0 ? (halted && done == 0 ? "Not run" : $"{done} done{rest}") : "Complete";
+        var rest = pending == 0 ? "" : halted
+            ? string.Format(L10n.T("StageRestNotRun", " · {0} not run"), pending)
+            : string.Format(L10n.T("StageRestNext", " · {0} next"), pending);
+        Status = failed > 0 ? string.Format(L10n.T("StageFailed", "{0} failed · {1} done{2}"),
+                failed == 1 ? L10n.T("StageFailedOne", "Failed: ") + ErrorText.Clip(FirstFailedTitle(), 48) : failed + L10n.T("StageFailedCount", " failed"),
+                done, rest) :
+            cancelled > 0 ? string.Format(L10n.T("StageCancelled", "Cancelled · {0} done{1}"), done, rest) :
+            running ? string.Format(L10n.T("StageInProgress", "In progress · {0} done{1}"), done, rest) :
+            pending > 0 ? (halted && done == 0 ? L10n.T("StatusNotRun", "Not run") : string.Format(L10n.T("StageDone", "{0} done{1}"), done, rest)) :
+            L10n.T("StatusComplete", "Complete");
     }
 
     private string FirstFailedTitle() =>
@@ -252,9 +257,9 @@ public sealed class BuildOperationChoice(string id, string title, string stage) 
     }
     public string Status => State switch
     {
-        BuildOperationState.Running => "In progress", BuildOperationState.Completed => "Done",
-        BuildOperationState.Skipped => "Skipped", BuildOperationState.Failed => "Failed",
-        BuildOperationState.Cancelled => "Cancelled", _ => NotRun ? "Not run" : "Next"
+        BuildOperationState.Running => L10n.T("StatusInProgress", "In progress"), BuildOperationState.Completed => L10n.T("StatusDone", "Done"),
+        BuildOperationState.Skipped => L10n.T("StatusSkipped", "Skipped"), BuildOperationState.Failed => L10n.T("StatusFailed", "Failed"),
+        BuildOperationState.Cancelled => L10n.T("StatusCancelled", "Cancelled"), _ => NotRun ? L10n.T("StatusNotRun", "Not run") : L10n.T("StatusNext", "Next")
     };
     public string Glyph => State switch
     {
