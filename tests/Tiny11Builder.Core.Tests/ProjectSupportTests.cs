@@ -34,7 +34,8 @@ public sealed class ProjectSupportTests
         var document = XDocument.Load(Path.Combine(AppContext.BaseDirectory, "Deployment", "MainWindow.xaml"));
         XNamespace ns = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
         XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
-        var dialog = Assert.Single(document.Descendants(ns + "ContentDialog"));
+        var dialog = Assert.Single(document.Descendants(ns + "ContentDialog"),
+            element => element.Attribute(x + "Name")?.Value == "SupportDialog");
         Assert.Equal("SupportDialog", dialog.Attribute(x + "Name")?.Value);
         Assert.Equal("Close", dialog.Attribute("DefaultButton")?.Value);
         Assert.Null(dialog.Attribute("IsOpen"));

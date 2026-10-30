@@ -31,10 +31,26 @@ public sealed class BuildHost : IBuildHost
         ToolLocator.EnsureServicingVersion(recipe.DismPath, image);
         var drive = new DriveInfo(Path.GetPathRoot(recipe.WorkspacePath)!);
         RequireNtfs(drive);
-        var required = Math.Max(40L * 1024 * 1024 * 1024, image.Size * 3 + 10L * 1024 * 1024 * 1024);
-        if (drive.AvailableFreeSpace < required)
-            throw new IOException($"The workspace needs at least {required / (1024 * 1024 * 1024)} GiB free for this image.");
+        RequireBuildSpace(drive.AvailableFreeSpace, RequiredBuildSpace(recipe));
         ValidateOutputDrive(recipe, drive);
+    }
+
+    internal static long RequiredBuildSpace(BuildRecipe recipe)
+    {
+        var source = PathSafety.Full(recipe.SourcePath);
+        PathSafety.RejectReparsePoints(source);
+        var bytes = File.Exists(source) ? new FileInfo(source).Length : Directory.Exists(source) ?
+            MediaManifest.Files(source).Aggregate(0L, (total, path) => checked(total + new FileInfo(path).Length)) :
+            throw new FileNotFoundException("The Windows media source does not exist.", source);
+        if (bytes <= 0) throw new InvalidDataException("The Windows media source is empty.");
+        return checked(bytes * 2 + WindowsUpdates.ValidateSources(recipe) * 3);
+    }
+
+    internal static void RequireBuildSpace(long available, long required)
+    {
+        if (available < required)
+            throw new IOException($"The workspace needs at least {(required + (1L << 30) - 1) >> 30} GiB free " +
+                "(twice the source media size, plus space for selected update packages).");
     }
 
     public void ValidateInventory(BuildRecipe recipe, WindowsImage image)

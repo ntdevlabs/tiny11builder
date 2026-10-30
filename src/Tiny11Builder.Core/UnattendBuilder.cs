@@ -8,7 +8,7 @@ public static class UnattendBuilder
     {
         XNamespace ns = "urn:schemas-microsoft-com:unattend";
         XNamespace wcm = "http://schemas.microsoft.com/WMIConfig/2002/State";
-        XElement Component(string name, params object[] children) => new(ns + "component",
+        XElement Component(string name, params object?[] children) => new(ns + "component",
             new XAttribute("name", name), new XAttribute("processorArchitecture", image.Architecture == "x64" ? "amd64" : "arm64"),
             new XAttribute("publicKeyToken", "31bf3856ad364e35"), new XAttribute("language", "neutral"),
             new XAttribute("versionScope", "nonSxS"), children);
@@ -19,6 +19,8 @@ public static class UnattendBuilder
             new XElement(ns + "unattend", new XAttribute(XNamespace.Xmlns + "wcm", wcm),
                 new XElement(ns + "settings", new XAttribute("pass", "windowsPE"),
                     Component("Microsoft-Windows-Setup",
+                        SetupInstaller.RequiresLegacy(recipe) ? new XElement(ns + "UserData",
+                            new XElement(ns + "ProductKey", new XElement(ns + "WillShowUI", "Always"))) : null,
                         new XElement(ns + "ImageInstall", new XElement(ns + "OSImage",
                             new XElement(ns + "Compact", recipe.CompactInstallation),
                             new XElement(ns + "WillShowUI", "OnError"),

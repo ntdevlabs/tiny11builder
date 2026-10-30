@@ -17,5 +17,12 @@
     <Compile Include="..\..\src\Tiny11Builder.App\ProjectSupport.cs" Link="AppLogic\ProjectSupport.cs"/>
     <None Include="..\..\src\Tiny11Builder.App\MainWindow.xaml" Link="Deployment\MainWindow.xaml" CopyToOutputDirectory="PreserveNewest"/>
     <None Include="..\..\src\Tiny11Builder.App\app.manifest" Link="Deployment\app.manifest" CopyToOutputDirectory="PreserveNewest"/>
+    <None Include="..\..\recipes\*.json" Link="Recipes\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest"/>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\..\src\Tiny11Builder.App\Localization.cs" Link="AppLogic\Localization.cs"/>
+    <Compile Include="..\..\src\Tiny11Builder.App\UiRefinements.cs" Link="AppLogic\UiRefinements.cs"/>
+    <EmbeddedResource Include="..\..\src\Tiny11Builder.App\Languages\en.json" LogicalName="Tiny11Builder.App.Languages.en.json"/>
+    <None Include="..\..\src\Tiny11Builder.App\Languages\*.json" Link="Languages\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest"/>
   </ItemGroup>
 </Project>

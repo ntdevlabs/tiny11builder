@@ -58,11 +58,14 @@ public sealed partial class BuildEngine
             ReportPath = Path.Combine(directory, "report.json"), Scratch = scratch, Elapsed = elapsed,
             PriorActive = TimeSpan.FromMilliseconds(checkpoint.ActiveMilliseconds), ResumedFrom = checkpoint.Phase,
             UsedOptimizedMount = checkpoint.Report.UsedOptimizedMount, StagingResult = checkpoint.Report.SetupMedia,
+            BootImageBytesBefore = checkpoint.Report.BootImageBytesBefore, BootImageBytesAfter = checkpoint.Report.BootImageBytesAfter,
             Cleanup = checkpoint.Report.RedundantData, Checkpoint = checkpoint, SetupPending = verified.SetupPending,
             CompressPending = checkpoint.Phase == ResumePhase.Committed,
             StageName = BuildProgressText.ResumeCheckStage
         };
         session.Features.AddRange(checkpoint.Report.Features);
+        session.Updates.AddRange(checkpoint.Report.Updates);
+        session.UpdatePackageStates = checkpoint.Report.UpdatePackageStates;
         session.Capabilities.AddRange(checkpoint.Report.Capabilities);
         // Warnings found before the commit (such as a skipped component cleanup) are part of this build's outcome.
         foreach (var warning in checkpoint.Report.Warnings ?? []) session.AddWarning(warning);
@@ -244,9 +247,7 @@ public sealed partial class BuildEngine
         if (images.Count != 1) throw new InvalidDataException($"{what} must contain exactly one image but contains {images.Count}.");
         var actual = images[0];
         // File hashes already verify the saved bytes. Display names can change when a console-decoding bug is fixed.
-        if (actual.Architecture != expected.Architecture || actual.Version != expected.Version ||
-            !actual.Edition.Equals(expected.Edition, StringComparison.OrdinalIgnoreCase) ||
-            !actual.Installation.Equals(expected.Installation, StringComparison.OrdinalIgnoreCase))
+        if (!WindowsImageIdentity.Matches(actual, expected))
             throw new InvalidDataException($"{what} is a different Windows image ({actual.Summary}) than this job was building ({expected.Summary}).");
     }
 
@@ -254,7 +255,9 @@ public sealed partial class BuildEngine
     private static BuildRecipe Freeze(BuildRecipe recipe) => recipe with
     {
         OutputPath = "", DismPath = "", OscdimgPath = "", Compression = default, KeepWorkingFiles = false,
+        CustomSetupMediaPath = null,
         SourcePath = NormalizePath(recipe.SourcePath), WorkspacePath = NormalizePath(recipe.WorkspacePath),
+        UpdatePackages = [.. recipe.UpdatePackages.Select(NormalizePath)],
         SelectedOptions = [.. recipe.SelectedOptions.Order(StringComparer.Ordinal)],
         ExpertActions = [.. recipe.ExpertActions.OrderBy(action => action.Kind).ThenBy(action => action.Identity, StringComparer.Ordinal)
             .ThenBy(action => action.Mode)]

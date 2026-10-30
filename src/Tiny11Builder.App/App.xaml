@@ -54,8 +54,8 @@
                 <ResourceDictionary x:Key="Default">
                     <x:Double x:Key="WelcomeTitleOpacity">0.24</x:Double>
                     <x:Double x:Key="PageHeadingOpacity">0.28</x:Double>
-                    <x:Double x:Key="ActionLabelOpacity">0.55</x:Double>
-                    <x:Double x:Key="ActionArrowOpacity">0.35</x:Double>
+                    <x:Double x:Key="ActionLabelOpacity">0.90</x:Double>
+                    <x:Double x:Key="ActionArrowOpacity">0.80</x:Double>
                     <x:Double x:Key="SubtleIconOpacity">0.65</x:Double>
                     <x:Double x:Key="CardArrowOpacity">0.4</x:Double>
                 </ResourceDictionary>

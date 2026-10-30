@@ -76,6 +76,7 @@ public sealed class ImageOperations : IImageOperations
             foreach (var child in Directory.EnumerateDirectories(directory))
                 items.Add(new(kind, Path.GetFileName(child), "Protected payload. Removal can break boot, servicing, security or the shell.", true));
         }
+        items.AddRange(FilePayloadCatalog.Read(mount));
         return items;
     }
 
@@ -84,6 +85,13 @@ public sealed class ImageOperations : IImageOperations
         RequireOwnedMount(mount);
         foreach (var action in actions.Where(a => a.Kind is ImageItemKind.SystemApp or ImageItemKind.ComponentPayload))
             Remove(mount, Path.Combine(action.Kind == ImageItemKind.SystemApp ? @"Windows\SystemApps" : @"Windows\WinSxS", action.Identity), log, turboMode: turboMode);
+        foreach (var action in actions.Where(a => a.Kind == ImageItemKind.FilePayload)
+                     .OrderBy(action => action.Identity.Count(character => character == '\\')))
+        {
+            if (action.Mode != ExpertActionMode.Remove || !FilePayloadCatalog.IsValidPath(action.Identity))
+                throw new InvalidDataException("Invalid direct offline file-removal path.");
+            Remove(mount, action.Identity, log, turboMode: turboMode);
+        }
         var serviceActions = actions.Where(a => a.Kind == ImageItemKind.Service).ToArray();
         if (serviceActions.Length == 0) return;
         using var privileges = new PrivilegeScope("SeBackupPrivilege", "SeRestorePrivilege");
@@ -114,6 +122,10 @@ public sealed class ImageOperations : IImageOperations
     public void RemoveOriginalFiles(string mount, string architecture, IReadOnlyList<string> options, Action<string> log, bool turboMode = false)
     {
         RequireOwnedMount(mount);
+        foreach (var id in options.Where(NativePayloadOptions.IsSelected))
+            log($"Selected direct file group: {id}. Missing targets are skipped.");
+        foreach (var path in NativePayloadOptions.Resolve(mount, options))
+            Remove(mount, path, log, turboMode: turboMode);
         if (options.Contains("onedrive-files"))
             foreach (var path in new[] { @"Windows\System32\OneDriveSetup.exe", @"Windows\SysWOW64\OneDriveSetup.exe" })
                 Remove(mount, path, log, turboMode: turboMode);
@@ -199,41 +211,70 @@ public sealed class ImageOperations : IImageOperations
         private static readonly object privilegeGate = new();
         private readonly SafeAccessTokenHandle token;
         private readonly List<TokenPrivileges> previous = [];
+        private readonly int ownerThread = Environment.CurrentManagedThreadId;
+        private bool disposed;
+
         public PrivilegeScope(params string[] names)
         {
+            ArgumentNullException.ThrowIfNull(names);
             Monitor.Enter(privilegeGate);
-            if (!OpenProcessToken(System.Diagnostics.Process.GetCurrentProcess().Handle, 0x28, out token))
+            using var process = System.Diagnostics.Process.GetCurrentProcess();
+            if (!OpenProcessToken(process.Handle, 0x28, out token))
             {
+                var error = Marshal.GetLastPInvokeError();
+                token.Dispose();
                 Monitor.Exit(privilegeGate);
-                throw new Win32Exception(Marshal.GetLastWin32Error());
+                throw new Win32Exception(error, "Cannot open this process's token for offline image servicing. Run as administrator.");
             }
             try
             {
-                foreach (var name in names.Length == 0 ? new[] { "SeBackupPrivilege", "SeRestorePrivilege" } : names)
+                foreach (var name in (names.Length == 0 ? new[] { "SeBackupPrivilege", "SeRestorePrivilege" } : names)
+                             .Distinct(StringComparer.OrdinalIgnoreCase))
                 {
-                    if (!LookupPrivilegeValue(null, name, out var luid)) throw new Win32Exception(Marshal.GetLastWin32Error());
+                    if (!LookupPrivilegeValue(null, name, out var luid)) throw new Win32Exception(Marshal.GetLastPInvokeError());
                     var state = new TokenPrivileges { Count = 1, Luid = luid, Attributes = 2 };
                     Marshal.SetLastPInvokeError(0);
-                    if (!AdjustTokenPrivileges(token, false, ref state, Marshal.SizeOf<TokenPrivileges>(), out var old, out _) ||
-                        Marshal.GetLastWin32Error() != 0)
-                        throw new Win32Exception(Marshal.GetLastWin32Error(), $"Cannot enable {name} for offline deletion.");
-                    previous.Add(old);
+                    var adjusted = AdjustTokenPrivileges(token, false, ref state, Marshal.SizeOf<TokenPrivileges>(), out var old, out _);
+                    var error = Marshal.GetLastPInvokeError();
+                    if (old.Count != 0) previous.Add(old);
+                    if (!adjusted || error != 0)
+                        throw new Win32Exception(error, $"Cannot enable {name} for offline image servicing (Windows error {error}). " +
+                            "Run as administrator. If this right is missing from the elevated token, ask your administrator to review the account's user-rights policy; this app cannot grant it.");
                 }
             }
-            catch { Dispose(); throw; }
+            catch (Win32Exception error)
+            {
+                try { Dispose(); }
+                catch (Exception rollback) when (rollback is Win32Exception or AggregateException)
+                {
+                    throw new AggregateException("Enabling process privileges failed, and their original state could not be fully restored.", error, rollback);
+                }
+                throw;
+            }
         }
+
         public void Dispose()
         {
+            if (disposed) return;
+            if (Environment.CurrentManagedThreadId != ownerThread)
+                throw new InvalidOperationException("A process privilege scope must be disposed on its creating thread, before awaiting or invoking asynchronous callbacks.");
+            disposed = true;
+            List<Exception> failures = [];
             try
             {
-                foreach (var item in previous)
+                for (var index = previous.Count - 1; index >= 0; index--)
                 {
-                    var state = item;
-                    if (!AdjustTokenPrivileges(token, false, ref state, Marshal.SizeOf<TokenPrivileges>(), out _, out _))
-                        throw new Win32Exception(Marshal.GetLastWin32Error(), "Cannot restore process privileges.");
+                    var state = previous[index];
+                    Marshal.SetLastPInvokeError(0);
+                    var adjusted = AdjustTokenPrivileges(token, false, ref state, Marshal.SizeOf<TokenPrivileges>(), out _, out _);
+                    var error = Marshal.GetLastPInvokeError();
+                    if (!adjusted || error != 0)
+                        failures.Add(new Win32Exception(error, $"Cannot restore this process's original image-servicing privileges (Windows error {error})."));
                 }
             }
             finally { token.Dispose(); Monitor.Exit(privilegeGate); }
+            if (failures.Count == 1) throw failures[0];
+            if (failures.Count > 1) throw new AggregateException("Cannot fully restore this process's original privileges.", failures);
         }
     }
     [StructLayout(LayoutKind.Sequential)]

@@ -20,14 +20,28 @@ public abstract class ObservableChoice : INotifyPropertyChanged
     protected void Notify(string name) => PropertyChanged?.Invoke(this, new(name));
 }
 
-public sealed class OptionChoice(CleanupOption option) : ObservableChoice
+public sealed class OptionChoice(CleanupOption option, bool presetRemovesEdgeFiles = false) : ObservableChoice
 {
     private bool selected = option.Balanced;
     public CleanupOption Option { get; } = option;
-    public string Title => Option.Title;
-    public string Description => Option.Description;
-    public string Category => Option.Category;
+    public string Title => UiText.GetOrEnglish($"Option.{Option.Id}.Title", Option.Title);
+    public string Description => presetRemovesEdgeFiles && Option.Id == "edge" ? UiText.Get("Preset.EdgePolicyWithFileRemoval") :
+        UiText.GetOrEnglish($"Option.{Option.Id}.Description", Option.Description);
+    public string Category => UiText.FromEnglish(Option.Category);
+    public string TechnicalDetail => $"{Category} · {Option.Id} · {Option.Kind}" +
+        (Option.Targets.Length == 0 ? "" : "\n" + string.Join("\n", Option.Targets));
+    public void RefreshLanguage()
+    {
+        Notify(nameof(Title)); Notify(nameof(Description)); Notify(nameof(Category)); Notify(nameof(TechnicalDetail));
+    }
     public bool Selected { get => selected; set => Set(ref selected, value); }
+}
+
+public sealed class ActionModeChoice(ExpertActionMode mode) : ObservableChoice
+{
+    public ExpertActionMode Mode { get; } = mode;
+    public string Title => UiText.Get(Mode == ExpertActionMode.Disable ? "Common.Disable" : "Common.Remove");
+    public void RefreshLanguage() => Notify(nameof(Title));
 }
 
 public sealed class InventoryChoice(ImageInventoryItem item) : ObservableChoice
@@ -36,13 +50,18 @@ public sealed class InventoryChoice(ImageInventoryItem item) : ObservableChoice
     private int modeIndex = item.Kind == ImageItemKind.Service ? 0 : 1;
     public ImageInventoryItem Item { get; } = item;
     public string Title => Item.Identity;
-    public string Detail => $"{Item.Kind} · {Item.Detail}";
-    public string Risk => Item.Protected ? "Protected / potentially boot-critical" : "Application";
-    public string ModeLabel => $"Action for {Title}";
+    public string Detail => $"{UiText.GetOrEnglish("Kind." + Item.Kind, Item.Kind.ToString())} · {Item.Detail}";
+    public string Risk => UiText.Get(Item.Protected ? "Inventory.Protected" : "Inventory.Application");
+    public string ModeLabel => UiText.Format("Inventory.ActionFor", Title);
     public bool HasModes => Item.Kind is ImageItemKind.Service or ImageItemKind.Feature;
-    public string[] Modes { get; } = ["Disable", "Remove"];
+    public ActionModeChoice[] Modes { get; } = [new(ExpertActionMode.Disable), new(ExpertActionMode.Remove)];
+    public void RefreshLanguage()
+    {
+        Notify(nameof(Detail)); Notify(nameof(Risk)); Notify(nameof(ModeLabel));
+        foreach (var mode in Modes) mode.RefreshLanguage();
+    }
     public bool Selected { get => selected; set => Set(ref selected, value); }
-    public int ModeIndex { get => modeIndex; set => Set(ref modeIndex, value); }
+    public int ModeIndex { get => modeIndex; set { if (value is 0 or 1) Set(ref modeIndex, value); } }
     public ExpertAction Action => new(Item.Kind, Item.Identity, ModeIndex == 0 ? ExpertActionMode.Disable : ExpertActionMode.Remove);
 }
 
@@ -52,7 +71,7 @@ public sealed class BuildStageBoard
 {
     public BuildStageChoice[] Stages { get; } =
     [
-        new("Prepare media", "\uE8B7"), new("Export and mount", "\uE7C5"), new("Remove components", "\uE74D"),
+        new("Prepare media", "\uE8B7"), new("Export and mount", "\uE7C5"), new("Updates and removals", "\uE74D"),
         new("Commit image", "\uE74E"), new("Compress image", "\uE8B9"), new("Create ISO", "\uE958"), new("Verify output", "\uE73E")
     ];
 
@@ -64,6 +83,7 @@ public sealed class BuildStageBoard
         return phase;
     }
 
+    public void RefreshLanguage() { foreach (var stage in Stages) stage.RefreshLanguage(); }
     public void Reset() { foreach (var stage in Stages) stage.Reset(); }
     public void Stop(bool cancelled) { foreach (var stage in Stages) stage.Stop(cancelled); }
     public void Complete() { foreach (var stage in Stages) stage.Complete(); }
@@ -97,9 +117,10 @@ public sealed class BuildStageChoice(string title, string glyph) : ObservableCho
         public int ItemTotal;
     }
 
-    public string Title { get; } = title;
+    public string Title => UiText.FromEnglish(title);
     public string Glyph { get; } = glyph;
-    public string Status { get => status; set { if (Set(ref status, value)) Notify(nameof(AutomationName)); } }
+    public bool IsComplete { get; private set; }
+    public string Status { get => UiText.FromEnglish(status); set { if (Set(ref status, value)) Notify(nameof(AutomationName)); } }
     public string AutomationName => $"{Title}, {Status}";
     public bool Expanded { get => expanded; set => Set(ref expanded, value); }
     public ObservableCollection<BuildOperationChoice> Operations { get; } = [];
@@ -111,7 +132,8 @@ public sealed class BuildStageChoice(string title, string glyph) : ObservableCho
         Operations.Clear();
         halted = false;
         doneEarlier = false;
-        Status = "Waiting";
+        IsComplete = false;
+        Status = UiText.Get("Progress.Waiting");
         Expanded = false;
     }
 
@@ -171,13 +193,27 @@ public sealed class BuildStageChoice(string title, string glyph) : ObservableCho
         RefreshStatus();
     }
 
-    public void Complete() => Status = doneEarlier ? "Done earlier" : "Complete";
+    public void Complete()
+    {
+        IsComplete = true;
+        Status = UiText.Get(doneEarlier ? "Progress.DoneEarlier" : "Progress.Complete");
+    }
+
+    public void RefreshLanguage()
+    {
+        Notify(nameof(Title));
+        foreach (var operation in Operations) operation.RefreshLanguage();
+        if (doneEarlier || IsComplete) Complete();
+        else if (Operations.Count == 0) Status = UiText.Get("Progress.Waiting");
+        else RefreshStatus();
+    }
 
     public void MarkDoneEarlier()
     {
         if (Operations.Count > 0) return;
         doneEarlier = true;
-        Status = "Done earlier";
+        IsComplete = true;
+        Status = UiText.Get("Progress.DoneEarlier");
     }
 
     private int InsertIndex(string stage)
@@ -215,11 +251,13 @@ public sealed class BuildStageChoice(string title, string glyph) : ObservableCho
             if (tally.Own is BuildOperationState.Failed && tally.Items[(int)BuildOperationState.Failed] == 0) failed++;
             if (tally.Own is BuildOperationState.Cancelled && tally.Items[(int)BuildOperationState.Cancelled] == 0) cancelled++;
         }
-        var rest = pending == 0 ? "" : halted ? $" · {pending} not run" : $" · {pending} next";
-        Status = failed > 0 ? $"{(failed == 1 ? "Failed: " + ErrorText.Clip(FirstFailedTitle(), 48) : failed + " failed")} · {done} done{rest}" :
-            cancelled > 0 ? $"Cancelled · {done} done{rest}" :
-            running ? $"In progress · {done} done{rest}" :
-            pending > 0 ? (halted && done == 0 ? "Not run" : $"{done} done{rest}") : "Complete";
+        var rest = pending == 0 ? "" : UiText.Format(halted ? "Progress.NotRunCount" : "Progress.NextCount", pending);
+        IsComplete = failed == 0 && cancelled == 0 && !running && pending == 0;
+        Status = failed > 0 ? UiText.Format("Progress.FailureSummary",
+                failed == 1 ? UiText.Format("Progress.FailedItem", ErrorText.Clip(FirstFailedTitle(), 48)) : UiText.Format("Progress.FailedCount", failed), done, rest) :
+            cancelled > 0 ? UiText.Format("Progress.CancelledSummary", done, rest) :
+            running ? UiText.Format("Progress.RunningSummary", done, rest) :
+            pending > 0 ? (halted && done == 0 ? UiText.Get("Progress.NotRun") : UiText.Format("Progress.DoneSummary", done, rest)) : UiText.Get("Progress.Complete");
     }
 
     private string FirstFailedTitle() =>
@@ -235,7 +273,7 @@ public sealed class BuildOperationChoice(string id, string title, string stage) 
     private string detail = "";
     private bool notRun;
     public string Id { get; } = id;
-    public string Title { get; } = title;
+    public string Title => UiText.FromEnglish(title);
     public string Stage { get; } = stage;
     public string Detail { get => detail; private set { if (Set(ref detail, value)) Notify(nameof(HasDetail)); } }
     public string FullDetail { get; private set; } = "";
@@ -250,12 +288,12 @@ public sealed class BuildOperationChoice(string id, string title, string stage) 
         get => state;
         set { if (Set(ref state, value)) Refresh(); }
     }
-    public string Status => State switch
+    public string Status => UiText.Get(State switch
     {
-        BuildOperationState.Running => "In progress", BuildOperationState.Completed => "Done",
-        BuildOperationState.Skipped => "Skipped", BuildOperationState.Failed => "Failed",
-        BuildOperationState.Cancelled => "Cancelled", _ => NotRun ? "Not run" : "Next"
-    };
+        BuildOperationState.Running => "Progress.InProgress", BuildOperationState.Completed => "Progress.Done",
+        BuildOperationState.Skipped => "Progress.Skipped", BuildOperationState.Failed => "Progress.Failed",
+        BuildOperationState.Cancelled => "Progress.Cancelled", _ => NotRun ? "Progress.NotRun" : "Common.Next"
+    });
     public string Glyph => State switch
     {
         BuildOperationState.Completed => "\uE73E", BuildOperationState.Failed => "\uE711",
@@ -269,6 +307,8 @@ public sealed class BuildOperationChoice(string id, string title, string stage) 
         FullDetail = BuildProgressText.ForDisplay(text);
         Detail = ErrorText.Summary(FullDetail, DetailLimit);
     }
+
+    public void RefreshLanguage() { Notify(nameof(Title)); Refresh(); }
 
     private void Refresh()
     {

@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Security.Principal;
+using System.Security.Cryptography;
 
 namespace Tiny11Builder.Core;
 
@@ -23,11 +24,44 @@ public static class ToolLocator
         @"Windows Kits\10\Assessment and Deployment Kit\Deployment Tools",
         RuntimeInformation.OSArchitecture == Architecture.Arm64 ? "arm64" : "amd64");
 
-    public static string FindDism()
+    public static string FindDism() => FindDism(null);
+
+    public static string FindDism(Action<string>? log)
     {
         var system = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), @"System32\dism.exe");
         var adk = Path.Combine(AdkDirectory, @"DISM\dism.exe");
-        return File.Exists(adk) && ServicingVersionOf(adk) > ServicingVersionOf(system) ? adk : system;
+        return SelectDism([system, adk], path =>
+        {
+            Validate(path, "dism.exe");
+            return ServicingVersionOf(path);
+        }, log);
+    }
+
+    internal static string SelectDism(IEnumerable<string> candidates, Func<string, Version> inspect, Action<string>? log = null)
+    {
+        var available = new List<(string Path, Version Version)>();
+        var rejected = new List<Exception>();
+        var failures = new List<string>();
+        foreach (var path in candidates.Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            try { available.Add((path, inspect(path))); }
+            catch (Exception error) when (error is ServicingToolsRequiredException or Win32Exception or InvalidDataException or
+                                              FileNotFoundException or DirectoryNotFoundException or UnauthorizedAccessException or CryptographicException)
+            {
+                rejected.Add(error);
+                var detail = $"Skipped installed DISM '{path}': {error.Message}";
+                failures.Add(detail);
+                log?.Invoke(detail);
+            }
+        }
+        if (available.Count == 0)
+            throw new ServicingToolsRequiredException("No trusted, complete Microsoft DISM installation is available. " +
+                "Install or repair Windows ADK Deployment Tools and servicing updates, then reopen. " +
+                string.Join(" ", failures),
+                rejected.Count == 1 ? rejected[0] : new AggregateException(rejected));
+        var selected = available.OrderByDescending(candidate => candidate.Version).First();
+        log?.Invoke($"Selected trusted DISM '{selected.Path}' with servicing engine {selected.Version}.");
+        return selected.Path;
     }
     public static string FindOscdimg()
     {
@@ -58,12 +92,7 @@ public static class ToolLocator
         return api < core ? api : core;
     }
 
-    internal static int ServicingBase(int build) => build switch
-    {
-        22631 => 22621,                  // 23H2 enables features on the 22H2 core.
-        26200 or 26300 => 26100,         // 25H2 and 26H2 share the 24H2 core.
-        _ => build                      // Never infer compatibility for an unknown Insider build.
-    };
+    internal static int ServicingBase(int build) => WindowsImageIdentity.ServicingBase(build);
     public static void Validate(string path, string filename)
     {
         path = PathSafety.Full(path);
@@ -76,19 +105,44 @@ public static class ToolLocator
             using var input = File.OpenRead(path);
             if (Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(input)) == OscdimgAcquirer.ApprovedSha256) return;
         }
-        using var file = new TrustFile(path);
-        var data = new TrustData { Size = Marshal.SizeOf<TrustData>(), UiChoice = 2, UnionChoice = 1,
-            File = file.Pointer, ProviderFlags = 0x1000 };
-        var action = new Guid("00AAC56B-CD44-11D0-8CC2-00C04FC295EE");
-        var result = WinVerifyTrust(new IntPtr(-1), ref action, ref data);
-        if (result != 0) throw new Win32Exception(result, $"{filename} does not have a trusted Authenticode signature.");
-        using var cert = new System.Security.Cryptography.X509Certificates.X509Certificate2(
-            System.Security.Cryptography.X509Certificates.X509Certificate.CreateFromSignedFile(path));
-        var publisher = cert.GetNameInfo(System.Security.Cryptography.X509Certificates.X509NameType.SimpleName, false);
-        if (!new[] { "Microsoft Corporation", "Microsoft Windows" }.Contains(publisher, StringComparer.OrdinalIgnoreCase) ||
-            !System.Text.RegularExpressions.Regex.IsMatch(cert.Subject, @"(?:^|,\s*)O=Microsoft Corporation(?:,|$)",
-                System.Text.RegularExpressions.RegexOptions.CultureInvariant))
-            throw new InvalidDataException($"{filename} is not signed by Microsoft Corporation.");
+        try
+        {
+            ValidateSignedResource(path, filename);
+            if (filename.Equals("dism.exe", StringComparison.OrdinalIgnoreCase)) ValidateServicingRoot(path);
+        }
+        catch (Exception error) when (filename.Equals("dism.exe", StringComparison.OrdinalIgnoreCase) &&
+                                      error is Win32Exception or InvalidDataException or CryptographicException or FileNotFoundException)
+        {
+            throw new ServicingToolsRequiredException($"Cannot use Microsoft DISM at '{path}'. {error.Message} " +
+                "Install or repair Windows ADK Deployment Tools and servicing updates; signature verification remains required.", error);
+        }
+    }
+
+    private static void ValidateSignedResource(string path, string filename)
+    {
+        PathSafety.RejectReparsePoints(path);
+        if (!File.Exists(path)) throw new FileNotFoundException($"The DISM installation is incomplete: missing '{path}'.", path);
+        MicrosoftToolTrust.Verify(path);
+        var info = FileVersionInfo.GetVersionInfo(path);
+        var original = info.OriginalFilename;
+        var resourceName = original?.EndsWith(".mui", StringComparison.OrdinalIgnoreCase) == true ? original[..^4] : original;
+        // Signed ADK oscdimg 2.56 has a build-system placeholder instead of its original filename.
+        var signedOscdimgResource = filename.Equals("oscdimg.exe", StringComparison.OrdinalIgnoreCase) &&
+            resourceName == "TARGETNAMEWITHEXTENSION" && info.ProductName == "OSCDIMG" &&
+            info.FileDescription == "Microsoft CD/DVD Premastering Utility" && info.CompanyName == "Microsoft Corporation";
+        if (!signedOscdimgResource && (string.IsNullOrWhiteSpace(resourceName) ||
+                                      !Path.GetFileName(resourceName).Equals(filename, StringComparison.OrdinalIgnoreCase)))
+            throw new InvalidDataException($"'{path}' is not Microsoft's {filename} resource (original filename '{original}').");
+    }
+
+    private static void ValidateServicingRoot(string dism)
+    {
+        var root = Path.GetDirectoryName(dism)!;
+        var providerRoot = File.Exists(Path.Combine(root, "dismcore.dll")) ? root : Path.Combine(root, "Dism");
+        foreach (var file in new[] { "DismApi.dll", "wimgapi.dll" }.Select(name => Path.Combine(root, name))
+                     .Concat(new[] { "dismcore.dll", "DismProv.dll", "ImagingProvider.dll", "LogProvider.dll", "WimProvider.dll" }
+                         .Select(name => Path.Combine(providerRoot, name))))
+            ValidateSignedResource(file, Path.GetFileName(file));
     }
     public static void EnsureServicingVersion(string dism, WindowsImage image)
     {
@@ -110,29 +164,4 @@ public static class ToolLocator
             ServicingBase(version.Build) >= ServicingBase(image.Version.Build));
 
     public static bool SupportsServicing(string dism, WindowsImage image) => SupportsServicing(ServicingVersionOf(dism), image);
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct FileInfoNative { public int Size; public IntPtr Path; public IntPtr Handle; public IntPtr Subject; }
-    private sealed class TrustFile : IDisposable
-    {
-        private readonly IntPtr name;
-        public IntPtr Pointer { get; }
-        public TrustFile(string path)
-        {
-            name = Marshal.StringToCoTaskMemUni(path);
-            Pointer = Marshal.AllocHGlobal(Marshal.SizeOf<FileInfoNative>());
-            Marshal.StructureToPtr(new FileInfoNative { Size = Marshal.SizeOf<FileInfoNative>(), Path = name }, Pointer, false);
-        }
-
-        public void Dispose() { Marshal.FreeHGlobal(Pointer); Marshal.FreeCoTaskMem(name); }
-    }
-    [StructLayout(LayoutKind.Sequential)]
-    private struct TrustData
-    {
-        public int Size; public IntPtr Policy; public IntPtr Sip; public int UiChoice; public int Revocation;
-        public int UnionChoice; public IntPtr File; public int StateAction; public IntPtr StateData;
-        public IntPtr Url; public int ProviderFlags; public int UiContext; public IntPtr SignatureSettings;
-    }
-    [DllImport("wintrust.dll", ExactSpelling = true)]
-    private static extern int WinVerifyTrust(IntPtr window, ref Guid action, ref TrustData data);
 }

@@ -9,7 +9,7 @@ public enum BuildFlavor { Regular, Core }
 public enum BuildMode { Tiny11, Tiny11Core, Custom }
 public enum OptionKind { App, Feature, Capability, Policy, File }
 public enum PolicyHive { Software, DefaultUser, System }
-public enum ImageItemKind { ProvisionedApp, SystemApp, Feature, Capability, Package, Service, ComponentPayload }
+public enum ImageItemKind { ProvisionedApp, SystemApp, Feature, Capability, Package, Service, ComponentPayload, FilePayload }
 public enum ExpertActionMode { Disable, Remove }
 public sealed record ExpertAction(ImageItemKind Kind, string Identity, ExpertActionMode Mode);
 public sealed record ImageInventoryItem(ImageItemKind Kind, string Identity, string Detail, bool Protected)
@@ -19,7 +19,10 @@ public sealed record ImageInventoryItem(ImageItemKind Kind, string Identity, str
 
 public sealed record CleanupOption(
     string Id, string Title, string Description, string Category, OptionKind Kind,
-    bool Balanced, bool Minimal, string[] Targets);
+    bool Balanced, bool Minimal, string[] Targets)
+{
+    public bool CustomOnly { get; init; }
+}
 
 public sealed record WindowsImage(
     int Index, string Name, string Description, string Architecture,
@@ -31,6 +34,8 @@ public sealed record WindowsImage(
 
     public void Validate()
     {
+        if (!Installation.Equals("Client", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidDataException("Tiny11 Builder supports Windows 11 client images only. Windows Server images are not supported.");
         if (!IsSupported)
             throw new InvalidDataException(
                 "Choose a Windows 11 client image, build 22621 (22H2) or newer, in x64 or ARM64 format.");
@@ -46,6 +51,7 @@ public sealed record BuildResult(string IsoPath, string Sha256, string ReportPat
 {
     // Problems after the ISO was published (report, cleanup) or in advisory data. They never turn a published ISO into a failure.
     public IReadOnlyList<string> Warnings { get; init; } = [];
+    public long? IsoSizeLimitBytes { get; init; }
 }
 public sealed record PolicyValue(PolicyHive Hive, string Key, string Name, object Value);
 
@@ -65,6 +71,7 @@ public sealed record BuildRecipe
     public bool ExpertAcknowledged { get; init; }
     public ExpertAction[] ExpertActions { get; init; } = [];
     public string[] SelectedOptions { get; init; } = [];
+    public string[] UpdatePackages { get; init; } = [];
     public bool EnableNetFx3 { get; init; }
     public bool CompactInstallation { get; init; } = true;
     public bool PreferLocalAccount { get; init; }
@@ -72,6 +79,13 @@ public sealed record BuildRecipe
     public bool TurboMode { get; init; }
     public bool RemoveRedundantData { get; init; }
     public bool OmitNetFx3SetupPayload { get; init; }
+    // Read the superseded pre-release flags only to reject those recipes with migration guidance.
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? CustomSetupMediaPath { get; init; }
+    public long? IsoSizeLimitBytes { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool ReuseSourceInstallImage { get; init; }
+    public bool ShrinkBootImage { get; init; }
 
     public void ValidateOptions()
     {
@@ -87,15 +101,35 @@ public sealed record BuildRecipe
             throw new InvalidDataException("Duplicate custom image actions.");
         foreach (var action in ExpertActions)
             if (!Enum.IsDefined(action.Kind) || !Enum.IsDefined(action.Mode) || string.IsNullOrWhiteSpace(action.Identity) ||
-                action.Identity.Contains('\\') || action.Identity.Contains('/') ||
+                (action.Kind == ImageItemKind.FilePayload ? !FilePayloadCatalog.IsValidPath(action.Identity) :
+                    action.Identity.Contains('\\') || action.Identity.Contains('/')) ||
                 (action.Mode == ExpertActionMode.Disable && action.Kind is not (ImageItemKind.Feature or ImageItemKind.Service)))
                 throw new InvalidDataException("Invalid custom image action.");
+        if (!string.IsNullOrEmpty(CustomSetupMediaPath) || ReuseSourceInstallImage)
+            throw new InvalidDataException("Prepared-image preservation and external installer recipes are no longer supported. " +
+                "Load the portable extreme recipe, choose your Windows ISO, and use Shrink boot.wim to rebuild its stock installer.");
+        if (IsoSizeLimitBytes is { } limit && (limit is < 64_000_000 or > 4_000_000_000 || Mode is not (null or BuildMode.Custom)))
+            throw new InvalidDataException("Custom ISO size limits must be between 64 MB and 4 GB (decimal bytes).");
+        if (ShrinkBootImage && Mode is not (null or BuildMode.Custom))
+            throw new InvalidDataException("Shrinking boot.wim is a Custom option.");
         if (ImageIndex < 1 || SelectedOptions is null ||
             SelectedOptions.Length != SelectedOptions.Distinct(StringComparer.Ordinal).Count())
             throw new InvalidDataException("Invalid image index or duplicate cleanup options.");
+        if (UpdatePackages is null || UpdatePackages.Length > 100)
+            throw new InvalidDataException("Choose at most 100 Windows update packages.");
+        var packagePaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var package in UpdatePackages)
+        {
+            var full = PathSafety.Full(package);
+            if (!new[] { ".cab", ".msu" }.Contains(Path.GetExtension(full), StringComparer.OrdinalIgnoreCase))
+                throw new InvalidDataException("Windows update packages must be .cab or .msu files; .cap files are not supported.");
+            if (!packagePaths.Add(full)) throw new InvalidDataException("Duplicate Windows update package.");
+        }
         foreach (var id in SelectedOptions)
             if (!CleanupCatalog.Options.Any(o => o.Id == id))
                 throw new InvalidDataException($"Unknown cleanup option: {id}");
+        if (SelectedOptions.Any(NativePayloadOptions.IsSelected) && (!ExpertAcknowledged || Mode is not (null or BuildMode.Custom)))
+            throw new InvalidDataException("Direct payload groups require Custom and the advanced-risk acknowledgement.");
         if (Mode is BuildMode.Tiny11 or BuildMode.Tiny11Core &&
             (Flavor != (Mode == BuildMode.Tiny11Core ? BuildFlavor.Core : BuildFlavor.Regular) ||
              ExpertActions.Length > 0 ||

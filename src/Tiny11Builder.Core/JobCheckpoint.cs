@@ -49,6 +49,8 @@ internal sealed record SourceIdentity
 internal sealed record CheckpointReport
 {
     public bool LegacyInstallerEnabled { get; init; }
+    public long? BootImageBytesBefore { get; init; }
+    public long? BootImageBytesAfter { get; init; }
     public required bool UsedOptimizedMount { get; init; }
     public required BuildExecutionPlan Execution { get; init; }
     public MediaStagingResult? SetupMedia { get; init; }
@@ -58,6 +60,8 @@ internal sealed record CheckpointReport
 
     /// <summary>Problems found before the commit (for example a skipped component cleanup). A resume reports them again.</summary>
     public IReadOnlyList<string> Warnings { get; init; } = [];
+    public IReadOnlyList<UpdatePackageResult> Updates { get; init; } = [];
+    public IReadOnlyList<ImageInventoryItem> UpdatePackageStates { get; init; } = [];
 }
 
 internal sealed record ResumeCheckpoint

@@ -33,6 +33,10 @@ public sealed partial class MainWindow : Window
     private bool applyingMode;
     private bool busy;
     private bool completed;
+    private bool stoppedWasCancelled;
+    private bool resultResumed;
+    private bool resultTurbo;
+    private int resultUpdateCount;
     private bool coreAcknowledged;
     private bool modalOpen;
     private enum NoticeAction { None, OpenLogs, CopyDetails, OpenTools, OpenOfficialDownload }
@@ -46,12 +50,13 @@ public sealed partial class MainWindow : Window
     private OperationKind? stoppedRun;
     private bool stoppedHasCheckpoint;
     private string? resumeJobFile;
-    private string servicingTool = ToolLocator.FindDism();
+    private string servicingTool = "";
     private string isoTool = ToolLocator.FindOscdimg();
     private readonly BuildStageBoard board = new();
     private BuildResult? result;
     private string? workDirectory;
     private readonly LiveLog liveLog = new();
+    private readonly List<string> servicingDiagnostics = [];
     private ScrollViewer? logScroller;
     private readonly ConcurrentQueue<BuildProgress> progressUpdates = new();
     private readonly LatestProgress<DownloadProgress> downloadUpdates = new();
@@ -62,11 +67,28 @@ public sealed partial class MainWindow : Window
     private NoticeAction noticeAction;
     private string noticeDetails = "";
     private int activePhase = -1;
+    private readonly UpdatePackageSelection updatePackages = new();
+    private readonly LanguageCatalogs languageCatalogs;
+    private string languagePreference = "system";
+    private bool changingLanguage;
     private readonly string dataDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Tiny11Builder");
 
     public MainWindow()
     {
+        languageCatalogs = LanguageCatalogs.Load(Path.Combine(AppContext.BaseDirectory, "Languages"));
+        string? languageProblem = null;
+        try
+        {
+            languagePreference = LanguagePreference.Read(Path.Combine(dataDirectory, "ui-language.json")).Language;
+            if (!languageCatalogs.IsAvailable(languagePreference)) languagePreference = "system";
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or InvalidDataException or JsonException)
+        { languageProblem = error.Message; }
+        UiText.Select(languageCatalogs.Resolve(languagePreference, CultureInfo.CurrentUICulture));
         InitializeComponent();
+        Root.Language = UiText.Current.Info.Id;
+        SetLanguageChoices();
+        UpdatePackagesList.ItemsSource = updatePackages.Items;
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(TitleArea);
         AppWindow.Resize(new Windows.Graphics.SizeInt32(1200, 900));
@@ -75,11 +97,12 @@ public sealed partial class MainWindow : Window
             if (!busy) return;
             args.Cancel = true;
             ShowNotice("An operation is still running.", cancelRequested ? "It is being cancelled. Wait for it to stop before closing." :
-                $"Choose {CancelPrompts.ButtonLabel} and wait for the image operation to finish before closing.", InfoBarSeverity.Warning);
+                UiText.Format("App.WaitBeforeClosing", CancelPrompts.ButtonLabel), InfoBarSeverity.Warning);
         };
         WorkspaceBox.Text = @"C:\tiny11";
         SupportPurpose.Text = ProjectSupport.Purpose;
         OutputBox.Text = Path.Combine(WorkspaceBox.Text, $"tiny11-{DateTime.Now:yyyyMMdd-HHmmss}.iso");
+        board.RefreshLanguage();
         BuildStages.ItemsSource = board.Stages;
         progressTimer.Tick += (_, _) => { FlushBuildProgress(); DrainDownload(); };
         // Desktop apps cannot subscribe to AccessibilitySettings.HighContrastChanged (it throws), so
@@ -87,8 +110,13 @@ public sealed partial class MainWindow : Window
         Root.ActualThemeChanged += (_, _) => ApplyContrast();
         Activated += (_, _) => ApplyContrast();
         Closed += (_, _) => progressTimer.Stop();
-        LatestDownloadDescription.Text = $"Official Microsoft ISO · {HostArchitecture.ToUpperInvariant()} · {CultureInfo.CurrentUICulture.NativeName}";
-        foreach (var choice in options) choice.PropertyChanged += (_, _) => UpdateCounts();
+        LatestDownloadDescription.Text = UiText.Format("Download.DefaultDescription", HostArchitecture.ToUpperInvariant(), CultureInfo.CurrentUICulture.NativeName);
+        foreach (var choice in options) choice.PropertyChanged += (_, args) =>
+        {
+            if (initialized && !applyingMode && choice.Option.CustomOnly && args.PropertyName == nameof(OptionChoice.Selected))
+                NativePayloadConsent.IsChecked = false;
+            UpdateCounts();
+        };
         initialized = true;
         ApplyContrast();
         ApplyMode();
@@ -108,6 +136,23 @@ public sealed partial class MainWindow : Window
             catch (Exception error) { ShowNotice("Session could not be restored.", ErrorText.Reason(error), InfoBarSeverity.Error); }
         }
         UpdateCounts();
+        UpdatePackageButtons();
+        if (languageProblem is not null || languageCatalogs.Problems.Count > 0)
+            ShowNotice(UiText.Get("Language.SomeFilesUnavailable"), UiText.Get("Language.EnglishFallback"),
+                InfoBarSeverity.Warning, NoticeAction.CopyDetails,
+                languageProblem ?? string.Join("\n", languageCatalogs.Problems.Select(problem => problem.FileName + ": " + problem.Message)));
+        try
+        {
+            servicingTool = FindServicingTool();
+            if (SkippedImageTools)
+                ShowNotice(UiText.Get("Tools.SomeSkipped"), UiText.Get("Tools.TrustedFallback"), InfoBarSeverity.Warning,
+                    NoticeAction.CopyDetails, string.Join("\n", servicingDiagnostics));
+        }
+        catch (Exception error)
+        {
+            ShowNotice(UiText.Get("Tools.NotReady"), ErrorText.Reason(error), InfoBarSeverity.Warning,
+                OperationOutcomes.RequiresServicingTools(error) ? NoticeAction.OpenTools : NoticeAction.CopyDetails, error.ToString());
+        }
     }
 
     private FrameworkElement[] Panels => [WelcomePanel, SourcePanel, CleanupPanel, SettingsPanel, ReviewPanel, BuildPanel];
@@ -192,25 +237,40 @@ public sealed partial class MainWindow : Window
         if (!initialized) return;
         BackButton.IsEnabled = !busy && step > 0 && !completed;
         BackButton.Visibility = step > 0 && !completed ? Visibility.Visible : Visibility.Collapsed;
-        var customCount = inventory.Count > 0 ? inventory.Count(i => i.Selected) : pendingActions.Length;
+        var expertReady = !RequiresExpertAcknowledgement || ExpertAccepted;
         var canAdvance = step switch
         {
             1 => image?.IsSupported == true,
-            2 => customCount == 0 || ExpertConsent.IsChecked == true,
+            2 => expertReady,
             _ => true
         };
         NextButton.IsEnabled = !busy && canAdvance;
         // After a build stops, the primary action says what it will do: start over, or continue the resume.
         var retry = step == 5 && !completed && stoppedRun is not null;
-        ActionLabel.Text = completed ? "Build another" : retry ? (stoppedRun == OperationKind.Resume ? "Resume again" : "Build again") : step switch
+        var actionLabel = completed ? "Build another" : retry ? (stoppedRun == OperationKind.Resume ? "Resume again" : "Build again") : step switch
         {
             0 => "Start", 1 => "Next", 2 => "Next", 3 => "Review", 4 => "Continue", _ => "Build"
         };
+        ActionLabel.Text = UiText.FromEnglish(actionLabel);
         ActionLabel.FontSize = 32;
         Grid.SetColumn(NextButton, 2);
         NextButton.HorizontalAlignment = HorizontalAlignment.Right;
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(NextButton, ActionLabel.Text);
+        NavigationHint.Text = StepNavigation.Hint(step, image?.IsSupported == true,
+            expertReady);
+        NavigationHint.Visibility = NavigationHint.Text.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
         StepRail.IsEnabled = !busy && !completed;
+        for (var index = 0; index < StepRail.Items.Count; index++)
+        {
+            var item = (ListViewItem)StepRail.Items[index];
+            item.IsEnabled = StepNavigation.CanSelect(index, step, reached, image?.IsSupported == true,
+                expertReady, busy, completed);
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetItemStatus(item,
+                UiText.Get(index == step ? "Navigation.CurrentStep" : item.IsEnabled ? "Navigation.AvailableStep" : "Navigation.LockedStep"));
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetHelpText(item, item.IsEnabled ? "" :
+                image?.IsSupported != true && index >= 2 ? UiText.Get("Navigation.InspectFirst") : UiText.Get("Navigation.CompletePrevious"));
+        }
+        LanguageChoice.IsEnabled = !busy && !modalOpen;
         RecoverButton.IsEnabled = !busy;
         SupportButton.IsEnabled = !busy;
         ResumeButton.IsEnabled = !busy;
@@ -232,23 +292,28 @@ public sealed partial class MainWindow : Window
         ContentScroller.IsEnabled = !busy || (step == 5 && running is OperationKind.Build or OperationKind.Resume);
     }
 
-    private void OnRailChanged(object sender, SelectionChangedEventArgs args)
+    private async void OnRailChanged(object sender, SelectionChangedEventArgs args)
     {
-        if (!initialized || navigating || StepRail.SelectedIndex < 0) return;
-        var next = StepRail.SelectedIndex;
-        if (busy || next > reached || next > step)
+        if (!initialized || navigating || StepRail.SelectedIndex < 0 || StepRail.SelectedIndex == step) return;
+        var target = StepRail.SelectedIndex;
+        navigating = true;
+        StepRail.SelectedIndex = step;
+        navigating = false;
+        var expertReady = !RequiresExpertAcknowledgement || ExpertAccepted;
+        if (!StepNavigation.CanSelect(target, step, reached, image?.IsSupported == true, expertReady, busy, completed, modalOpen))
         {
-            navigating = true;
-            StepRail.SelectedIndex = step;
-            navigating = false;
+            if (!busy && !modalOpen)
+                ShowNotice(UiText.Get("Navigation.StepNotReady"), image?.IsSupported != true && target >= 2 ?
+                    UiText.Get("Navigation.InspectFirst") : UiText.Get("Navigation.CompletePrevious"), InfoBarSeverity.Warning);
             return;
         }
-        GoStep(next);
+        if (target < step) GoStep(target);
+        else await AdvanceToAsync(target);
     }
 
     private void OnBack(object sender, RoutedEventArgs args) { if (!busy && !modalOpen && step > 0) GoStep(step - 1); }
 
-    private void OnModeCardClick(object sender, RoutedEventArgs args)
+    private async void OnModeCardClick(object sender, RoutedEventArgs args)
     {
         if (busy || modalOpen) return;
         if (sender is not Button { Tag: string tag } || !Enum.TryParse<BuildMode>(tag, out var mode) || !Enum.IsDefined(mode))
@@ -256,14 +321,22 @@ public sealed partial class MainWindow : Window
             ShowNotice("Build mode could not be selected.", "The selected card does not identify a valid build mode.", InfoBarSeverity.Error);
             return;
         }
-        ModeChoice.SelectedIndex = (int)mode;
-        GoStep(1);
+        if (mode == BuildMode.Custom) await EnterCustomAsync(fromWelcome: true);
+        else
+        {
+            ModeChoice.SelectedIndex = (int)mode;
+            GoStep(1);
+        }
     }
 
-    private void OnRemovalModeClick(object sender, RoutedEventArgs args)
+    private async void OnRemovalModeClick(object sender, RoutedEventArgs args)
     {
-        if (!busy && sender is Button { Tag: string tag } && Enum.TryParse<BuildMode>(tag, out var mode))
-            ModeChoice.SelectedIndex = (int)mode;
+        if (busy || modalOpen) return;
+        if (sender is Button { Tag: string tag } && Enum.TryParse<BuildMode>(tag, out var mode) && Enum.IsDefined(mode))
+        {
+            if (mode == BuildMode.Custom) await EnterCustomAsync(fromWelcome: false);
+            else ModeChoice.SelectedIndex = (int)mode;
+        }
     }
 
     private async void OnNext(object sender, RoutedEventArgs args)
@@ -284,22 +357,26 @@ public sealed partial class MainWindow : Window
             await (stoppedRun == OperationKind.Resume && resumeJobFile is { } job ? ResumeJobAsync(job) : StartBuildAsync());
             return;
         }
-        if (step == 2 && UsesCore && !coreAcknowledged)
+        await AdvanceToAsync(step + 1);
+    }
+
+    // The rail and primary action share all checks. Revisited steps never bypass a changed source or recipe.
+    private async Task AdvanceToAsync(int target)
+    {
+        if (busy || modalOpen || target <= step || target >= StepNavigation.StepCount) return;
+        if (target >= 3 && UsesCore && !coreAcknowledged)
         {
-            coreAcknowledged = await Confirm("Core is not serviceable",
-                "No Windows Update\nNo Microsoft Defender\nNo recovery environment\nNo added languages or features\n\n" +
-                "Use only in an isolated test VM.\nThe image may not boot.",
-                "I agree");
-            CoreConsentStatus.Text = coreAcknowledged ? "Core limitations accepted for this build." : "Core limitations have not been accepted.";
+            coreAcknowledged = await Confirm(UiText.Get("Core.ConsentTitle"), UiText.Get("Core.ConsentBody"), UiText.Get("Core.Agree"));
+            CoreConsentStatus.Text = UiText.Get(coreAcknowledged ? "Core.Accepted" : "Core.NotAccepted");
             if (!coreAcknowledged) return;
         }
         await RunOperation(OperationKind.Check, async token =>
         {
-            Working("Checking your choices…");
-            if (step >= 1 && image is null) throw new InvalidOperationException("Inspect the selected Windows image first.");
-            image?.Validate();
-            if (step >= 2) CreateRecipe().ValidateOptions();
-            if (step >= 3)
+            Working(UiText.Get("Navigation.CheckingChoices"));
+            if (target >= 2 && image is null) throw new InvalidOperationException(UiText.Get("Navigation.InspectFirst"));
+            if (target >= 2) image!.Validate();
+            if (target >= 3) CreateRecipe().ValidateOptions();
+            if (target >= 4)
             {
                 await EnsureToolsAsync(token);
                 var recipe = CreateRecipe();
@@ -312,8 +389,7 @@ public sealed partial class MainWindow : Window
                 }, token);
             }
             token.ThrowIfCancellationRequested();
-            GoStep(step + 1);
-            await Task.CompletedTask;
+            GoStep(target);
         });
     }
 
@@ -323,14 +399,17 @@ public sealed partial class MainWindow : Window
         WorkspacePath = WorkspaceBox.Text.Trim(), OutputPath = OutputBox.Text.Trim(),
         DismPath = servicingTool, OscdimgPath = isoTool,
         Mode = SelectedMode, Flavor = UsesCore ? BuildFlavor.Core : BuildFlavor.Regular,
-        CoreAcknowledged = coreAcknowledged, ExpertAcknowledged = ExpertConsent.IsChecked == true,
+        CoreAcknowledged = coreAcknowledged, ExpertAcknowledged = ExpertAccepted,
         SelectedOptions = options.Where(o => o.Selected).Select(o => o.Option.Id).ToArray(),
         ExpertActions = inventory.Count > 0 ? inventory.Where(i => i.Selected).Select(i => i.Action).ToArray() : pendingActions,
         Compression = (Compression)CompressionChoice.SelectedIndex,
         CompactInstallation = CompactCheck.IsOn, EnableNetFx3 = NetFxCheck.IsOn,
         PreferLocalAccount = LocalAccountCheck.IsOn, KeepWorkingFiles = KeepFilesCheck.IsOn,
         TurboMode = TurboCheck.IsOn, RemoveRedundantData = RedundantDataCheck.IsOn,
-        OmitNetFx3SetupPayload = OmitSetupCheck.IsOn
+        OmitNetFx3SetupPayload = OmitSetupCheck.IsOn,
+        UpdatePackages = updatePackages.Paths,
+        IsoSizeLimitBytes = SelectedMode == BuildMode.Custom ? recipeIsoSizeLimit : null,
+        ShrinkBootImage = SelectedMode == BuildMode.Custom && ShrinkBootCheck.IsChecked == true
     };
 
     private async Task RunOperation(OperationKind kind, Func<CancellationToken, Task> action)
@@ -415,7 +494,7 @@ public sealed partial class MainWindow : Window
         Debug.WriteLine(error);
         try
         {
-            var text = what + " " + ErrorText.Reason(error);
+            var text = UiText.FromEnglish(what) + " " + ErrorText.Reason(error);
             liveLog.Add("[App] " + text);
             if (Notice.IsOpen) Notice.Message = ErrorText.Summary(Notice.Message + " " + text, 400);
             else ShowNotice("Part of the page could not be updated.", text, InfoBarSeverity.Warning, NoticeAction.CopyDetails, error.ToString());
@@ -453,8 +532,9 @@ public sealed partial class MainWindow : Window
             // First, so that whatever below fails to draw, the page is not left spinning.
             StopBuildActivity();
             board.Stop(outcome.Cancelled);
+            stoppedWasCancelled = outcome.Cancelled;
             var noun = kind == OperationKind.Resume ? "Resume" : "Build";
-            BuildHeading.Text = outcome.Cancelled ? $"{noun} cancelled" : $"{noun} stopped";
+            BuildHeading.Text = UiText.Format(outcome.Cancelled ? "Build.CancelledHeading" : "Build.StoppedHeading", UiText.FromEnglish(noun));
             CurrentMessage.Text = outcome.FullMessage;
             HistoryCount.Text = StageSummary.Describe(board);
         }
@@ -472,8 +552,8 @@ public sealed partial class MainWindow : Window
     private void ShowNotice(string title, string message, InfoBarSeverity severity = InfoBarSeverity.Informational,
         NoticeAction action = NoticeAction.None, string? details = null)
     {
-        Notice.Title = title;
-        Notice.Message = ErrorText.Summary(message, 400);
+        Notice.Title = UiText.FromEnglish(title);
+        Notice.Message = ErrorText.Summary(UiText.FromEnglish(message), 400);
         Notice.Severity = severity;
         noticeAction = action;
         noticeDetails = details ?? "";
@@ -483,6 +563,7 @@ public sealed partial class MainWindow : Window
             NoticeAction.OpenLogs => "Open logs", NoticeAction.OpenTools => "Get image tools",
             NoticeAction.OpenOfficialDownload => "Open Microsoft download page", _ => "Copy details"
         };
+        label = UiText.FromEnglish(label);
         NoticeButton.Content = label;
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(NoticeButton, label);
         Notice.IsOpen = true;
@@ -509,7 +590,7 @@ public sealed partial class MainWindow : Window
             return;
         }
         if (noticeAction != NoticeAction.CopyDetails || noticeDetails.Length == 0) return;
-        NoticeButton.Content = CopyToClipboard(noticeDetails) ? "Copied" : "Could not copy";
+        NoticeButton.Content = UiText.Get(CopyToClipboard(noticeDetails) ? "Common.Copied" : "Common.CopyFailed");
     }
 
     // A clipboard that is locked or unavailable is reported to the caller, never thrown into the page or a dialog.
@@ -527,7 +608,7 @@ public sealed partial class MainWindow : Window
 
     private void Working(string text)
     {
-        BusyText.Text = text;
+        BusyText.Text = UiText.FromEnglish(text);
         BusyText.Visibility = Visibility.Visible;
         BusyBar.Visibility = Visibility.Visible;
     }
@@ -574,7 +655,8 @@ public sealed partial class MainWindow : Window
             var dialog = new ContentDialog
             {
                 XamlRoot = Root.XamlRoot, RequestedTheme = DialogTheme(),
-                Title = title, Content = content, PrimaryButtonText = action, CloseButtonText = "Cancel",
+                Title = UiText.FromEnglish(title), Content = UiText.FromEnglish(content),
+                PrimaryButtonText = UiText.FromEnglish(action), CloseButtonText = UiText.Get("Common.Cancel"),
                 DefaultButton = ContentDialogButton.Close
             };
             return await dialog.ShowAsync() == ContentDialogResult.Primary;
@@ -624,7 +706,7 @@ public sealed partial class MainWindow : Window
         }
         catch (Exception error)
         {
-            SupportError.Title = "Could not open the support page";
+            SupportError.Title = UiText.FromEnglish("Could not open the support page");
             SupportError.Message = ErrorText.Reason(error);
             SupportError.IsOpen = true;
         }
@@ -653,7 +735,10 @@ public sealed partial class MainWindow : Window
     private Task<string?> SaveFile(string filename, string extension)
     {
         var picker = new FileSavePicker(AppWindow.Id) { SuggestedFileName = filename };
-        picker.FileTypeChoices.Add(extension == ".iso" ? "ISO image" : "Image recipe", new List<string> { extension });
+        picker.FileTypeChoices.Add(UiText.Get(extension switch
+        {
+            ".iso" => "Picker.IsoImage", ".txt" => "Picker.TextDocument", _ => "Picker.ImageRecipe"
+        }), new List<string> { extension });
         return Pick(async () => (await picker.PickSaveFileAsync())?.Path);
     }
 
@@ -670,11 +755,12 @@ public sealed partial class MainWindow : Window
     {
         if (!initialized) return;
         image = null;
+        reached = Math.Min(reached, 1);
         pendingImageIndex = null;
         pendingSourcePath = "";
         EditionChoice.ItemsSource = null;
-        ImageBadge.Text = "No image selected";
-        ClearInventory();
+        ImageBadge.Text = UiText.FromEnglish("No image selected");
+        ClearInventory(preserveSelections: true);
         UpdateNavigation();
     }
     private void OnEditionChanged(object sender, SelectionChangedEventArgs args)
@@ -684,11 +770,14 @@ public sealed partial class MainWindow : Window
         if (selected is not null && image?.Index != selected.Index &&
             !(pendingImageIndex == selected.Index &&
               SourcePathBox.Text.Trim().Equals(pendingSourcePath, StringComparison.OrdinalIgnoreCase)))
-            ClearInventory();
+            ClearInventory(preserveSelections: true);
         image = selected;
-        ImageBadge.Text = image is null ? "No image selected" : $"{image.Name}\n{image.Architecture} · build {image.Version.Build}";
+        ImageBadge.Text = image is null ? UiText.Get("Image.NoneSelected") : UiText.Format("Image.Badge", image.Name, image.Architecture, image.Version.Build);
         if (image is not null && !image.IsSupported)
-            ShowNotice("This edition is not supported.", "Choose a Windows 11 client image, 22H2 or newer, in x64 or ARM64 format.", InfoBarSeverity.Warning);
+            ShowNotice(image.Installation.StartsWith("Server", StringComparison.OrdinalIgnoreCase) ||
+                image.Name.Contains("Windows Server", StringComparison.OrdinalIgnoreCase) ?
+                UiText.Get("Image.ServerUnsupported") : UiText.FromEnglish("This edition is not supported."),
+                UiText.FromEnglish("Choose a Windows 11 client image, 22H2 or newer, in x64 or ARM64 format."), InfoBarSeverity.Warning);
         UpdateNavigation();
     }
 
@@ -711,13 +800,17 @@ public sealed partial class MainWindow : Window
         }
         Working("Inspecting the image…");
         var source = SourcePathBox.Text.Trim();
-        servicingTool = ToolLocator.FindDism();
+        servicingTool = FindServicingTool();
         await Task.Run(() => ToolLocator.Validate(servicingTool, "dism.exe"), token);
         var images = await Task.Run(() => engine.InspectAsync(source, servicingTool, token), token);
         var restored = source.Equals(pendingSourcePath, StringComparison.OrdinalIgnoreCase) ? pendingImageIndex : null;
         EditionChoice.ItemsSource = images;
         EditionChoice.SelectedIndex = ImageDefaults.SelectPosition(images, restored);
-        ShowNotice("Image inspected.", $"{images.Count} editions found. {image?.Name} is selected.");
+        ShowNotice(UiText.Get("Image.Inspected"), UiText.Format("Image.EditionsFound", images.Count, image?.Name) +
+            (SkippedImageTools ? " " + UiText.Get("Tools.TrustedFallback") : ""),
+            SkippedImageTools ? InfoBarSeverity.Warning : InfoBarSeverity.Informational,
+            SkippedImageTools ? NoticeAction.CopyDetails : NoticeAction.None,
+            SkippedImageTools ? string.Join("\n", servicingDiagnostics) : null);
     }
 
     private void BeginDownloadText(Func<DownloadProgress, string> format)
@@ -797,7 +890,7 @@ public sealed partial class MainWindow : Window
                 if (actual != (await File.ReadAllTextAsync(hashFile, token)).Trim() ||
                     (media.Sha256 is not null && actual != media.Sha256))
                     throw new InvalidDataException("The cached ISO has changed. It has not been accepted.");
-                DownloadStatus.Text = "Previously downloaded ISO verified.";
+                DownloadStatus.Text = UiText.FromEnglish("Previously downloaded ISO verified.");
             }
             else
             {
@@ -818,14 +911,140 @@ public sealed partial class MainWindow : Window
         finally { EndDownloadText(); }
     });
 
+    private async void OnAddUpdatePackage(object sender, RoutedEventArgs args)
+    {
+        if (busy || modalOpen) return;
+        await RunOperation(OperationKind.Choose, async _ =>
+        {
+            var path = await PickFile(".msu", ".cab");
+            if (path is null) return;
+            updatePackages.Add(path);
+            UpdatePackagesList.SelectedIndex = updatePackages.Items.Count - 1;
+            UpdatePackageButtons();
+        });
+    }
+
+    private void OnUpdatePackageSelectionChanged(object sender, SelectionChangedEventArgs args) => UpdatePackageButtons();
+
+    private void OnRemoveUpdatePackage(object sender, RoutedEventArgs args)
+    {
+        if (busy || modalOpen) return;
+        var index = UpdatePackagesList.SelectedIndex;
+        if (updatePackages.Remove(index)) UpdatePackagesList.SelectedIndex = Math.Min(index, updatePackages.Items.Count - 1);
+        UpdatePackageButtons();
+    }
+
+    private void OnMoveUpdatePackage(object sender, RoutedEventArgs args)
+    {
+        if (busy || modalOpen || sender is not Button { Tag: string direction }) return;
+        var index = UpdatePackagesList.SelectedIndex;
+        var offset = direction == "Up" ? -1 : 1;
+        if (updatePackages.Move(index, offset)) UpdatePackagesList.SelectedIndex = index + offset;
+        UpdatePackageButtons();
+    }
+
+    private void UpdatePackageButtons()
+    {
+        if (UpdatePackagesList is null || RemoveUpdatePackageButton is null) return;
+        var index = UpdatePackagesList.SelectedIndex;
+        RemoveUpdatePackageButton.IsEnabled = !busy && index >= 0;
+        MoveUpdateUpButton.IsEnabled = !busy && index > 0;
+        MoveUpdateDownButton.IsEnabled = !busy && index >= 0 && index < updatePackages.Items.Count - 1;
+        UpdatePackageCount.Text = UiText.Format("Updates.SelectionCount", updatePackages.Items.Count);
+    }
+
+    private async void OnExportInventory(object sender, RoutedEventArgs args)
+    {
+        if (busy || modalOpen || inventory.Count == 0) return;
+        var allItems = inventory.Select(choice => choice.Item).ToArray();
+        await RunOperation(OperationKind.Choose, async token =>
+        {
+            var path = await SaveFile("tiny11-components", ".txt");
+            if (path is null) return;
+            await File.WriteAllTextAsync(path, InventoryTextExport.Create(allItems), new UTF8Encoding(true), token);
+            ShowNotice(UiText.Get("Inventory.Exported"), UiText.Format("Inventory.ExportComplete", allItems.Length, path));
+        });
+    }
+
+    private void SetLanguageChoices()
+    {
+        changingLanguage = true;
+        var choices = new[] { new LanguageInfo("system", UiText.Get("Language.System")) }.Concat(languageCatalogs.Available).ToArray();
+        LanguageChoice.ItemsSource = choices;
+        LanguageChoice.SelectedItem = choices.First(choice => choice.Id.Equals(languagePreference, StringComparison.OrdinalIgnoreCase));
+        changingLanguage = false;
+    }
+
+    private void OnLanguageChanged(object sender, SelectionChangedEventArgs args)
+    {
+        if (!initialized || changingLanguage || LanguageChoice.SelectedItem is not LanguageInfo selected) return;
+        if (busy || modalOpen) { SetLanguageChoices(); return; }
+        var previousLanguage = UiText.Current;
+        TextBlock[] statefulLabels = [ImageBadge, LatestDownloadDescription, DownloadStatus, BuildHeading, CurrentStage, CurrentMessage, ToolStatus];
+        var previousLabels = statefulLabels.Select(label => (Label: label, Text: label.Text)).ToArray();
+        var previousNoticeTitle = Notice.Title;
+        var previousNoticeMessage = Notice.Message;
+        languagePreference = selected.Id;
+        UiText.Select(languageCatalogs.Resolve(languagePreference, CultureInfo.CurrentUICulture));
+        Root.Language = UiText.Current.Info.Id;
+        foreach (var (label, text) in previousLabels) label.Text = UiText.Relocalize(previousLanguage, text);
+        Notice.Title = UiText.Relocalize(previousLanguage, previousNoticeTitle);
+        Notice.Message = UiText.Relocalize(previousLanguage, previousNoticeMessage);
+        SupportPurpose.Text = ProjectSupport.Purpose;
+        ImageBadge.Text = image is null ? UiText.Get("Image.NoneSelected") : UiText.Format("Image.Badge", image.Name, image.Architecture, image.Version.Build);
+        if (LatestDownloadDescription.Text == previousLanguage.Format("Download.DefaultDescription", HostArchitecture.ToUpperInvariant(), CultureInfo.CurrentUICulture.NativeName))
+            LatestDownloadDescription.Text = UiText.Format("Download.DefaultDescription", HostArchitecture.ToUpperInvariant(), CultureInfo.CurrentUICulture.NativeName);
+        SetLanguageChoices();
+        foreach (var choice in options) choice.RefreshLanguage();
+        foreach (var choice in inventory) choice.RefreshLanguage();
+        board.RefreshLanguage();
+        UpdateModePresentation();
+        FilterOptions();
+        FilterInventory();
+        UpdateCounts();
+        UpdatePackageButtons();
+        HistoryCount.Text = StageSummary.Describe(board);
+        if (step == 4) UpdateReview();
+        if (step == 5) UpdateBuildDescription(CreateRecipe());
+        if (completed && result is { } built)
+        {
+            BuildHeading.Text = UiText.FromEnglish("ISO created");
+            CurrentStage.Text = UiText.Get("Progress.Complete");
+            OverallStep.Text = UiText.FromEnglish("All stages done");
+            RenderResultMetrics(built, resultResumed, resultTurbo, resultUpdateCount);
+        }
+        else if (stoppedRun is { } stopped)
+            BuildHeading.Text = UiText.Format(stoppedWasCancelled ? "Build.CancelledHeading" : "Build.StoppedHeading",
+                UiText.FromEnglish(stopped == OperationKind.Resume ? "Resume" : "Build"));
+        if (!completed && activePhase >= 0) OverallStep.Text = UiText.Format("Progress.StageCount", activePhase + 1, board.Stages.Length);
+        try { new LanguagePreference(languagePreference).Write(Path.Combine(dataDirectory, "ui-language.json")); }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        { ShowNotice(UiText.Get("Language.NotSaved"), ErrorText.Reason(error), InfoBarSeverity.Warning); }
+        if (UiText.Current.MissingKeys.Count > 0)
+            ShowNotice(UiText.Get("Language.IncompleteTitle"), UiText.Format("Language.IncompleteBody", UiText.Current.MissingKeys.Count));
+    }
+
+    private string FindServicingTool()
+    {
+        servicingDiagnostics.Clear();
+        return ToolLocator.FindDism(message =>
+        {
+            servicingDiagnostics.Add(message);
+            liveLog.Add("[Tools] " + message);
+        });
+    }
+
+    private bool SkippedImageTools => servicingDiagnostics.Any(message => message.StartsWith("Skipped installed DISM", StringComparison.Ordinal));
+
     private async Task EnsureToolsAsync(CancellationToken token)
     {
-        servicingTool = ToolLocator.FindDism();
+        servicingTool = FindServicingTool();
         using var client = OfficialImageDownloader.CreateClient();
         client.Timeout = TimeSpan.FromSeconds(60);
         isoTool = await new OscdimgAcquirer(client).EnsureAsync(Path.Combine(dataDirectory, "tools"),
             new UiProgress<string>(text => DispatcherQueue.TryEnqueue(() => ToolStatus.Text = text)), token);
-        ToolStatus.Text = "Image and ISO tools ready.";
+        ToolStatus.Text = UiText.FromEnglish("Image and ISO tools ready.") + (SkippedImageTools ? " " + UiText.Get("Tools.TrustedFallback") : "");
+        ToolTipService.SetToolTip(ToolStatus, string.Join("\n", servicingDiagnostics));
     }
 
     private void OnModeChanged(object sender, SelectionChangedEventArgs args)
@@ -843,6 +1062,9 @@ public sealed partial class MainWindow : Window
         CustomCoreCheck.IsOn = false;
         coreAcknowledged = false;
         ExpertConsent.IsChecked = false;
+        NativePayloadConsent.IsChecked = false;
+        recipeIsoSizeLimit = null;
+        ShrinkBootCheck.IsChecked = false;
         applyingMode = false;
         UpdateModePresentation();
         UpdateCounts();
@@ -850,16 +1072,22 @@ public sealed partial class MainWindow : Window
     private void UpdateModePresentation()
     {
         CustomChoices.Visibility = SelectedMode == BuildMode.Custom ? Visibility.Visible : Visibility.Collapsed;
+        CustomMediaSettings.Visibility = SelectedMode == BuildMode.Custom ? Visibility.Visible : Visibility.Collapsed;
+        PresetPreview.Visibility = SelectedMode == BuildMode.Custom ? Visibility.Collapsed : Visibility.Visible;
+        var presetOptions = PresetRemovalPreview.ForMode(SelectedMode);
+        var presetRemovesEdgeFiles = presetOptions.Any(option => option.Id == "edge-files");
+        PresetOptionsList.ItemsSource = presetOptions.Select(option => new OptionChoice(option, presetRemovesEdgeFiles)).ToArray();
+        PresetCoreDetails.Visibility = UsesCore ? Visibility.Visible : Visibility.Collapsed;
         CoreWarning.IsOpen = UsesCore;
         CoreConsentStatus.Visibility = UsesCore ? Visibility.Visible : Visibility.Collapsed;
-        CoreConsentStatus.Text = coreAcknowledged ? "Core limitations accepted for this build." : "You will be asked to accept Core's limitations before continuing.";
-        ModeDescription.Text = SelectedMode switch
+        CoreConsentStatus.Text = UiText.Get(coreAcknowledged ? "Core.Accepted" : "Core.WillAsk");
+        ModeDescription.Text = UiText.FromEnglish(SelectedMode switch
         {
             BuildMode.Tiny11 => "Original Tiny11 removals, including Edge/WebView2 and OneDrive binaries. Windows Update, Defender and recovery are kept. Choose Custom to change individual removals.",
             BuildMode.Tiny11Core => "Tiny11 Core removals, including irreversible component pruning. Choose Custom to change individual removals.",
             _ => "Start with nothing selected, then choose what to remove or disable. You can also list individual components, including protected items."
-        };
-        SourceMode.Text = $"Build mode: {(ModeChoice.SelectedItem as ComboBoxItem)?.Content}";
+        });
+        SourceMode.Text = UiText.Format("Mode.Selected", (ModeChoice.SelectedItem as ComboBoxItem)?.Content);
         MarkChoice(Tiny11Selection, SelectedMode == BuildMode.Tiny11);
         MarkChoice(CoreSelection, SelectedMode == BuildMode.Tiny11Core);
         MarkChoice(CustomSelection, SelectedMode == BuildMode.Custom);
@@ -869,7 +1097,7 @@ public sealed partial class MainWindow : Window
     private static void MarkChoice(Button card, bool selected)
     {
         card.Style = (Style)Application.Current.Resources[selected ? "ModeCardSelected" : "ModeCard"];
-        Microsoft.UI.Xaml.Automation.AutomationProperties.SetItemStatus(card, selected ? "Selected" : "Not selected");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetItemStatus(card, UiText.Get(selected ? "Common.Selected" : "Common.NotSelected"));
     }
     private void OnChoicesChanged(object sender, RoutedEventArgs args)
     {
@@ -886,15 +1114,21 @@ public sealed partial class MainWindow : Window
     private void OnOptionFilterChanged(object sender, SelectionChangedEventArgs args) { if (initialized) FilterOptions(); }
     private void FilterOptions()
     {
-        var category = (OptionFilter.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "All";
-        OptionsList.ItemsSource = options.Where(o => category == "All" || o.Category == category).ToArray();
+        var category = (OptionFilter.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "";
+        OptionsList.ItemsSource = options.Where(o => category.Length == 0 || o.Option.Category == category).ToArray();
     }
     private void UpdateCounts()
     {
         if (!initialized) return;
         var custom = inventory.Count > 0 ? inventory.Count(i => i.Selected) : pendingActions.Length;
-        SelectionCount.Text = $"{options.Count(o => o.Selected)} removal groups selected · {custom} advanced actions";
-        ExpertCount.Text = $"{inventory.Count:N0} components listed · {custom:N0} advanced actions selected.";
+        SelectionCount.Text = UiText.Format("Removals.SelectionCount", options.Count(o => o.Selected), custom);
+        ExpertCount.Text = UiText.Format("Inventory.Count", inventory.Count, custom);
+        var directGroups = SelectedMode == BuildMode.Custom && options.Any(option => option.Selected && option.Option.CustomOnly);
+        NativePayloadWarning.IsOpen = directGroups;
+        NativePayloadConsent.Visibility = directGroups ? Visibility.Visible : Visibility.Collapsed;
+        RecipeLimitPanel.Visibility = SelectedMode == BuildMode.Custom && recipeIsoSizeLimit is not null ? Visibility.Visible : Visibility.Collapsed;
+        RecipeLimitText.Text = recipeIsoSizeLimit is { } limit ? UiText.Format("CustomMedia.ReviewLimit", limit) : "";
+        ExportInventoryButton.IsEnabled = !busy && inventory.Count > 0;
         UpdateNavigation();
     }
 
@@ -933,22 +1167,26 @@ public sealed partial class MainWindow : Window
         });
     }
 
-    private void ClearInventory()
+    private void ClearInventory(bool preserveSelections = false)
     {
+        var retained = preserveSelections ? (inventory.Count > 0 ?
+            inventory.Where(item => item.Selected).Select(item => item.Action).ToArray() : pendingActions) : [];
         inventory = [];
-        pendingActions = [];
+        pendingActions = retained;
         InventoryList.ItemsSource = null;
-        ExpertPanel.Visibility = Visibility.Collapsed;
+        ExpertPanel.Visibility = retained.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
         ExpertConsent.IsChecked = false;
+        NativePayloadConsent.IsChecked = false;
+        coreAcknowledged = false;
         UpdateCounts();
     }
     private void OnInventoryFilterChanged(object sender, TextChangedEventArgs args) { if (initialized) FilterInventory(); }
     private void OnInventoryFilterSelection(object sender, SelectionChangedEventArgs args) { if (initialized) FilterInventory(); }
     private void FilterInventory()
     {
-        var filter = (InventoryFilter.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "All";
+        var filter = (InventoryFilter.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "";
         var query = InventorySearch.Text.Trim();
-        InventoryList.ItemsSource = inventory.Where(i => (filter == "All" || i.Item.Kind.ToString() == filter) &&
+        InventoryList.ItemsSource = inventory.Where(i => (filter.Length == 0 || i.Item.Kind.ToString() == filter) &&
             (query.Length == 0 || i.Title.Contains(query, StringComparison.OrdinalIgnoreCase) ||
              i.Detail.Contains(query, StringComparison.OrdinalIgnoreCase))).ToArray();
     }
@@ -963,57 +1201,74 @@ public sealed partial class MainWindow : Window
     {
         var recipe = CreateRecipe();
         var text = new StringBuilder();
-        text.AppendLine($"IMAGE       {image?.Summary ?? "Not inspected"}");
-        text.AppendLine($"MODE        {(ModeChoice.SelectedItem as ComboBoxItem)?.Content}");
-        if (SelectedMode == BuildMode.Custom) text.AppendLine($"CORE REMOVALS {UsesCore}");
-        text.AppendLine($"SOURCE      {recipe.SourcePath}");
-        text.AppendLine($"OUTPUT      {recipe.OutputPath}");
-        text.AppendLine($"WORKSPACE   {recipe.WorkspacePath}");
-        text.AppendLine($"IMAGE TOOL  {recipe.DismPath}");
-        text.AppendLine($"ISO TOOL    {recipe.OscdimgPath}");
-        text.AppendLine($"COMPRESSION {recipe.Compression}");
-        text.AppendLine($"TURBO       {recipe.TurboMode}");
-        text.AppendLine($"CACHE CLEAN {recipe.RemoveRedundantData}");
-        text.AppendLine($"OMIT SXS    {recipe.OmitNetFx3SetupPayload}");
-        text.AppendLine($"COMPACT     {recipe.CompactInstallation}");
-        text.AppendLine($".NET 3.5    {recipe.EnableNetFx3}");
-        text.AppendLine($"LOCAL OOBE  {recipe.PreferLocalAccount} (best effort)");
-        if (SetupLabels.LegacyReason(recipe) is { } legacyReason) text.AppendLine($"LEGACY SETUP automatic, needed for {legacyReason}");
-        text.AppendLine("\nREMOVE / DISABLE");
-        foreach (var option in options.Where(o => o.Selected)) text.AppendLine($"  {option.Title}");
-        foreach (var action in recipe.ExpertActions) text.AppendLine($"  EXPERT {action.Mode} {action.Kind}: {action.Identity}");
-        text.AppendLine("\nUNSELECTED ITEMS ARE KEPT.");
-        if (recipe.Flavor == BuildFlavor.Core)
-            text.AppendLine("\nCORE: irreversible component pruning, WinRE removed, Update and Defender disabled. Install optional features now, not after creation.");
-        if (recipe.ExpertActions.Length > 0)
-            text.AppendLine("\nEXPERT: dependencies are not resolved. Protected and boot-critical removals may produce an unbootable image.");
-        text.AppendLine("\nPolicies may be ignored by a particular Windows build/edition or changed by updates. VM boot validation is required.");
+        void Row(string key, object? value) => text.AppendLine(UiText.Format(key, value));
+        Row("Review.Image", image?.Summary ?? UiText.Get("Image.NotInspected"));
+        Row("Review.Mode", (ModeChoice.SelectedItem as ComboBoxItem)?.Content);
+        if (SelectedMode == BuildMode.Custom) Row("Review.CoreRemovals", YesNo(UsesCore));
+        if (recipe.IsoSizeLimitBytes is { } limit) Row("CustomMedia.ReviewLimit", limit);
+        Row("Review.Source", recipe.SourcePath);
+        Row("Review.Output", recipe.OutputPath);
+        Row("Review.Workspace", recipe.WorkspacePath);
+        Row("Review.ImageTool", recipe.DismPath);
+        Row("Review.IsoTool", recipe.OscdimgPath);
+        Row("Review.Compression", CompressionLabel(recipe.Compression));
+        Row("Review.Turbo", OnOff(recipe.TurboMode));
+        Row("Review.RedundantData", UiText.Get(recipe.RemoveRedundantData ? "Common.Remove" : "Common.Keep"));
+        Row("Review.SetupPayload", UiText.Get(recipe.OmitNetFx3SetupPayload ? "Common.Omit" : "Common.Keep"));
+        Row("Review.Compact", OnOff(recipe.CompactInstallation));
+        Row("Review.NetFx", YesNo(recipe.EnableNetFx3));
+        Row("Review.LocalAccount", UiText.Get(recipe.PreferLocalAccount ? "Common.Preferred" : "Common.Default"));
+        if (SetupLabels.Legacy(recipe) is { } legacy) text.AppendLine(legacy);
+        text.AppendLine();
+        text.AppendLine(UpdatePackagesSummary(recipe));
+        text.AppendLine();
+        text.AppendLine(UiText.Get("Review.RemoveDisable"));
+        foreach (var option in options.Where(option => option.Selected)) text.AppendLine("  " + option.Title);
+        foreach (var action in recipe.ExpertActions) text.AppendLine($"  {action.Mode} {action.Kind}: {action.Identity}");
+        text.AppendLine();
+        text.AppendLine(UiText.Get("Review.UnselectedKept"));
+        if (recipe.Flavor == BuildFlavor.Core) text.AppendLine(UiText.Get("Review.CoreWarning"));
+        if (recipe.ExpertActions.Length > 0) text.AppendLine(UiText.Get("Review.ExpertWarning"));
+        text.AppendLine(UiText.Get("Review.PolicyWarning"));
         return text.ToString();
     }
+
+    private static string OnOff(bool value) => UiText.Get(value ? "Common.On" : "Common.Off");
+    private static string YesNo(bool value) => UiText.Get(value ? "Common.Yes" : "Common.No");
+    private static string CompressionLabel(Compression value) => UiText.Get(value switch
+    {
+        Compression.Recovery => "Compression.Recovery", Compression.Maximum => "Compression.Maximum", _ => "Compression.Fast"
+    });
+
+    private static string UpdatePackagesSummary(BuildRecipe recipe) => UiText.Format("Updates.ReviewCount", recipe.UpdatePackages.Length) +
+        (recipe.UpdatePackages.Length == 0 ? "" : "\n" + string.Join("\n", recipe.UpdatePackages.Select((path, index) => $"{index + 1}. {Path.GetFileName(path)}")));
 
     private void UpdateReview()
     {
         var recipe = CreateRecipe();
         ReviewText.Text = CreateReview();
-        ReviewImage.Text = image?.Summary ?? "No image selected";
+        ReviewImage.Text = image?.Summary ?? UiText.Get("Image.NoneSelected");
         ReviewMode.Text = (ModeChoice.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
-        ReviewRemovals.Text = $"{recipe.SelectedOptions.Length} removal groups · {recipe.ExpertActions.Length} individual actions\n" +
-            (UsesCore ? "No servicing, recovery or Defender." : SelectedMode == BuildMode.Custom ?
-                "Custom removals may affect servicing, recovery or security." : "Windows Update, recovery and Defender retained.");
-        ReviewPaths.Text = $"ISO\n{recipe.OutputPath}\n\nWorkspace\n{recipe.WorkspacePath}";
-        var compression = recipe.Compression switch { Compression.Recovery => "Recovery ESD", Compression.Maximum => "Maximum WIM", _ => "Fast WIM" };
-        ReviewOptions.Text = $"{compression} compression\nTurbo mode: {(recipe.TurboMode ? "On" : "Off")}\n" +
-            $"Redundant data: {(recipe.RemoveRedundantData ? "Remove" : "Keep")}\n.NET setup payload: {(recipe.OmitNetFx3SetupPayload ? "Omit" : "Keep")}\n" +
-            $"Compact installation: {(recipe.CompactInstallation ? "On" : "Off")}\n.NET 3.5: {(recipe.EnableNetFx3 ? "Included" : "Not included")}\n" +
-            $"Local-account setup: {(recipe.PreferLocalAccount ? "Preferred" : "Default")}\nWorking files: {(recipe.KeepWorkingFiles ? "Keep" : "Clean after build")}" +
-            (SetupLabels.Legacy(recipe) is { } legacy ? "\n" + legacy : "");
+        ReviewRemovals.Text = UiText.Format("Review.RemovalCounts", recipe.SelectedOptions.Length, recipe.ExpertActions.Length) + "\n" +
+            UiText.Get(UsesCore ? "Review.CoreEffects" : SelectedMode == BuildMode.Custom ? "Review.CustomEffects" : "Review.RegularEffects");
+        ReviewPaths.Text = UiText.Format("Review.Paths", recipe.OutputPath, recipe.WorkspacePath);
+        ReviewOptions.Text = UiText.Format("Review.Options", CompressionLabel(recipe.Compression), OnOff(recipe.TurboMode),
+            UiText.Get(recipe.RemoveRedundantData ? "Common.Remove" : "Common.Keep"),
+            UiText.Get(recipe.OmitNetFx3SetupPayload ? "Common.Omit" : "Common.Keep"), OnOff(recipe.CompactInstallation),
+            UiText.Get(recipe.EnableNetFx3 ? "Common.Included" : "Common.NotIncluded"),
+            UiText.Get(recipe.PreferLocalAccount ? "Common.Preferred" : "Common.Default"),
+            UiText.Get(recipe.KeepWorkingFiles ? "Common.Keep" : "Common.CleanAfterBuild")) +
+            (SetupLabels.Legacy(recipe) is { } legacy ? "\n" + legacy : "") + "\n\n" + UpdatePackagesSummary(recipe) +
+            "\n" + CustomMediaSummary(recipe);
     }
 
     private const string BuildDescriptionText = "The selected edition will be copied, modified, compressed and saved as a bootable ISO.";
 
     // The legacy installer is derived from the removals, never chosen, so this only reports it.
-    private void UpdateBuildDescription(BuildRecipe recipe) => BuildDescription.Text = BuildDescriptionText +
-        (SetupLabels.LegacyReason(recipe) is { } reason ? $" The legacy installer is turned on automatically for {reason}." : "");
+    private void UpdateBuildDescription(BuildRecipe recipe) => BuildDescription.Text =
+        UiText.FromEnglish(BuildDescriptionText) +
+        (SetupLabels.LegacyReason(recipe) is { } reason ? UiText.Format("Build.LegacyDescription", reason) : "") +
+        "\n" + CustomMediaSummary(recipe);
 
     private async Task StartBuildAsync()
     {
@@ -1021,21 +1276,22 @@ public sealed partial class MainWindow : Window
         try { recipe = CreateRecipe(); recipe.ValidateOptions(); PathSafety.Validate(recipe); }
         catch (Exception error) { ShowNotice("The recipe is not ready.", ErrorText.Reason(error), InfoBarSeverity.Error); return; }
         if (!await Confirm("Create this offline Windows image?",
-            $"Output: {recipe.OutputPath}\n\nMode: {(ModeChoice.SelectedItem as ComboBoxItem)?.Content}\nRemoval groups: {recipe.SelectedOptions.Length}\nIndividual actions: {recipe.ExpertActions.Length}" +
-            (SetupLabels.Legacy(recipe) is { } legacy ? "\n" + legacy : ""),
+            UiText.Format("Build.Confirmation", recipe.OutputPath, (ModeChoice.SelectedItem as ComboBoxItem)?.Content,
+                recipe.SelectedOptions.Length, recipe.ExpertActions.Length) + "\n" + UpdatePackagesSummary(recipe) +
+            (SetupLabels.Legacy(recipe) is { } legacy ? "\n" + legacy : "") + "\n" + CustomMediaSummary(recipe),
             "Build")) return;
         await RunOperation(OperationKind.Build, async token =>
         {
             ResetBuildPage();
             BuildActivity.IsActive = true;
             BuildBar.IsIndeterminate = true;
-            CurrentMessage.Text = "Preparing image tools…";
+            CurrentMessage.Text = UiText.FromEnglish("Preparing image tools…");
             await EnsureToolsAsync(token);
             recipe = CreateRecipe();
             BeginBuildRun("Building");
             var reporter = BuildProgressReporter();
             var built = await Task.Run(() => engine.BuildAsync(recipe, reporter, token), token);
-            ShowBuildResult(built, resumed: false, turbo: recipe.TurboMode);
+            ShowBuildResult(built, resumed: false, turbo: recipe.TurboMode, updateCount: recipe.UpdatePackages.Length);
         });
     }
 
@@ -1053,10 +1309,11 @@ public sealed partial class MainWindow : Window
         ResultPanel.Visibility = Visibility.Collapsed;
         ResultWarnings.IsOpen = false;
         liveLog.Clear();
+        foreach (var diagnostic in servicingDiagnostics) liveLog.Add("[Tools] " + diagnostic);
         RefreshLog(force: true);
-        BuildHeading.Text = "Build";
-        CurrentStage.Text = "Waiting to start";
-        CurrentMessage.Text = "No changes have been made.";
+        BuildHeading.Text = UiText.FromEnglish("Build");
+        CurrentStage.Text = UiText.FromEnglish("Waiting to start");
+        CurrentMessage.Text = UiText.FromEnglish("No changes have been made.");
         BuildGlyph.Glyph = "\uE7C5";
         BuildActivity.IsActive = false;
         BuildBar.IsIndeterminate = false;
@@ -1070,56 +1327,67 @@ public sealed partial class MainWindow : Window
 
     private void BeginBuildRun(string heading)
     {
-        BuildHeading.Text = heading;
+        BuildHeading.Text = UiText.FromEnglish(heading);
         BuildActivity.IsActive = true;
         BuildBar.IsIndeterminate = true;
     }
 
-    private void ShowBuildResult(BuildResult built, bool resumed, bool turbo)
+    private void ShowBuildResult(BuildResult built, bool resumed, bool turbo, int updateCount)
     {
         FlushBuildProgress(flushAll: true);
         result = built;
         workDirectory = built.WorkDirectory;
         ResultPath.Text = built.IsoPath;
         ResultHash.Text = built.Sha256;
-        var size = File.Exists(built.IsoPath) ? $" · {new FileInfo(built.IsoPath).Length / (1024d * 1024 * 1024):N2} GiB ISO" : "";
-        var metrics = new List<string>
-        {
-            $"{(resumed ? "Resumed build" : turbo ? "Turbo build" : "Standard build")} · {built.Duration.TotalMinutes:N1} minutes{(resumed ? " in total" : "")}{size}"
-        };
-        if (!resumed || built.RemovedLogicalBytes > 0 || built.OmittedSetupBytes > 0)
-            metrics.Add($"Redundant data removed: {built.RemovedLogicalBytes / (1024d * 1024):N1} MiB logical · " +
-                $"Setup payload omitted: {built.OmittedSetupBytes / (1024d * 1024):N1} MiB");
-        metrics.Add("Detailed stage timings are saved with the build report.");
-        ResultMetrics.Text = string.Join("\n", metrics);
+        resultResumed = resumed;
+        resultTurbo = turbo;
+        resultUpdateCount = updateCount;
+        RenderResultMetrics(built, resumed, turbo, updateCount);
         var warnings = built.Warnings;
         // A cancel prompt open for this run reports the warning too, instead of calling the end clean.
         if (warnings.Count > 0)
-            active?.NoteWarning("The ISO was saved with warnings. See the warnings on the page.");
+            active?.NoteWarning(UiText.FromEnglish("The ISO was saved with warnings. See the warnings on the page."));
         ResultWarnings.IsOpen = warnings.Count > 0;
         if (warnings.Count > 0)
             ResultWarnings.Message = string.Join("\n", warnings.Take(4).Select(w => "• " + ErrorText.Summary(w, 200))) +
-                (warnings.Count > 4 ? $"\n• {warnings.Count - 4} more in the build log" : "");
+                (warnings.Count > 4 ? "\n• " + UiText.Format("Result.MoreWarnings", warnings.Count - 4) : "");
         ResultPanel.Visibility = Visibility.Visible;
-        BuildHeading.Text = "ISO created";
-        CurrentStage.Text = "Complete";
+        BuildHeading.Text = UiText.FromEnglish("ISO created");
+        CurrentStage.Text = UiText.FromEnglish("Complete");
         BuildActivity.IsActive = false;
         BuildGlyph.Glyph = "\uE73E";
         if (resumed) board.MarkEarlierPhasesDone();
         board.Complete();
         OverallBar.Value = 100;
         BuildPercent.Text = "100%";
-        OverallStep.Text = "All stages done";
+        OverallStep.Text = UiText.FromEnglish("All stages done");
         CurrentPercent.Text = "100%";
         HistoryCount.Text = StageSummary.Describe(board);
         BuildBar.IsIndeterminate = false;
         BuildBar.Value = 100;
-        CurrentMessage.Text = warnings.Count > 0 ?
+        CurrentMessage.Text = UiText.FromEnglish(warnings.Count > 0 ?
             "The ISO was saved with warnings. See the skipped work and other details below." :
-            "The ISO and build report have been saved. Test the ISO in a VM before use.";
+            "The ISO and build report have been saved. Test the ISO in a VM before use.");
         stoppedRun = null;
         stoppedHasCheckpoint = false;
         completed = true;
+    }
+
+    private void RenderResultMetrics(BuildResult built, bool resumed, bool turbo, int updateCount)
+    {
+        var size = File.Exists(built.IsoPath) ? UiText.Format("Result.IsoSize", new FileInfo(built.IsoPath).Length / (1024d * 1024 * 1024)) : "";
+        var metrics = new List<string>
+        {
+            UiText.Format("Result.Duration", UiText.Get(resumed ? "Result.ResumedBuild" : turbo ? "Result.TurboBuild" : "Result.StandardBuild"),
+                built.Duration.TotalMinutes, resumed ? UiText.Get("Result.InTotal") : "", size)
+        };
+        if (!resumed || built.RemovedLogicalBytes > 0 || built.OmittedSetupBytes > 0)
+            metrics.Add(UiText.Format("Result.RemovedData", built.RemovedLogicalBytes / (1024d * 1024), built.OmittedSetupBytes / (1024d * 1024)));
+        if (updateCount > 0) metrics.Add(UiText.Format("Result.UpdateResults", updateCount));
+        if (built.IsoSizeLimitBytes is { } budget && File.Exists(built.IsoPath))
+            metrics.Add(UiText.Format("CustomMedia.ResultSize", new FileInfo(built.IsoPath).Length, budget));
+        metrics.Add(UiText.Get("Result.TimingsSaved"));
+        ResultMetrics.Text = string.Join("\n", metrics);
     }
 
     private IProgress<BuildProgress> BuildProgressReporter() => new UiProgress<BuildProgress>(progressUpdates.Enqueue);
@@ -1139,7 +1407,7 @@ public sealed partial class MainWindow : Window
                 // the build, so it must not move the page's stage, bars or history.
                 if (!string.IsNullOrWhiteSpace(p.Message) && !BuildProgressText.IsConsoleProgress(p.Message))
                 {
-                    if (running is OperationKind.Build or OperationKind.Resume) CurrentMessage.Text = $"Cancellation requested. {p.Message}…";
+                    if (running is OperationKind.Build or OperationKind.Resume) CurrentMessage.Text = UiText.Format("Cancel.RequestedDetail", UiText.FromEnglish(p.Message));
                     liveLog.Add($"[{p.Stage}] {BuildProgressText.ForDisplay(p.Message)}");
                 }
                 continue;
@@ -1152,11 +1420,11 @@ public sealed partial class MainWindow : Window
             }
             if (!string.IsNullOrWhiteSpace(p.Message) && !BuildProgressText.IsConsoleProgress(p.Message))
             {
-                CurrentStage.Text = p.Stage;
+                CurrentStage.Text = UiText.FromEnglish(p.Stage);
                 // Once cancellation has been requested, that status stays until the run actually stops.
                 if (!cancelRequested)
                     CurrentMessage.Text = p.State == BuildOperationState.Failed ?
-                        p.Message + " failed. Expand this stage for error details." : p.Message;
+                        UiText.Format("Progress.OperationFailed", UiText.FromEnglish(p.Message)) : UiText.FromEnglish(p.Message);
             }
             BuildBar.IsIndeterminate = p.Percent is null && p.State is not (BuildOperationState.Completed or BuildOperationState.Failed or BuildOperationState.Cancelled);
             if (p.Percent is double percent) BuildBar.Value = percent;
@@ -1174,7 +1442,7 @@ public sealed partial class MainWindow : Window
                 var overall = start + (end - start) * stage.Fraction(p);
                 OverallBar.Value = Math.Max(OverallBar.Value, overall);
                 BuildPercent.Text = $"{OverallBar.Value:0}%";
-                OverallStep.Text = $"Stage {phase + 1} of {board.Stages.Length}";
+                OverallStep.Text = UiText.Format("Progress.StageCount", phase + 1, board.Stages.Length);
                 BuildGlyph.Glyph = stage.Glyph;
             }
             var line = p.Detail ?? (p.State is null ? null : p.Message);
@@ -1287,7 +1555,7 @@ public sealed partial class MainWindow : Window
     private void AfterCancelRequested()
     {
         if (running is OperationKind.Build or OperationKind.Resume)
-            CurrentMessage.Text = "Cancellation requested. Waiting for the current operation to finish…";
+            CurrentMessage.Text = UiText.FromEnglish("Cancellation requested. Waiting for the current operation to finish…");
         Working("Cancelling…");
         UpdateNavigation();
     }
@@ -1335,7 +1603,7 @@ public sealed partial class MainWindow : Window
             detail.Style = hint;
             footnote.Style = hint;
             Microsoft.UI.Xaml.Automation.AutomationProperties.SetLiveSetting(status, Microsoft.UI.Xaml.Automation.Peers.AutomationLiveSetting.Polite);
-            Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(bar, "Cancellation progress");
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(bar, UiText.Get("Cancel.Progress"));
             progress.Children.Add(status);
             progress.Children.Add(bar);
             progress.Children.Add(detail);
@@ -1378,14 +1646,14 @@ public sealed partial class MainWindow : Window
             });
             Safely("The cancel dialog could not show its message.", () =>
             {
-                dialog.Title = view.Title;
+                dialog.Title = UiText.FromEnglish(view.Title);
                 var errored = view.Tone == CancelTone.Error;
-                body.Text = view.Body;
+                body.Text = UiText.FromEnglish(view.Body);
                 body.Visibility = view.Body.Length > 0 && !errored ? Visibility.Visible : Visibility.Collapsed;
                 // An outcome that needs attention is the notice itself; cleanup problems beside a clean end are its warning.
                 var message = errored ? string.Join(" ", new[] { view.Body, view.Warning }.Where(text => text.Length > 0)) : view.Warning;
                 notice.Severity = errored ? InfoBarSeverity.Error : InfoBarSeverity.Warning;
-                notice.Message = message;
+                notice.Message = UiText.FromEnglish(message);
                 notice.IsOpen = message.Length > 0;
                 Show(status, view.Status);
                 Show(detail, view.Detail);
@@ -1393,15 +1661,15 @@ public sealed partial class MainWindow : Window
             });
             Safely("The cancel dialog could not update its buttons.", () =>
             {
-                dialog.PrimaryButtonText = view.ConfirmText ?? "";
-                dialog.SecondaryButtonText = view.LinkText;
-                dialog.CloseButtonText = view.CloseText ?? "";
+                dialog.PrimaryButtonText = UiText.FromEnglish(view.ConfirmText ?? "");
+                dialog.SecondaryButtonText = UiText.FromEnglish(view.LinkText);
+                dialog.CloseButtonText = UiText.FromEnglish(view.CloseText ?? "");
             });
         }
 
         private static void Show(TextBlock block, string text)
         {
-            block.Text = text;
+            block.Text = UiText.FromEnglish(text);
             block.Visibility = text.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
         }
 
@@ -1420,7 +1688,7 @@ public sealed partial class MainWindow : Window
             var copy = flow.View.Link == CancelLink.CopyDetails;
             var done = copy ? end is { Details.Length: > 0 } && copyDetails(end.Details) : end?.WorkDirectory is { } directory && openLogs(directory);
             Safely("The cancel dialog could not update its link.",
-                () => dialog.SecondaryButtonText = copy ? done ? "Copied" : "Could not copy" : done ? "Open logs" : "Could not open logs");
+                () => dialog.SecondaryButtonText = UiText.Get(copy ? done ? "Common.Copied" : "Common.CopyFailed" : done ? "Common.OpenLogs" : "Common.OpenLogsFailed"));
         }
 
         private void OnClosing(ContentDialog sender, ContentDialogClosingEventArgs args)
@@ -1443,24 +1711,31 @@ public sealed partial class MainWindow : Window
         var path = await SaveFile("tiny11-recipe", ".json");
         if (path is not null) { recipe.Write(path); ShowNotice("Recipe saved.", "It contains selections and local paths, not downloaded media or credentials."); }
     });
-    private async void OnLoadRecipe(object sender, RoutedEventArgs args) => await RunOperation(OperationKind.Recipe, async _ =>
+    private async void OnLoadRecipe(object sender, RoutedEventArgs args) => await LoadRecipeAsync(useCustom: false);
+
+    private Task LoadRecipeAsync(bool useCustom) => RunOperation(OperationKind.Recipe, async _ =>
     {
         var path = await PickFile(".json");
         if (path is null) return;
-        RestoreRecipe(BuildRecipe.Read(path));
+        var recipe = RecipeSelection.Read(path, useCustom);
+        RestoreRecipe(recipe);
         ShowNotice("Recipe loaded.", "Inspect the source again. Core/expert risk acknowledgements must be renewed.");
     });
 
     private void RestoreRecipe(BuildRecipe recipe)
     {
+        var portable = string.IsNullOrWhiteSpace(recipe.SourcePath);
+        var priorIndex = image?.Index;
+        recipe = RecipeSelection.BindPaths(recipe, CreateRecipe());
+        ClearInventory();
         SourcePathBox.Text = recipe.SourcePath;
         WorkspaceBox.Text = recipe.WorkspacePath;
         OutputBox.Text = recipe.OutputPath;
-        servicingTool = ToolLocator.FindDism();
+        servicingTool = FindServicingTool();
         applyingMode = true;
         ModeChoice.SelectedIndex = (int)CleanupCatalog.ModeForRecipe(recipe);
         CustomCoreCheck.IsOn = recipe.Flavor == BuildFlavor.Core && SelectedMode == BuildMode.Custom;
-        foreach (var choice in options) choice.Selected = recipe.SelectedOptions.Contains(choice.Option.Id);
+        RecipeSelection.ApplyGroups(options, recipe.SelectedOptions);
         applyingMode = false;
         CompressionChoice.SelectedIndex = (int)recipe.Compression;
         CompactCheck.IsOn = recipe.CompactInstallation;
@@ -1470,12 +1745,22 @@ public sealed partial class MainWindow : Window
         TurboCheck.IsOn = recipe.TurboMode;
         RedundantDataCheck.IsOn = recipe.RemoveRedundantData;
         OmitSetupCheck.IsOn = recipe.OmitNetFx3SetupPayload;
+        updatePackages.Restore(recipe.UpdatePackages);
+        UpdatePackageButtons();
         pendingActions = recipe.ExpertActions;
-        pendingImageIndex = recipe.ImageIndex;
+        pendingImageIndex = portable ? priorIndex : recipe.ImageIndex;
         pendingSourcePath = recipe.SourcePath;
+        recipeIsoSizeLimit = recipe.IsoSizeLimitBytes;
+        ShrinkBootCheck.IsChecked = recipe.ShrinkBootImage;
+        NativePayloadConsent.IsChecked = false;
         if (pendingActions.Length > 0) ExpertPanel.Visibility = Visibility.Visible;
         coreAcknowledged = false;
         ExpertConsent.IsChecked = false;
+        image = null;
+        EditionChoice.ItemsSource = null;
+        ImageBadge.Text = UiText.Get("Image.NoneSelected");
+        OptionFilter.SelectedIndex = 0;
+        FilterOptions();
         UpdateModePresentation();
         reached = 1;
         GoStep(1);
@@ -1509,7 +1794,7 @@ public sealed partial class MainWindow : Window
         await RunOperation(OperationKind.Recover, async token =>
         {
             Working("Recovering workspace…");
-            var dism = ToolLocator.FindDism();
+            var dism = FindServicingTool();
             ToolLocator.Validate(dism, "dism.exe");
             await Task.Run(() => engine.RecoverAsync(path, dism, token), token);
             ShowNotice("Workspace recovered.", "The interrupted working copy was discarded. Your source and logs were preserved.");
@@ -1567,14 +1852,14 @@ public sealed partial class MainWindow : Window
             workDirectory = candidate.JobDirectory;
             BuildActivity.IsActive = true;
             BuildBar.IsIndeterminate = true;
-            CurrentMessage.Text = "Preparing image tools…";
+            CurrentMessage.Text = UiText.FromEnglish("Preparing image tools…");
             await EnsureToolsAsync(token);
             recipe = recipe with { DismPath = servicingTool, OscdimgPath = isoTool };
             new BuildHost().ValidateTools(recipe);
             BeginBuildRun("Resuming");
             var reporter = BuildProgressReporter();
             var built = await Task.Run(() => engine.ResumeAsync(candidate.JobFile, recipe, reporter, token), token);
-            ShowBuildResult(built, resumed: true, turbo: recipe.TurboMode);
+            ShowBuildResult(built, resumed: true, turbo: recipe.TurboMode, updateCount: recipe.UpdatePackages.Length);
         });
     }
 
@@ -1587,7 +1872,7 @@ public sealed partial class MainWindow : Window
         if (workDirectory is null) return;
         if (!Directory.Exists(workDirectory))
         {
-            ShowNotice("The job folder is gone.", $"{workDirectory} no longer exists.", InfoBarSeverity.Warning);
+            ShowNotice(UiText.Get("Logs.FolderGone"), UiText.Format("Logs.FolderMissing", workDirectory), InfoBarSeverity.Warning);
             return;
         }
         OpenFolder(workDirectory);
@@ -1627,7 +1912,7 @@ public sealed partial class MainWindow : Window
         if (contrast == appliedContrast) return;
         appliedContrast = contrast;
         StepNumber.Visibility = contrast ? Visibility.Collapsed : Visibility.Visible;
-        ToolTipService.SetToolTip(ThemeChoice, contrast ? "Windows high contrast is on, so colors follow your system settings." : null);
+        ToolTipService.SetToolTip(ThemeChoice, contrast ? UiText.FromEnglish("Windows high contrast is on, so colors follow your system settings.") : null);
         ApplyTheme();
         UpdateNavigation();
     }

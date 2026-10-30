@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
@@ -52,7 +53,21 @@ public sealed class ProcessRunner : IProcessRunner
             try { output(line); }
             catch (Exception error) { Interlocked.CompareExchange(ref sinkFailure, ExceptionDispatchInfo.Capture(error), null); }
         }
-        if (!process.Start()) throw new IOException($"Unable to start {Path.GetFileName(executable)}.");
+        var started = false;
+        ExceptionDispatchInfo? privilegeRestoreFailure = null;
+        try
+        {
+            // CreateProcess inherits the process token. Restore it before any await, pipe callback or cancellation registration.
+            using var privileges = OperatingSystem.IsWindows() && Path.GetFileName(executable).Equals("dism.exe", StringComparison.OrdinalIgnoreCase)
+                ? new ImageOperations.PrivilegeScope("SeBackupPrivilege", "SeRestorePrivilege", "SeSecurityPrivilege") : null;
+            started = process.Start();
+        }
+        catch (Exception error) when (started && error is Win32Exception or AggregateException)
+        {
+            // Still drain and reap a child that started before a privilege-rollback failure; never report it as successful.
+            privilegeRestoreFailure = ExceptionDispatchInfo.Capture(error);
+        }
+        if (!started) throw new IOException($"Unable to start {Path.GetFileName(executable)}.");
         // Both pipes are read at once: a child that fills one while the other is unread would otherwise stall.
         var readers = Task.WhenAll(
             ReadLinesAsync(process.StandardOutput.BaseStream, "standard output", encoding, Receive),
@@ -66,6 +81,7 @@ public sealed class ProcessRunner : IProcessRunner
         // Killing DISM during mount/commit can orphan an image. Cancellation is checked at the next boundary.
         await process.WaitForExitAsync(CancellationToken.None).ConfigureAwait(false);
         var failures = await readers.ConfigureAwait(false);
+        privilegeRestoreFailure?.Throw();
         if (!finishOnCancellation) cancellationToken.ThrowIfCancellationRequested();
         if (failures.FirstOrDefault(failure => failure is not null) is { } undecodable)
             throw new InvalidDataException($"{Path.GetFileName(executable)} wrote {undecodable.Stream} that is not valid " +

@@ -77,6 +77,84 @@ public sealed class NativeTests(Xunit.Abstractions.ITestOutputHelper output)
         Assert.Throws<InvalidDataException>(() => new ImageOperations().RemoveOriginalFiles(fixture.Root, "x64", ["edge-files"], _ => { }));
     }
 
+    [Fact]
+    public void Individual_file_inventory_and_removals_include_native_files_drivers_fonts_and_32bit_payloads()
+    {
+        using var fixture = new BuildFixture();
+        var mount = CreateOwnedMount(fixture.Root);
+        string[] paths = [@"Windows\System32\unused.dll", @"Windows\System32\drivers\unused.sys",
+            @"Windows\Fonts\unused.ttf", @"Windows\SysWOW64\unused.dll",
+            @"Windows\SystemApps\FixtureApp\Assets\unused.png"];
+        foreach (var relative in paths)
+        {
+            var path = Path.Combine(mount, relative);
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            File.WriteAllText(path, "offline removable file");
+        }
+        var outside = Path.Combine(fixture.Root, "host.dll");
+        File.WriteAllText(outside, "must remain");
+        var items = FilePayloadCatalog.Read(mount);
+        Assert.All(items, item => Assert.True(item.Protected));
+        foreach (var relative in paths.Where(path => !path.Contains("SysWOW64", StringComparison.Ordinal)))
+            Assert.Contains(items, item => item.Identity == relative && item.Kind == ImageItemKind.FilePayload);
+        Assert.Contains(items, item => item.Identity == @"Windows\SysWOW64");
+        var actions = paths.Where(path => !path.Contains("SysWOW64", StringComparison.Ordinal))
+            .Select(path => new ExpertAction(ImageItemKind.FilePayload, path, ExpertActionMode.Remove))
+            .Append(new(ImageItemKind.FilePayload, @"Windows\SysWOW64", ExpertActionMode.Remove)).ToArray();
+        ImageInventory.ValidateActions(actions, items);
+        new ImageOperations().ApplyNativeActions(mount, actions, output.WriteLine);
+        Assert.All(paths, path => Assert.False(File.Exists(Path.Combine(mount, path))));
+        Assert.Equal("must remain", File.ReadAllText(outside));
+        Assert.True(File.Exists(Path.Combine(mount, @"Windows\System32\config\SYSTEM")));
+    }
+
+    [Fact]
+    public void Individual_file_actions_refuse_a_symlink_to_host_data_and_protected_hive_paths()
+    {
+        using var fixture = new BuildFixture();
+        var mount = CreateOwnedMount(fixture.Root);
+        var outside = Path.Combine(fixture.Root, "host.dll");
+        File.WriteAllText(outside, "must remain");
+        var link = Path.Combine(mount, @"Windows\System32\link.dll");
+        File.CreateSymbolicLink(link, outside);
+        var operations = new ImageOperations();
+        Assert.Throws<InvalidDataException>(() => operations.ApplyNativeActions(mount,
+            [new(ImageItemKind.FilePayload, @"Windows\System32\link.dll", ExpertActionMode.Remove)], output.WriteLine));
+        Assert.Throws<InvalidDataException>(() => operations.ApplyNativeActions(mount,
+            [new(ImageItemKind.FilePayload, @"Windows\System32\config\SYSTEM", ExpertActionMode.Remove)], output.WriteLine));
+        Assert.Equal("must remain", File.ReadAllText(outside));
+        File.Delete(link);
+    }
+
+    [Fact]
+    public void Portable_file_groups_remove_only_declared_targets_and_keep_storage_network_and_unselected_groups()
+    {
+        using var fixture = new BuildFixture();
+        var mount = CreateOwnedMount(fixture.Root);
+        var store = Path.Combine(mount, @"Windows\System32\DriverStore\FileRepository");
+        foreach (var name in new[] { "prnms006.inf_amd64_abcd", "scan001.inf_arm64_efgh", "stornvme.inf_amd64_keep", "netvsc.inf_amd64_keep" })
+        {
+            var folder = Path.Combine(store, name);
+            Directory.CreateDirectory(folder);
+            File.WriteAllText(Path.Combine(folder, "payload.sys"), "driver");
+        }
+        foreach (var folder in new[] { @"Windows\SysWOW64", @"Windows\Microsoft.NET", @"Windows\Web" })
+        {
+            Directory.CreateDirectory(Path.Combine(mount, folder));
+            File.WriteAllText(Path.Combine(mount, folder, "fixture.bin"), "payload");
+        }
+        var logs = new List<string>();
+        new ImageOperations().RemoveOriginalFiles(mount, "arm64", ["remove-wow64", "remove-print-drivers", "remove-extra-media"], logs.Add);
+        Assert.False(Directory.Exists(Path.Combine(mount, @"Windows\SysWOW64")));
+        Assert.False(Directory.Exists(Path.Combine(mount, @"Windows\Web")));
+        Assert.False(Directory.Exists(Path.Combine(store, "prnms006.inf_amd64_abcd")));
+        Assert.False(Directory.Exists(Path.Combine(store, "scan001.inf_arm64_efgh")));
+        Assert.True(File.Exists(Path.Combine(store, @"stornvme.inf_amd64_keep\payload.sys")));
+        Assert.True(File.Exists(Path.Combine(store, @"netvsc.inf_amd64_keep\payload.sys")));
+        Assert.True(File.Exists(Path.Combine(mount, @"Windows\Microsoft.NET\fixture.bin")));
+        Assert.Contains(logs, line => line.StartsWith("Not present:", StringComparison.Ordinal));
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -94,11 +172,11 @@ public sealed class NativeTests(Xunit.Abstractions.ITestOutputHelper output)
         using (var hive = OfflineRegistry.Load(software))
             foreach (var root in uninstall)
             {
-                foreach (var name in new[] { "Microsoft Edge", "Microsoft Edge Update", "Microsoft Edge WebView2 Runtime", "UnrelatedApp" })
+                foreach (var name in new[] { "Microsoft Edge", "Microsoft Edge Update", "Microsoft Edge WebView2 Runtime", "UnrelatedApp", "UnrelatedWebViewApp" })
                 {
                     using var key = OfflineRegistry.OpenWriteKey(hive.Root, root + "\\" + name);
                     key.SetValue("DisplayName", name);
-                    key.SetValue("Publisher", name == "UnrelatedApp" ? "Other publisher" : "Microsoft Corporation");
+                    key.SetValue("Publisher", name.StartsWith("Unrelated", StringComparison.Ordinal) ? "Other publisher" : "Microsoft Corporation");
                 }
             }
         var browser = Path.Combine(mount, @"Program Files (x86)\Microsoft\Edge\Application\msedge.exe");
@@ -112,12 +190,37 @@ public sealed class NativeTests(Xunit.Abstractions.ITestOutputHelper output)
             {
                 using var parent = hive.Root.OpenSubKey(root);
                 Assert.DoesNotContain("Microsoft Edge", parent!.GetSubKeyNames());
-                Assert.Contains("Microsoft Edge Update", parent.GetSubKeyNames());
-                Assert.Contains("Microsoft Edge WebView2 Runtime", parent.GetSubKeyNames());
+                Assert.DoesNotContain("Microsoft Edge Update", parent.GetSubKeyNames());
+                Assert.DoesNotContain("Microsoft Edge WebView2 Runtime", parent.GetSubKeyNames());
                 Assert.Contains("UnrelatedApp", parent.GetSubKeyNames());
+                Assert.Contains("UnrelatedWebViewApp", parent.GetSubKeyNames());
             }
-        Assert.Equal(2, messages.Count(message => message.StartsWith("Removed offline Edge uninstall entry:", StringComparison.Ordinal)));
+        Assert.Equal(6, messages.Count(message => message.StartsWith("Removed offline Edge uninstall entry:", StringComparison.Ordinal)));
         Assert.Empty(Directory.EnumerateFiles(Path.GetDirectoryName(mount)!, "*.hive.json"));
+    }
+
+    [Fact]
+    public void Registration_cleanup_does_not_hide_an_Edge_Update_or_WebView_runtime_that_still_exists()
+    {
+        using var fixture = new BuildFixture();
+        var mount = CreateOwnedMount(fixture.Root);
+        var software = Path.Combine(mount, @"Windows\System32\config\SOFTWARE");
+        SaveFixtureHive(software);
+        const string location = @"WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall";
+        using (var hive = OfflineRegistry.Load(software))
+            foreach (var name in new[] { "Microsoft Edge Update", "Microsoft Edge WebView2 Runtime" })
+            {
+                using var key = OfflineRegistry.OpenWriteKey(hive.Root, location + "\\" + name);
+                key.SetValue("DisplayName", name);
+                key.SetValue("Publisher", "Microsoft Corporation");
+            }
+        Directory.CreateDirectory(Path.Combine(mount, @"Program Files (x86)\Microsoft\EdgeUpdate"));
+        Directory.CreateDirectory(Path.Combine(mount, @"Program Files (x86)\Microsoft\EdgeWebView"));
+        EdgeRegistration.RemoveAfterFiles(mount, _ => { });
+        using var loaded = OfflineRegistry.Load(software, false);
+        using var parent = loaded.Root.OpenSubKey(location);
+        Assert.Contains("Microsoft Edge Update", parent!.GetSubKeyNames());
+        Assert.Contains("Microsoft Edge WebView2 Runtime", parent.GetSubKeyNames());
     }
 
     [Fact]

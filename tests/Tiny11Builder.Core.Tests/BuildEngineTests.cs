@@ -309,15 +309,22 @@ internal sealed class FakeRunner(int build, string architecture, List<string> ev
         {
             var file = Value("/WimFile:");
             var boot = file.EndsWith("boot.wim", StringComparison.OrdinalIgnoreCase);
+            var bootCount = boot ? (int)BitConverter.ToUInt32(File.ReadAllBytes(file), 44) : 0;
             if (!args.Any(a => a.StartsWith("/Index:")))
-                return Result(boot ? "Index : 1\nIndex : 2\n" : file.Contains(@"\source\") ? "Index : 3\n" : "Index : 1\n");
+                return Result(boot ? string.Concat(Enumerable.Range(1, bootCount).Select(index => $"Index : {index}\n")) :
+                    file.Contains(@"\source\") ? "Index : 3\n" : "Index : 1\n");
+            var name = boot ? (bootCount > 1 && args.Contains("/Index:1") ? "Microsoft Windows PE" : "Microsoft Windows Setup") : "Windows 11 Pro";
             return Result($"Deployment Image Servicing and Management tool\nVersion: 10.0.99999.1000\n" +
-                $"Name : {(boot ? "Microsoft Windows Setup" : "Windows 11 Pro")}\nDescription : Image\n" +
+                $"Name : {name}\nDescription : Image\n" +
                 $"Architecture : {architecture}\nVersion : 10.0.{build}\nServicePack Build : 123\n" +
                 $"Edition : Professional\nInstallation : Client\nSize : 16,000,000,000 bytes\n");
         }
         if (args.Contains("/Export-Image"))
-            File.WriteAllBytes(Value("/DestinationImageFile:"), FakeWim.Create(seed: (byte)(0x20 + exports++)));
+        {
+            var bytes = FakeWim.Create(seed: (byte)(0x20 + exports++));
+            if (args.Contains("/Bootable")) BitConverter.GetBytes(1u).CopyTo(bytes, 120);
+            File.WriteAllBytes(Value("/DestinationImageFile:"), bytes);
+        }
         if (args.Contains("/Get-ProvisionedAppxPackages")) return Result(
             "DisplayName : Microsoft.Copilot\nPackageName : Microsoft.Copilot_1.0_x64__8weky\n");
         if (args.Contains("/Get-Features") && lazyMount && FailLazyAccess)

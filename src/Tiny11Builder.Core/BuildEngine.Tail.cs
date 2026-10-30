@@ -16,8 +16,8 @@ public sealed partial class BuildEngine
         public IProgress<BuildProgress>? CancellationProgress { get; init; }
         public required DismClient Dism { get; init; }
         public required BuildExecutionPlan Execution { get; init; }
-        public required WindowsImage Image { get; init; }
-        public required string EfiRelative { get; init; }
+        public required WindowsImage Image { get; set; }
+        public required string EfiRelative { get; set; }
         public required string Staging { get; init; }
         public required string Mount { get; init; }
         public required string WorkingWim { get; init; }
@@ -30,11 +30,15 @@ public sealed partial class BuildEngine
         public bool UsedOptimizedMount { get; set; }
         public bool SetupPending { get; set; }
         public bool CleanupDeferredForPending { get; set; }
+        public long? BootImageBytesBefore { get; set; }
+        public long? BootImageBytesAfter { get; set; }
         public bool CompressPending { get; set; } = true;
         public string StageName { get; set; } = "Prepare";
         public bool Mounted { get; set; }
         public MediaStagingResult? StagingResult { get; set; }
         public IReadOnlyList<ImageCleanupResult> Cleanup { get; set; } = [];
+        public List<UpdatePackageResult> Updates { get; } = [];
+        public IReadOnlyList<ImageInventoryItem> UpdatePackageStates { get; set; } = [];
         public List<FeatureRemovalVerification> Features { get; } = [];
         public List<RemovalVerification> Capabilities { get; } = [];
         public ResumeCheckpoint? Checkpoint { get; set; }
@@ -121,7 +125,7 @@ public sealed partial class BuildEngine
             {
                 UsedOptimizedMount = s.UsedOptimizedMount, Execution = s.Execution, SetupMedia = s.StagingResult,
                 RedundantData = s.Cleanup, Features = s.Features.ToArray(), Capabilities = s.Capabilities.ToArray(),
-                Warnings = s.WarningSnapshot()
+                Warnings = s.WarningSnapshot(), Updates = s.Updates.ToArray(), UpdatePackageStates = s.UpdatePackageStates
             },
             ActiveMilliseconds = s.TotalActive.TotalMilliseconds,
             Operations = s.Tracking.SnapshotCompleting("stage:Commit", "checkpoint:committed")
@@ -164,7 +168,7 @@ public sealed partial class BuildEngine
 
     private async Task ApplySetupImageAsync(BuildSession s, CancellationToken token)
     {
-        s.Stage("Setup image", SetupInstaller.RequiresLegacy(s.Recipe) ?
+        s.Stage("Setup image", s.Recipe.ShrinkBootImage ? "Rebuilding a smaller boot.wim from the stock Windows Setup image." : SetupInstaller.RequiresLegacy(s.Recipe) ?
             "Enabling the legacy Windows installer required by component-store removals." :
             "Applying hardware-requirement settings to the Windows Setup boot image.", token);
         var bootWim = Path.Combine(s.Staging, @"sources\boot.wim");
@@ -174,14 +178,21 @@ public sealed partial class BuildEngine
         PathSafety.DeleteOwnedDirectory(privateDirectory, s.Job.Directory);
         Directory.CreateDirectory(privateDirectory);
         var privateBoot = Path.Combine(privateDirectory, "boot.wim");
-        File.Copy(bootWim, privateBoot, overwrite: false);
-        var bootImages = await s.Dism.GetImagesAsync(privateBoot, token).ConfigureAwait(false);
+        var bootImages = await s.Dism.GetImagesAsync(bootWim, token).ConfigureAwait(false);
         var setup = bootImages.FirstOrDefault(i => i.Name.Contains("Setup", StringComparison.OrdinalIgnoreCase)) ??
             bootImages.FirstOrDefault(i => i.Index == 2) ??
+            (bootImages.Count == 1 ? bootImages[0] : null) ??
             throw new InvalidDataException("Cannot identify Windows Setup in boot.wim.");
+        if (setup.Architecture != s.Image.Architecture)
+            throw new InvalidDataException("The stock Setup image architecture does not match the selected Windows edition.");
+        s.BootImageBytesBefore = new FileInfo(bootWim).Length;
+        if (s.Recipe.ShrinkBootImage)
+            await SetupInstaller.ExportSmallerBootImageAsync(s.Dism, bootWim, setup, privateBoot, token).ConfigureAwait(false);
+        else File.Copy(bootWim, privateBoot, overwrite: false);
+        var setupIndex = s.Recipe.ShrinkBootImage ? 1 : setup.Index;
         s.Dism.DisableOptimizedMount();
         s.Mounted = true;
-        await s.Dism.RunAsync(token, "/Mount-Image", $"/ImageFile:{privateBoot}", $"/Index:{setup.Index}",
+        await s.Dism.RunAsync(token, "/Mount-Image", $"/ImageFile:{privateBoot}", $"/Index:{setupIndex}",
             $"/MountDir:{s.Mount}").ConfigureAwait(false);
         if (s.Recipe.SelectedOptions.Contains("hardware-bypass"))
             registry.ApplySetupBypass(s.Mount, s.Log);
@@ -192,16 +203,25 @@ public sealed partial class BuildEngine
         Digest.RequireCompleteWim(privateBoot, "The edited Windows Setup image");
         // The edit has committed; validating and placing it is not interruptible, so finished work is not discarded.
         var edited = await s.Dism.GetImagesAsync(privateBoot, CancellationToken.None).ConfigureAwait(false);
-        if (edited.Count != bootImages.Count ||
+        if (s.Recipe.ShrinkBootImage ? edited.Count != 1 || !WindowsImageIdentity.Matches(edited[0], setup) :
+            edited.Count != bootImages.Count ||
             !edited.Select(image => image.Index).Order().SequenceEqual(bootImages.Select(image => image.Index).Order()))
             throw new InvalidDataException("The edited Windows Setup image no longer lists its original indexes. The staged boot.wim was left unchanged.");
         var (editedLength, editedSha) = await Digest.HashAsync(privateBoot, null, CancellationToken.None).ConfigureAwait(false);
+        s.BootImageBytesAfter = editedLength;
+        if (s.Recipe.ShrinkBootImage)
+        {
+            s.Log($"Stock boot.wim rebuilt with one bootable Setup index and maximum compression: {s.BootImageBytesBefore:N0} -> {editedLength:N0} bytes. Setup, GUI and native driver files are retained.");
+            if (editedLength >= s.BootImageBytesBefore)
+                s.Warn("This stock boot.wim was already compact; rebuilding it did not reduce its size. The actual byte counts are recorded.");
+        }
         // The replacement is announced durably BEFORE it happens, so the checkpoint can always describe the media. If that
         // record cannot be written, the staged original is simply left as it is.
         if (!UpdateCheckpoint(s, saved => saved with
         {
             SetupState = SetupProgress.Replacing, EditedBootSha256 = editedSha,
-            Report = saved.Report with { LegacyInstallerEnabled = SetupInstaller.RequiresLegacy(s.Recipe) }
+            Report = saved.Report with { LegacyInstallerEnabled = SetupInstaller.RequiresLegacy(s.Recipe),
+                BootImageBytesBefore = s.BootImageBytesBefore, BootImageBytesAfter = s.BootImageBytesAfter }
         }))
             throw new IOException("The saved progress could not record the Setup image replacement, so the staged boot.wim was left unchanged.");
         File.Move(privateBoot, bootWim, overwrite: true);
@@ -246,9 +266,9 @@ public sealed partial class BuildEngine
         // The export has finished. Checking, placing and checkpointing its result must not be interrupted by a cancellation
         // request, or the finished (and slowest) work would be lost; cancellation is observed at the next stage boundary.
         var finalImages = await s.Dism.GetImagesAsync(partial, CancellationToken.None).ConfigureAwait(false);
-        if (finalImages.Count != 1 || finalImages[0].Version.Build != s.Image.Version.Build ||
-            finalImages[0].Architecture != s.Image.Architecture)
+        if (finalImages.Count != 1 || !WindowsImageIdentity.Matches(finalImages[0], s.Image))
             throw new InvalidDataException("The final installation image failed its edition/build/architecture check.");
+        s.Image = finalImages[0];
         Digest.RequireCompleteWim(partial, "The compressed installation image");
         File.Move(partial, Path.Combine(sources, leaf), overwrite: false);
         PathSafety.DeleteOwnedDirectory(partialDirectory, s.Job.Directory);
@@ -279,6 +299,7 @@ public sealed partial class BuildEngine
                     var next = s.Checkpoint with
                     {
                         Phase = ResumePhase.Compressed, CompressedImage = entry, CompressedWith = compression,
+                        Image = s.Image,
                         StagedMedia = ReplaceEntry(s.Checkpoint.StagedMedia, entry), CreatedUtc = DateTimeOffset.UtcNow,
                         ActiveMilliseconds = s.TotalActive.TotalMilliseconds,
                         Operations = s.Tracking.SnapshotCompleting("stage:Compress", "checkpoint:compressed")
@@ -328,6 +349,7 @@ public sealed partial class BuildEngine
         {
             isoBytes = input.Length;
             await IsoStructure.ValidateAsync(input, token).ConfigureAwait(false);
+            RequireIsoBudget(isoBytes, s.Recipe.IsoSizeLimitBytes);
             sha = Convert.ToHexString(await SHA256.HashDataAsync(input, token).ConfigureAwait(false));
         }
         token.ThrowIfCancellationRequested();
@@ -402,7 +424,7 @@ public sealed partial class BuildEngine
         if (File.Exists(s.TemporaryIso)) Best("The verified ISO copy in the job folder could not be deleted", () => File.Delete(s.TemporaryIso));
         if (!recipe.KeepWorkingFiles)
         {
-            foreach (var name in new[] { "media", "mount", "scratch", "setup", "compress" })
+            foreach (var name in new[] { "media", "mount", "scratch", "setup", "compress", "updates" })
                 Best($"The {name} folder could not be removed", () => PathSafety.DeleteOwnedDirectory(Path.Combine(s.Job.Directory, name), s.Job.Directory));
             Best("The working image could not be deleted", () => DeleteWorkingWim(s.Job.Directory));
         }
@@ -412,11 +434,15 @@ public sealed partial class BuildEngine
             {
                 SchemaVersion = 1, CompletedUtc = DateTimeOffset.UtcNow, Image = s.Image, recipe.Flavor,
                 LegacyInstallerEnabled = SetupInstaller.RequiresLegacy(recipe),
+                recipe.ShrinkBootImage, recipe.IsoSizeLimitBytes,
+                s.BootImageBytesBefore, s.BootImageBytesAfter,
+                IsoBudgetMet = recipe.IsoSizeLimitBytes is { } budget ? (bool?)(isoBytes <= budget) : null,
                 recipe.SelectedOptions, recipe.ExpertActions, recipe.Compression, recipe.EnableNetFx3,
                 recipe.TurboMode, recipe.RemoveRedundantData, recipe.OmitNetFx3SetupPayload,
                 Execution = s.Execution, UsedOptimizedMount = s.UsedOptimizedMount, SetupMedia = s.StagingResult,
                 RedundantData = s.Cleanup, RemovedLogicalBytes = s.Cleanup.Sum(item => item.LogicalBytes),
                 OptionalFeatures = s.Features, Capabilities = s.Capabilities,
+                Updates = s.Updates, UpdatePackageStates = s.UpdatePackageStates,
                 Resumed = s.ResumedFrom is not null, ResumedFrom = s.ResumedFrom,
                 Output = recipe.OutputPath, Sha256 = sha, BootValidated = false, OperationLog = "operations.json",
                 TimingLog = "timings.json", OutputBytes = isoBytes, Warnings = s.Warnings.ToArray(),
@@ -431,7 +457,16 @@ public sealed partial class BuildEngine
             Path.Combine(s.Job.Directory, "timings.json"), TimingsJson(s)));
         Best("The log could not be flushed", s.Job.Flush);
         return new(recipe.OutputPath, sha, s.ReportPath, s.Job.Directory, s.TotalActive,
-            s.Cleanup.Sum(item => item.LogicalBytes), s.StagingResult?.OmittedBytes ?? 0) { Warnings = s.Warnings.ToArray() };
+            s.Cleanup.Sum(item => item.LogicalBytes), s.StagingResult?.OmittedBytes ?? 0)
+        { Warnings = s.Warnings.ToArray(), IsoSizeLimitBytes = recipe.IsoSizeLimitBytes };
+    }
+
+    internal static void RequireIsoBudget(long bytes, long? limit)
+    {
+        if (limit is { } budget && bytes > budget)
+            throw new InvalidDataException($"The complete ISO is {bytes:N0} bytes, exceeding the {budget:N0}-byte limit by " +
+                $"{bytes - budget:N0} bytes. It was not published. Reduce selected payloads or installer files; " +
+                "the installation image alone is not the ISO size.");
     }
 
     private static string TimingsJson(BuildSession s) => JsonSerializer.Serialize(new

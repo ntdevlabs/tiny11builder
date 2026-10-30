@@ -4,11 +4,31 @@ namespace Tiny11Builder.Core;
 
 public static class SetupInstaller
 {
-    public static bool RequiresLegacy(BuildRecipe recipe) => recipe.Flavor == BuildFlavor.Core ||
-        recipe.ExpertActions.Any(action => action.Kind == ImageItemKind.ComponentPayload && action.Mode == ExpertActionMode.Remove);
+    public static bool RequiresLegacy(BuildRecipe recipe) => recipe.Flavor == BuildFlavor.Core || recipe.SelectedOptions.Any(NativePayloadOptions.IsSelected) ||
+        recipe.ExpertActions.Any(action => action.Kind is ImageItemKind.ComponentPayload or ImageItemKind.FilePayload && action.Mode == ExpertActionMode.Remove);
 
     internal static bool RequiresBootEdit(BuildRecipe recipe) =>
-        recipe.SelectedOptions.Contains("hardware-bypass") || RequiresLegacy(recipe);
+        recipe.ShrinkBootImage || recipe.SelectedOptions.Contains("hardware-bypass") || RequiresLegacy(recipe);
+
+    internal static async Task ExportSmallerBootImageAsync(DismClient dism, string source, WindowsImage setup,
+        string destination, CancellationToken token)
+    {
+        PathSafety.RejectReparsePoints(source);
+        PathSafety.RejectReparsePoints(destination);
+        if (File.Exists(destination)) throw new IOException("The reduced boot image destination already exists.");
+        await dism.RunAsync(token, "/Export-Image", $"/SourceImageFile:{source}", $"/SourceIndex:{setup.Index}",
+            $"/DestinationImageFile:{destination}", "/Compress:max", "/Bootable", "/CheckIntegrity").ConfigureAwait(false);
+        Digest.RequireCompleteWim(destination, "The rebuilt stock Setup image");
+        var images = await dism.GetImagesAsync(destination, CancellationToken.None).ConfigureAwait(false);
+        if (images.Count != 1 || !WindowsImageIdentity.Matches(images[0], setup))
+            throw new InvalidDataException("The rebuilt stock Setup image changed version, architecture or identity.");
+        using var stream = File.OpenRead(destination);
+        stream.Position = 120;
+        var bootIndex = new byte[4];
+        stream.ReadExactly(bootIndex);
+        if (System.Buffers.Binary.BinaryPrimitives.ReadUInt32LittleEndian(bootIndex) != 1)
+            throw new InvalidDataException("The rebuilt stock boot.wim is not marked bootable at index 1.");
+    }
 
     internal static void ApplyLegacy(string mount, Action<string> log)
     {

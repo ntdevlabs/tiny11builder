@@ -18,6 +18,8 @@ public sealed class ServicingVersionTests
     [InlineData(26100, 1, 22631)]
     [InlineData(29691, 1, 26300)]
     [InlineData(29691, 1, 29691)]
+    [InlineData(26340, 1, 26340)]
+    [InlineData(29691, 1, 26340)]
     public void Known_shared_servicing_families_are_accepted_without_changing_image_identity(int tool, int revision, int build)
     {
         var image = Image(build);
@@ -34,6 +36,7 @@ public sealed class ServicingVersionTests
     [InlineData(26100, 26301)]
     [InlineData(26200, 26201)]
     [InlineData(29691, 99999)]
+    [InlineData(26100, 26340)]
     public void Older_servicing_families_and_unknown_newer_builds_are_not_silently_allowed(int tool, int build)
     {
         var error = Assert.Throws<ServicingToolsRequiredException>(() =>

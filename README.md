@@ -1,66 +1,104 @@
 # Tiny11 Builder
 
-Build a smaller Windows 11 ISO with a native WinUI app. Download an official
-Windows image or use your own, choose what to remove, and create your ISO.
+**Build a smaller Windows 11 installer. Choose what stays.**
 
-## Download
+Start with an official Microsoft image or your own ISO, choose the apps and
+features you want, and create your installer in a native Windows app.
+Your original source media is left unchanged.
 
-[**Get the latest version**](https://github.com/ntdevlabs/tiny11builder/releases/latest)
+[**Download for Windows**](https://github.com/ntdevlabs/tiny11builder/releases/latest) ·
+[What's new in 0.2.0](docs/release-notes-0.2.0.md) ·
+[Watch the demo](https://youtu.be/LfEWIz5mQ8A) ·
+[Get help or report a problem](https://github.com/ntdevlabs/tiny11builder/issues)
 
-Choose **x64** for Intel/AMD PCs or **ARM64** for Windows on ARM. Extract the
-entire ZIP and open `Tiny11Builder.exe`. Administrator approval is required.
+![Tiny11 Builder: choose Tiny11, Tiny11 Core or Custom from the welcome screen](docs/images/ui-welcome.png)
 
-## Choose your build
+## Get started
 
-| Mode | What it does |
+1. **Download and extract the whole ZIP.** Choose **x64** for Intel/AMD PCs or
+   **ARM64** for Windows on ARM.
+2. **Open `Tiny11Builder.exe`.** Approve the administrator prompt.
+3. **Choose your Windows image and what to keep.** Download an official image
+   in the app or select your own, review your choices, then build your ISO.
+
+The app includes its .NET runtime. For image-tool requirements and a full
+walkthrough, see the [usage guide](docs/usage.md).
+
+## Pick a starting point
+
+| Choose | When it fits |
 | --- | --- |
-| Tiny11 | Removes bundled apps and unwanted features while keeping updates, Defender and recovery. |
-| Tiny11 Core | Trims further by removing servicing and recovery support and disabling Defender. |
-| Custom | Choose individual apps, components, features and services to remove or keep. |
+| **Tiny11** | A leaner image that keeps Windows Update, Defender and recovery. |
+| **Custom** | Choose removals yourself, or load a recipe and adjust it to your needs. |
+| **Tiny11 Core** | Disposable test VMs. Removes update and recovery support and disables Defender. |
 
-Turbo mode speeds up image processing. Interrupted builds can resume from saved
-progress after the image is committed or compressed. Core and component-store
-removals automatically use the legacy Windows installer.
+> **Try your image in a virtual machine first.** Core cannot be updated or
+> serviced. Advanced Custom removals can break Windows, apps or devices.
 
-**Core cannot be updated or serviced. Protected Custom removals can break
-Windows. Test your ISO in a VM before installing it.**
+## More control in 0.2.0
 
-## Video
+- **Reuse a setup you like.** Load a recipe, review its selected removals,
+  and adapt it to another Windows image.
+- **Know what will change.** Browse the Tiny11 and Core removal plans, or
+  export a complete list of components for a closer look.
+- **Bring updates along.** Add local Windows update packages before building,
+  in the order your image needs.
+- **Use your language.** English and Simplified Chinese are included.
+  Additional languages can use [translation files](docs/translation.md).
+- **Go further with Custom.** Fine-tune individual removals and create a
+  smaller installer from your own Windows image.
 
-[**Watch on YouTube**](https://youtu.be/LfEWIz5mQ8A)
+Turbo mode speeds up processing. Interrupted builds can resume once a saved
+image checkpoint is available.
 
-## Screenshots
+[Read the full 0.2.0 release notes](docs/release-notes-0.2.0.md)
 
-### Welcome
+## A look inside
 
-![Tiny11 Builder welcome screen with Tiny11, Tiny11 Core and Custom modes](docs/images/ui-welcome.png)
+| See what a preset removes | Check your build before starting |
+| --- | --- |
+| ![Tiny11 preset details and its removal plan](docs/images/ui-presets.png) | ![Review of the selected Windows image, output and build options](docs/images/ui-review.png) |
 
-### Components
+## Compatibility and advanced use
 
-![Component choices and the Tiny11 Core warning](docs/images/ui-components.png)
+Windows 11 images from **22H2 onward** are supported. Insider and Canary builds
+need compatible Microsoft image tools; Windows Server is not supported.
+See [requirements and compatibility](docs/usage.md) before choosing a source.
 
-### Build settings
+<details>
+<summary>Looking for deeper customization or a very small image?</summary>
 
-![Build settings with Turbo mode and optional image cleanup](docs/images/ui-build-settings.png)
+Custom includes individual app, component, service, file, driver and font
+removals, plus optional installer cleanup.
 
-## More information
+The bundled [extreme recipe](recipes/cd700-custom.json) is a starting point
+for experimenting with much smaller images, not another build mode.
+CD size is an optional target, not a guarantee for every Windows image.
+Test the result in an isolated virtual machine.
 
-[Usage, compatibility and build instructions](docs/usage.md) ·
-[Attribution and distribution notes](NOTICE.md)
+See the [usage guide](docs/usage.md) for the controls and their tradeoffs.
+
+</details>
+
+## Help keep the next update coming
+
+Tiny11 Builder grows through testing and feedback from people using it.
+If it saves you time, a contribution helps fund development, testing across
+Windows releases, and fixes for real-world problems.
+
+**[Sponsor monthly](https://github.com/sponsors/ntdevlabs)** ·
+**[Send a one-time thanks](https://ko-fi.com/ntdev)**
+
+You can also use [Patreon](https://www.patreon.com/ntdev) or
+[PayPal](https://paypal.me/ntdev2).
+
+**Every feature is free, whether you donate or not.** Clear bug reports,
+testing in a VM, and sharing the [demo](https://youtu.be/LfEWIz5mQ8A) help too.
+
+---
+
+[Usage and build instructions](docs/usage.md) ·
+[Translation guide](docs/translation.md) ·
+[Attribution and distribution notices](NOTICE.md)
 
 The original PowerShell builders remain in this repository.
-
-## Support the project
-
-Tiny11 Builder is free. If it saved you time, you can help fund development,
-testing across Windows releases and fixes for reported problems.
-
-**[Monthly support](https://github.com/sponsors/ntdevlabs)** ·
-**[One-time donation](https://ko-fi.com/ntdev)**
-
-Prefer another service? [Patreon](https://www.patreon.com/ntdev) ·
-[PayPal](https://paypal.me/ntdev2)
-
-No donation is needed to use any feature. Reporting reproducible bugs,
-testing builds in a VM and sharing the [demo](https://youtu.be/LfEWIz5mQ8A)
-help too.

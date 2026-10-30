@@ -26,7 +26,7 @@ public static class BuildProgressText
     {
         "Prepare" or "Copy media" => 0,
         "Export edition" or "Mount" => 1,
-        "Inventory" or "Custom servicing" or "Remove apps" or "Optional features" or ".NET 3.5" or
+        "Inventory" or "Integrate updates" or "Custom servicing" or "Remove apps" or "Optional features" or ".NET 3.5" or
             "Windows settings" or "Component cleanup" or "Advanced payloads" or "Core pruning" or "Redundant data" => 2,
         "Commit" or "Setup image" or ResumeCheckStage => 3,
         "Compress" => 4,
@@ -40,6 +40,7 @@ public static class BuildProgressText
         "Prepare" or "Copy media" => (0, 8),
         "Export edition" => (8, 15), "Mount" => (15, 25), "Inventory" => (25, 28),
         "Custom servicing" => (28, 32), "Remove apps" => (32, 44), "Optional features" => (44, 53),
+        "Integrate updates" => (25, 28),
         ".NET 3.5" => (61, 63), "Windows settings" => (63, 65), "Component cleanup" => (53, 61),
         "Advanced payloads" => (65, 68), "Core pruning" => (68, 72), "Redundant data" => (71, 72), "Commit" => (72, 77),
         ResumeCheckStage => (72, 77),

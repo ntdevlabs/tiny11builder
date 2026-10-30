@@ -65,7 +65,13 @@ public static class CleanupCatalog
         Policy("cleanup", "Component cleanup", "Regular mode preserves servicing. Core additionally resets the update base before its irreversible component pruning.", true, true),
         Policy("hardware-bypass", "Bypass setup hardware requirements", "Set CPU, RAM, TPM, storage and Secure Boot bypass values in setup and Windows. Unsupported hardware may not work.", false, false),
         Policy("reserved-storage", "Disable reserved storage", "Stop reserving disk space for updates. This can leave less space available during servicing.", false, false),
-        Policy("device-encryption", "Disable automatic device encryption", "Prevent automatic BitLocker device encryption; do not use if you require encryption by default.", false, false)
+        Policy("device-encryption", "Disable automatic device encryption", "Prevent automatic BitLocker device encryption; do not use if you require encryption by default.", false, false),
+        NativePayloadOptions.Option("remove-wow64", "32-bit application support", "Remove SysWOW64 and 32-bit shared files. 32-bit applications will not work."),
+        NativePayloadOptions.Option("remove-desktop-netfx", "Desktop .NET Framework", "Remove desktop .NET payloads and native-image caches. Managed applications may stop working."),
+        NativePayloadOptions.Option("remove-ime-files", "IME input methods", "Remove Asian-language input-method payloads. Keep this group unchecked if you need those input methods."),
+        NativePayloadOptions.Option("remove-speech-files", "Speech engines", "Remove speech, OCR and text-to-speech files directly. Voice input, screen-reading voices and OCR may stop working."),
+        NativePayloadOptions.Option("remove-print-drivers", "Printer and scanner driver payloads", "Remove matching printer/scanner driver-store folders. Storage, USB, display and network drivers are not selected."),
+        NativePayloadOptions.Option("remove-extra-media", "Wallpapers, sounds and help", "Remove bundled wallpapers, system sounds, help files and optional cursor artwork.")
     ];
 
     private static CleanupOption App(string id, string title, string description, bool balanced, bool minimal, params string[] targets)
@@ -75,7 +81,7 @@ public static class CleanupCatalog
     private static CleanupOption Policy(string id, string title, string description, bool balanced, bool minimal)
         => new(id, title, description, "Windows settings", OptionKind.Policy, balanced, minimal, []);
 
-    public static string[] ForPreset(CleanupPreset preset) => Options
+    public static string[] ForPreset(CleanupPreset preset) => Options.Where(o => !o.CustomOnly)
         .Where(o => preset switch
         {
             CleanupPreset.Balanced => o.Balanced,
@@ -100,7 +106,7 @@ public static class CleanupCatalog
     {
         if (recipe.Mode is { } mode) return mode;
         var preset = recipe.Flavor == BuildFlavor.Core ? BuildMode.Tiny11Core : BuildMode.Tiny11;
-        return recipe.ExpertActions.Length == 0 &&
+        return !recipe.ShrinkBootImage && recipe.ExpertActions.Length == 0 && recipe.IsoSizeLimitBytes is null &&
             recipe.SelectedOptions.ToHashSet(StringComparer.Ordinal).SetEquals(ForMode(preset))
             ? preset : BuildMode.Custom;
     }

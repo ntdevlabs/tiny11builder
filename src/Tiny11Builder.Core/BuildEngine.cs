@@ -122,6 +122,7 @@ public sealed partial class BuildEngine
     {
         var elapsed = Stopwatch.StartNew();
         PathSafety.Validate(recipe);
+        WindowsUpdates.ValidateSources(recipe);
         if (string.IsNullOrEmpty(recipe.OscdimgPath)) throw new FileNotFoundException("Windows ADK oscdimg.exe is required to create a bootable ISO.");
         host.ValidateTools(recipe);
         using var media = mediaFactory.Open(recipe.SourcePath);
@@ -176,6 +177,7 @@ public sealed partial class BuildEngine
             {
                 ("Copy media", "Copy installation media"), ("Export edition", "Export selected edition"),
                 ("Mount", "Mount working image"), ("Inventory", "Validate individual image actions"),
+                ("Integrate updates", "Integrate selected Windows updates"),
                 ("Custom servicing", "Apply individual servicing actions"), ("Remove apps", "Remove selected apps"),
                 ("Optional features", "Remove optional features and capabilities"),
                 ("Component cleanup", "Clean superseded component files"), (".NET 3.5", "Include .NET Framework 3.5"),
@@ -187,6 +189,7 @@ public sealed partial class BuildEngine
             }.Where(entry => entry.Item1 switch
             {
                 "Inventory" => recipe.ExpertActions.Length > 0,
+                "Integrate updates" => recipe.UpdatePackages.Length > 0,
                 "Custom servicing" => servicingActions.Length > 0,
                 ".NET 3.5" => recipe.EnableNetFx3,
                 "Component cleanup" => recipe.SelectedOptions.Contains("cleanup") || recipe.Flavor == BuildFlavor.Core,
@@ -259,6 +262,29 @@ public sealed partial class BuildEngine
                         }).ConfigureAwait(false);
                     prefetchedFeatures = DismClient.ParseFeatures(await dism.RunAsync(token, $"/Image:{mount}", "/Get-Features").ConfigureAwait(false));
                 }
+            }
+            if (recipe.UpdatePackages.Length > 0)
+            {
+                Stage("Integrate updates", "Adding selected .cab and .msu packages in the chosen order. Applicability checks remain enabled.");
+                var packages = await WindowsUpdates.StageAsync(recipe, job.Directory, Log, token).ConfigureAwait(false);
+                for (var index = 0; index < packages.Count; index++)
+                {
+                    var package = packages[index];
+                    var path = WindowsUpdates.StagedPath(job.Directory, index, package.Name);
+                    await tracking.RunAsync("update:" + index, "Integrate updates", $"Integrate {package.Name}", async () =>
+                    {
+                        await dism.RunAsync(token, $"/Image:{mount}", "/Add-Package", $"/PackagePath:{path}", "/NoRestart").ConfigureAwait(false);
+                        session.Updates.Add(package with { Outcome = "DISM servicing command completed; may require first boot" });
+                    }).ConfigureAwait(false);
+                }
+                var packageOutput = await dism.RunAsync(token, $"/Image:{mount}", "/Get-Packages").ConfigureAwait(false);
+                session.UpdatePackageStates = ImageInventory.ParseIdentityStates(packageOutput, "Package Identity", ImageItemKind.Package);
+                if (session.UpdatePackageStates.Count == 0)
+                    throw new InvalidDataException("Windows update servicing completed but DISM returned no package inventory to verify.");
+                Log("Post-update package inventory recorded. Pending operations remain pending until first boot.");
+                prefetchedFeatures = null;
+                if (session.UpdatePackageStates.Any(item => PendingOperations.IsPending(item.Detail)))
+                    session.Warn("Windows update servicing has pending operations. They are retained for first boot; component cleanup and unsafe file removal are deferred.");
             }
             IReadOnlyList<ImageInventoryItem> inventory = [];
             if (recipe.ExpertActions.Length > 0)
@@ -408,6 +434,16 @@ public sealed partial class BuildEngine
             Stage("Commit", "Committing the modified working image.");
             await dism.RunAsync(token, "/Unmount-Image", $"/MountDir:{mount}", "/Commit", "/CheckIntegrity").ConfigureAwait(false);
             session.Mounted = false;
+            if (recipe.UpdatePackages.Length > 0)
+            {
+                var updated = await dism.GetImagesAsync(workingWim, CancellationToken.None).ConfigureAwait(false);
+                if (updated.Count != 1 || updated[0].Architecture != image.Architecture ||
+                    updated[0].Edition != image.Edition || updated[0].Installation != image.Installation)
+                    throw new InvalidDataException("The updated image's edition, architecture or installation type changed unexpectedly.");
+                updated[0].Validate();
+                host.ValidateResume(recipe, updated[0], 0);
+                session.Image = updated[0];
+            }
             // The checkpoint is durable before any later stage can observe a cancellation request.
             await SaveCommittedCheckpointAsync(session, new SourceIdentity
             {

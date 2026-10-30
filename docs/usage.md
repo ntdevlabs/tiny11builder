@@ -72,6 +72,14 @@ The six-step wizard provides:
   This configures the booted ISO's WinPE shell using
   [Winpeshl.ini](https://learn.microsoft.com/en-us/windows-hardware/manufacture/desktop/winpeshlini-reference-launching-an-app-when-winpe-starts);
   it is not an in-place upgrade workaround.
+  Version 0.2.0 also requests interactive product-key UI in the legacy
+  answer file without inserting a key. If a Core ISO made by 0.1.x fails
+  with "Windows cannot read the <ProductKey> setting from the unattend
+  answer file", rebuild from the original Windows media with 0.2.0 and
+  recreate the installation USB from that new output. Updating the app
+  does not modify an already-created ISO or USB. The fix is in the media,
+  not a VM-only DVD-disconnection workaround; Windows licensing and
+  activation requirements are unchanged.
 - Optional .NET 3.5 from matching `sources\sxs`, compact installation, and
   best-effort local-account setup. No account, password, product key, automatic
   logon or EULA acceptance is injected.
@@ -95,6 +103,58 @@ The six-step wizard provides:
   report, and separate interrupted-workspace discard/recovery.
 
 ## Turbo mode and smaller images
+
+### Portable Custom recipes
+
+Clicking either **Custom** card offers **Choose manually** or **Load recipe**.
+The Custom component panel also has a **Load recipe** button. A recipe loaded
+from these entry points keeps its selections but opens in Custom, including
+recipes originally saved from a preset. Loading does not start a build:
+inspect the source again and renew any Core/advanced acknowledgements.
+Cancelling the choice or file picker leaves the current recipe unchanged.
+
+The bundled [`cd700-custom.json`](../recipes/cd700-custom.json) is a portable,
+extreme removal profile. Its source, workspace, output and tool paths are
+empty intentionally: loading it keeps your current local paths and selected
+edition, or lets you choose any supported Windows 11 ISO afterward. It is
+not tied to a prepared image, language, edition or architecture. Supported
+means Windows 11 client x64/ARM64, 22H2 or newer, with compatible tools;
+unknown Insider builds still need a compatible engine.
+
+Every selected removal group appears **checked** in Components, including
+six Custom-only groups for 32-bit support, desktop .NET, IMEs, speech/OCR,
+printer/scanner driver payloads, and wallpapers/sounds/help. Core is also
+selected by this recipe. Review or uncheck groups before proceeding.
+Source/edition changes keep recipe selections but invalidate the inventory
+and previous risk acknowledgement. Exact advanced actions are still validated
+against the chosen image; portable groups skip missing targets rather than
+guessing package versions. No driver, app or file dependency solver is claimed.
+
+**Create a smaller boot.wim from this ISO** is the only additional installer
+control, under **Custom build options**. It exports the stock Windows Setup
+index into a fresh, maximum-compressed, single-index bootable WIM. Setup,
+fonts, input languages and native driver files inside that index are retained.
+The source ISO is never modified and no separate installer download or
+prepared image is required. Existing hardware/legacy settings are then applied
+to the private copy normally. Output measurements record both boot-image
+sizes; some sources are already compact and may see no savings.
+
+CD size is an optional extreme-profile goal, not the project's default.
+This JSON sets `IsoSizeLimitBytes` to **700,000,000**; the UI shows that
+recipe-specific limit with a **Remove recipe size limit** action, not a global
+CD mode or byte-entry form. The limit covers the complete measured ISO.
+Oversized output stays in the job folder with resumable progress and is not
+published. Keeping the profile portable does **not** guarantee that all sources
+reach the limit or boot after those removals. The previous curated CD700
+experiment's size/install results do not certify this stock-source recipe.
+
+There is no image-preservation switch or external prepared-installer picker.
+Old recipes that require those removed options are rejected with migration
+guidance instead of silently producing an unchanged ISO. Aggressive cuts
+remove servicing, security, recovery, 32-bit support and language/input
+features; test the actual build in an isolated VM before using it.
+
+### General compression and cleanup choices
 
 The settings page has independent **Turbo mode**, **Remove redundant image
 data**, and **Omit .NET 3.5 setup payload** switches. All default to off so
@@ -158,11 +218,12 @@ When that exact pending-state error occurs, selected Edge/WebView2 file removal
 is also skipped for the run, because its WinSxS files may be referenced by
 pending servicing. The report records that those files were kept; it does not
 claim the requested removal succeeded. These warnings survive resume.
-When Edge's files are actually removed, the matching Microsoft Edge entry is
-also removed from both offline installed-program registry locations. Exact
-identity and publisher checks keep unrelated software, Edge Update and WebView2
-registrations outside this browser-entry cleanup. If file removal fails or is
-deferred, the entry is retained. The running PC's registry is never targeted.
+When selected Edge files are actually removed, the matching browser, Edge Update
+and known WebView uninstall entries are removed from both offline
+installed-program registry locations only when their corresponding files are
+gone. Exact identity and publisher checks preserve unrelated software. If any
+matching runtime remains, its registration stays; if file removal fails or is
+deferred, registrations are retained. The running PC's registry is never targeted.
 Core and explicit Custom component-payload removal also check pending files,
 package states and feature states immediately before deleting component files,
 even when cleanup is off. If enabling .NET 3.5 leaves pending work, those
@@ -251,6 +312,44 @@ ordinary symbolic links and junctions are still refused. Source, workspace and
 output paths retain their stricter reparse-point checks.
 
 ## Windows 11 build compatibility
+
+### Adding Windows updates
+
+In **Build settings**, select local `.cab` and `.msu` packages in prerequisite
+order. `.cap` is not a Windows servicing package extension. Use updates for the
+image's architecture and release, and follow each KB's prerequisite/checkpoint
+instructions. The app does not download updates, guess dependencies, run
+installers or bypass DISM applicability checks.
+
+Selected packages are copied and hash-checked into a private job directory.
+Only selected files are passed to DISM, in the chosen order, before removals.
+Unselected updates in your Downloads folder are not implicitly applied.
+The report records each file's SHA-256, command outcome and the post-servicing
+package inventory. A completed command does not mean pending online actions
+have finished. An inapplicable or corrupt package stops the build explicitly.
+Core/component-store pruning remains blocked if servicing is pending.
+
+Update choices and order are part of a saved recipe. A verified post-commit
+resume uses the already-serviced image and does not require the original
+package files or reapply them. Keep working files only if you also want the
+private staged packages retained after a successful build.
+
+### Windows Update after installation
+
+Tiny11 does **not** restrict Windows Update to security updates only. On a
+serviceable output, feature-update offers still depend on Microsoft's release
+eligibility, edition, hardware and any policies you configure separately.
+Feature updates can restore apps/settings removed from an older image. Core
+does not support Windows Update or later component servicing.
+
+### Tool trust and custom media
+
+The app accepts local and custom Windows 11 client media; it does not require an
+Authenticode signature on the ISO. It does verify executable tools before
+running them as administrator. A tool signature failure must not be worked
+around by disabling certificate validation. Follow the reported trust problem
+and use a current complete Microsoft toolset.
+Windows Server images are outside the supported client-image scope.
 
 The engine accepts **Windows 11 client builds 22621 (22H2) and newer**, including
 23H2, 24H2, 25H2, 26H2 and Insider/Canary media, in **x64 and ARM64**, without a
@@ -401,7 +500,7 @@ runtime, and includes dependency license notices. It refuses to overwrite an
 existing archive for that version. Extract the entire ZIP into a folder and
 open `Tiny11Builder.exe`; copying just the EXE is not sufficient.
 
-The current app version is **0.1.3**. Packages are unsigned,
+The current app version is **0.2.0**. Packages are unsigned,
 not Microsoft-certified Windows images. Review [NOTICE.md](../NOTICE.md) before
 public redistribution: this upstream checkout has no standalone license file,
 and this rewrite does not assign a license to someone else's source.
@@ -409,7 +508,12 @@ The existing `origin` points to the upstream project; choose your own GitHub
 repository or fork before pushing. Nothing in the packaging script pushes code.
 
 The default workspace is **`C:\tiny11`**, with output ISOs there as well.
-Use an **NTFS workspace**, typically with 40-70 GiB free. ReFS, FAT32 and network
+Use an **NTFS workspace** with free space at least **twice the source ISO's
+file size**. Extracted media uses twice the total size of its files. Selected
+update packages add their existing staging allowance (three times their total
+file size). This is an admission estimate, not a guarantee of peak usage:
+large expanded images or retained working files can still need more space.
+The old expanded-image-based 40-84+ GiB minimum is removed. ReFS, FAT32 and network
 workspaces are refused because of WIM mounting constraints. Output cannot be
 FAT32. A workspace on the same drive as output is supported. Network paths,
 alternate data streams, reparse points in source/workspace/output and system
