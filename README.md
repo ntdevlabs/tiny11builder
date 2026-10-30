@@ -8,7 +8,7 @@ Your original source media is left unchanged.
 
 [**Download for Windows**](https://github.com/ntdevlabs/tiny11builder/releases/latest) ·
 [What's new in 0.2.0](docs/release-notes-0.2.0.md) ·
-[Watch the demo](https://youtu.be/LfEWIz5mQ8A) ·
+[Watch the 0.2.0 demo](https://youtu.be/Ijp3J8SYqLc) ·
 [Get help or report a problem](https://github.com/ntdevlabs/tiny11builder/issues)
 
 ![Tiny11 Builder: choose Tiny11, Tiny11 Core or Custom from the welcome screen](docs/images/ui-welcome.png)
@@ -53,6 +53,10 @@ image checkpoint is available.
 
 [Read the full 0.2.0 release notes](docs/release-notes-0.2.0.md)
 
+## Watch what's new
+
+[![Watch the Tiny11 Builder 0.2.0 showcase on YouTube](docs/images/video-0.2.0.jpg)](https://youtu.be/Ijp3J8SYqLc)
+
 ## A look inside
 
 | See what a preset removes | Check your build before starting |
@@ -93,7 +97,7 @@ You can also use [Patreon](https://www.patreon.com/ntdev) or
 [PayPal](https://paypal.me/ntdev2).
 
 **Every feature is free, whether you donate or not.** Clear bug reports,
-testing in a VM, and sharing the [demo](https://youtu.be/LfEWIz5mQ8A) help too.
+testing in a VM, and sharing the [demo](https://youtu.be/Ijp3J8SYqLc) help too.
 
 ---
 
