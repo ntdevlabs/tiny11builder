@@ -31,7 +31,7 @@ walkthrough, see the [usage guide](docs/usage.md).
 | **Tiny11** | A leaner image that keeps Windows Update, Defender and recovery. |
 | **Custom** | Choose removals yourself, or load a recipe and adjust it to your needs. |
 | **Tiny11 Core** | Disposable test VMs. Removes update and recovery support and disables Defender. |
-| **Nano11** | Core plus a stripped component store, drivers and fonts. The smallest mode; not a Windows replacement. |
+| **Nano11** | Core plus a stripped component store, drivers and fonts, always built with the smallest output settings. Not a Windows replacement. |
 
 > **Try your image in a virtual machine first.** Core and Nano11 cannot be updated or
 > serviced. Advanced Custom removals can break Windows, apps or devices.

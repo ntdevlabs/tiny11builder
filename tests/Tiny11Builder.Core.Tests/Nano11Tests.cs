@@ -98,6 +98,41 @@ public sealed class Nano11Tests
     }
 
     [Fact]
+    public void Nano11_recipe_settings_are_the_smallest_ones_available()
+    {
+        var recipe = new BuildRecipe
+        {
+            Mode = BuildMode.Nano11, Flavor = BuildFlavor.Nano, CoreAcknowledged = true,
+            SelectedOptions = CleanupCatalog.ForMode(BuildMode.Nano11)
+        };
+        // The smallest output: recovery ESD, no redundant data, no staged .NET 3.5 payload, rebuilt boot.wim.
+        var smallest = recipe.WithSmallestOutput();
+        Assert.Equal(Compression.Recovery, smallest.Compression);
+        Assert.True(smallest.RemoveRedundantData);
+        Assert.True(smallest.OmitNetFx3SetupPayload);
+        Assert.True(smallest.ShrinkBootImage);
+        smallest.ValidateOptions();   // a shrunk boot.wim is valid for Nano11, not only for Custom
+        Assert.Throws<InvalidDataException>(() => (recipe with { Mode = BuildMode.Tiny11Core, Flavor = BuildFlavor.Core,
+            ShrinkBootImage = true }).ValidateOptions());
+    }
+
+    [Fact]
+    public async Task Nano11_builds_the_smallest_output_even_when_the_recipe_asks_for_larger_settings()
+    {
+        using var fixture = new BuildFixture();
+        var recipe = Recipe(fixture) with
+        {
+            Compression = Compression.Fast, RemoveRedundantData = false, OmitNetFx3SetupPayload = false, ShrinkBootImage = false
+        };
+        await fixture.Engine.BuildAsync(recipe, null, CancellationToken.None);
+        // Fast output, kept redundant data and the .NET 3.5 setup payload are never what Nano11 produces.
+        var compressed = fixture.Runner.Calls.Single(c => c.Contains("/Export-Image") && c.Any(a => a.EndsWith("install.esd")));
+        Assert.Contains("/Compress:recovery", compressed);
+        Assert.Contains(fixture.Runner.Calls, c => c.Contains("/Compress:max"));   // the rebuilt boot.wim
+        Assert.DoesNotContain(fixture.Events, e => e == "CleanRedundantData");
+    }
+
+    [Fact]
     public async Task Fixed_nano11_recipes_refuse_changes_to_the_nano11_removal_set()
     {
         using var fixture = new BuildFixture();

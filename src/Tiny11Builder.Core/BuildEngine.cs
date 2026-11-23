@@ -121,6 +121,9 @@ public sealed partial class BuildEngine
     public async Task<BuildResult> BuildAsync(BuildRecipe recipe, IProgress<BuildProgress>? progress, CancellationToken token)
     {
         var elapsed = Stopwatch.StartNew();
+        // Nano11 exists to produce the smallest ISO, so its output settings are the smallest ones. The recipe that is
+        // written to the job and used for resume is the one that actually ran.
+        if (recipe.Flavor == BuildFlavor.Nano) recipe = recipe.WithSmallestOutput();
         PathSafety.Validate(recipe);
         WindowsUpdates.ValidateSources(recipe);
         if (string.IsNullOrEmpty(recipe.OscdimgPath)) throw new FileNotFoundException("Windows ADK oscdimg.exe is required to create a bootable ISO.");

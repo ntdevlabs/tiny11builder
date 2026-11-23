@@ -395,25 +395,35 @@ public sealed partial class MainWindow : Window
         });
     }
 
-    private BuildRecipe CreateRecipe() => new()
+    // Nano11 always builds its smallest output, so the recipe reflects that here: the review, the validation and the
+    // build all describe the same settings.
+    private BuildRecipe CreateRecipe()
     {
-        SourcePath = SourcePathBox.Text.Trim(), ImageIndex = image?.Index ?? 1,
-        WorkspacePath = WorkspaceBox.Text.Trim(), OutputPath = OutputBox.Text.Trim(),
-        DismPath = servicingTool, OscdimgPath = isoTool,
-        Mode = SelectedMode, Flavor = SelectedMode == BuildMode.Nano11 ? BuildFlavor.Nano :
-            UsesCore ? BuildFlavor.Core : BuildFlavor.Regular,
-        CoreAcknowledged = coreAcknowledged, ExpertAcknowledged = ExpertAccepted,
-        SelectedOptions = options.Where(o => o.Selected).Select(o => o.Option.Id).ToArray(),
-        ExpertActions = inventory.Count > 0 ? inventory.Where(i => i.Selected).Select(i => i.Action).ToArray() : pendingActions,
-        Compression = (Compression)CompressionChoice.SelectedIndex,
-        CompactInstallation = CompactCheck.IsOn, EnableNetFx3 = NetFxCheck.IsOn,
-        PreferLocalAccount = LocalAccountCheck.IsOn, KeepWorkingFiles = KeepFilesCheck.IsOn,
-        TurboMode = TurboCheck.IsOn, RemoveRedundantData = RedundantDataCheck.IsOn,
-        OmitNetFx3SetupPayload = OmitSetupCheck.IsOn,
-        UpdatePackages = updatePackages.Paths,
-        IsoSizeLimitBytes = SelectedMode == BuildMode.Custom ? recipeIsoSizeLimit : null,
-        ShrinkBootImage = SelectedMode == BuildMode.Custom && ShrinkBootCheck.IsChecked == true
-    };
+        var recipe = new BuildRecipe
+        {
+            SourcePath = SourcePathBox.Text.Trim(), ImageIndex = image?.Index ?? 1,
+            WorkspacePath = WorkspaceBox.Text.Trim(), OutputPath = OutputBox.Text.Trim(),
+            DismPath = servicingTool, OscdimgPath = isoTool,
+            CoreAcknowledged = coreAcknowledged, ExpertAcknowledged = ExpertAccepted,
+            SelectedOptions = options.Where(o => o.Selected).Select(o => o.Option.Id).ToArray(),
+            ExpertActions = inventory.Count > 0 ? inventory.Where(i => i.Selected).Select(i => i.Action).ToArray() : pendingActions,
+            Compression = (Compression)CompressionChoice.SelectedIndex,
+            CompactInstallation = CompactCheck.IsOn, EnableNetFx3 = NetFxCheck.IsOn,
+            PreferLocalAccount = LocalAccountCheck.IsOn, KeepWorkingFiles = KeepFilesCheck.IsOn,
+            TurboMode = TurboCheck.IsOn, RemoveRedundantData = RedundantDataCheck.IsOn,
+            OmitNetFx3SetupPayload = OmitSetupCheck.IsOn,
+            UpdatePackages = updatePackages.Paths,
+            IsoSizeLimitBytes = SelectedMode == BuildMode.Custom ? recipeIsoSizeLimit : null,
+            ShrinkBootImage = SelectedMode is BuildMode.Custom or BuildMode.Nano11 && ShrinkBootCheck.IsChecked == true
+        };
+        recipe = recipe with
+        {
+            Mode = SelectedMode,
+            Flavor = SelectedMode == BuildMode.Nano11 ? BuildFlavor.Nano : UsesCore ? BuildFlavor.Core : BuildFlavor.Regular
+        };
+        // The engine applies this too, so a recipe that never passed through the app still builds the smallest ISO.
+        return SelectedMode == BuildMode.Nano11 ? recipe.WithSmallestOutput() : recipe;
+    }
 
     private async Task RunOperation(OperationKind kind, Func<CancellationToken, Task> action)
     {
@@ -1081,7 +1091,7 @@ public sealed partial class MainWindow : Window
     private void UpdateModePresentation()
     {
         CustomChoices.Visibility = SelectedMode == BuildMode.Custom ? Visibility.Visible : Visibility.Collapsed;
-        CustomMediaSettings.Visibility = SelectedMode == BuildMode.Custom ? Visibility.Visible : Visibility.Collapsed;
+        CustomMediaSettings.Visibility = SelectedMode is BuildMode.Custom or BuildMode.Nano11 ? Visibility.Visible : Visibility.Collapsed;
         PresetPreview.Visibility = SelectedMode == BuildMode.Custom ? Visibility.Collapsed : Visibility.Visible;
         var presetOptions = PresetRemovalPreview.ForMode(SelectedMode);
         var presetRemovesEdgeFiles = presetOptions.Any(option => option.Id == "edge-files");
@@ -1110,6 +1120,29 @@ public sealed partial class MainWindow : Window
         card.Style = (Style)Application.Current.Resources[selected ? "ModeCardSelected" : "ModeCard"];
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetItemStatus(card, UiText.Get(selected ? "Common.Selected" : "Common.NotSelected"));
     }
+    private bool applyingSmallest;
+
+    /// <summary>
+    /// Nano11 builds the smallest ISO it can, so its output settings are shown as they will be built and cannot be
+    /// relaxed into a larger image. Every other mode keeps its own settings, so a Tiny11 or Core build can still be
+    /// made smaller by hand here.
+    /// </summary>
+    private void ApplySmallestOutput(bool smallest)
+    {
+        if (applyingSmallest) return;
+        applyingSmallest = true;
+        if (smallest)
+        {
+            CompressionChoice.SelectedIndex = (int)Compression.Recovery;
+            RedundantDataCheck.IsOn = true;
+            OmitSetupCheck.IsOn = true;
+            ShrinkBootCheck.IsChecked = true;
+        }
+        foreach (var control in new Control[] { CompressionChoice, RedundantDataCheck, OmitSetupCheck, ShrinkBootCheck })
+            control.IsEnabled = !smallest;
+        applyingSmallest = false;
+    }
+
     private void OnChoicesChanged(object sender, RoutedEventArgs args)
     {
         if (!initialized || applyingMode) return;
@@ -1138,6 +1171,7 @@ public sealed partial class MainWindow : Window
         NativePayloadWarning.IsOpen = directGroups;
         NativePayloadConsent.Visibility = directGroups ? Visibility.Visible : Visibility.Collapsed;
         RecipeLimitPanel.Visibility = SelectedMode == BuildMode.Custom && recipeIsoSizeLimit is not null ? Visibility.Visible : Visibility.Collapsed;
+        ApplySmallestOutput(SelectedMode == BuildMode.Nano11);
         RecipeLimitText.Text = recipeIsoSizeLimit is { } limit ? UiText.Format("CustomMedia.ReviewLimit", limit) : "";
         ExportInventoryButton.IsEnabled = !busy && inventory.Count > 0;
         UpdateNavigation();

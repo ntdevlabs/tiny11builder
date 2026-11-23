@@ -121,8 +121,8 @@ public sealed record BuildRecipe
                 "Load the portable extreme recipe, choose your Windows ISO, and use Shrink boot.wim to rebuild its stock installer.");
         if (IsoSizeLimitBytes is { } limit && (limit is < 64_000_000 or > 4_000_000_000 || Mode is not (null or BuildMode.Custom)))
             throw new InvalidDataException("Custom ISO size limits must be between 64 MB and 4 GB (decimal bytes).");
-        if (ShrinkBootImage && Mode is not (null or BuildMode.Custom))
-            throw new InvalidDataException("Shrinking boot.wim is a Custom option.");
+        if (ShrinkBootImage && Mode is not (null or BuildMode.Custom or BuildMode.Nano11))
+            throw new InvalidDataException("Shrinking boot.wim is a Custom or Nano11 option.");
         if (ImageIndex < 1 || SelectedOptions is null ||
             SelectedOptions.Length != SelectedOptions.Distinct(StringComparer.Ordinal).Count())
             throw new InvalidDataException("Invalid image index or duplicate cleanup options.");
@@ -147,6 +147,17 @@ public sealed record BuildRecipe
              !SelectedOptions.ToHashSet(StringComparer.Ordinal).SetEquals(CleanupCatalog.ForMode(Mode.Value))))
             throw new InvalidDataException("Use Custom for changes to the Tiny11, Tiny11 Core or Nano11 removal sets.");
     }
+
+    /// <summary>
+    /// The smallest settings a mode can use. Nano11 applies all of them automatically, because its purpose is the
+    /// smallest ISO rather than a serviceable one: recovery ESD, no redundant offline data, no staged .NET 3.5 setup
+    /// payload and a rebuilt single-index boot.wim.
+    /// </summary>
+    public BuildRecipe WithSmallestOutput() => this with
+    {
+        Compression = Compression.Recovery, RemoveRedundantData = true, OmitNetFx3SetupPayload = true,
+        ShrinkBootImage = true
+    };
 
     public static BuildRecipe Read(string path)
     {
