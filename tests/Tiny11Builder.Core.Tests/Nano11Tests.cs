@@ -98,6 +98,37 @@ public sealed class Nano11Tests
     }
 
     [Fact]
+    public void Nano11_file_removals_apply_to_a_mount_and_name_what_they_skip()
+    {
+        using var mount = new TempMount();
+        mount.File(@"Windows\Help\help.html");
+        mount.File(@"Windows\Web\wallpaper.jpg");
+        mount.File(@"Windows\Fonts\seguiemj.ttf");
+        mount.File(@"Windows\Fonts\arial.ttf");
+        mount.File(@"Windows\Fonts\malgun.ttf");
+        mount.File(@"Windows\System32\DriverStore\FileRepository\prnms001.inf_x64_neutral_deadbeef\prnms001.inf");
+        mount.File(@"Windows\System32\DriverStore\FileRepository\nvhda.inf_x64_deadbeef\nvhda.inf");
+        mount.File(@"Windows\assembly\NativeImages_v4.0.30319_64\cache.dat");
+        mount.File(@"Windows\System32\Tasks\Microsoft\Windows\Chkdsk\Proxy");
+        var log = new List<string>();
+        Nano11Files.Apply(mount.Root, log.Add);
+
+        Assert.False(File.Exists(mount.Path(@"Windows\Help\help.html")));
+        Assert.False(File.Exists(mount.Path(@"Windows\Web\wallpaper.jpg")));
+        Assert.True(File.Exists(mount.Path(@"Windows\Fonts\seguiemj.ttf")));    // kept by the plan's prefix list
+        Assert.True(File.Exists(mount.Path(@"Windows\Fonts\arial.ttf")));
+        Assert.False(File.Exists(mount.Path(@"Windows\Fonts\malgun.ttf")));    // non-Latin family the plan names
+        Assert.False(Directory.Exists(mount.Path(@"Windows\System32\DriverStore\FileRepository\prnms001.inf_x64_neutral_deadbeef")));
+        Assert.True(Directory.Exists(mount.Path(@"Windows\System32\DriverStore\FileRepository\nvhda.inf_x64_deadbeef")));
+        Assert.False(Directory.Exists(mount.Path(@"Windows\assembly\NativeImages_v4.0.30319_64")));
+        Assert.False(File.Exists(mount.Path(@"Windows\System32\Tasks\Microsoft\Windows\Chkdsk\Proxy")));
+        // The recovery image becomes the empty placeholder the script leaves behind.
+        Assert.True(File.Exists(mount.Path(@"Windows\System32\Recovery\winre.wim")));
+        Assert.Empty(File.ReadAllBytes(mount.Path(@"Windows\System32\Recovery\winre.wim")));
+        Assert.Contains(log, line => line.Contains(@"Nano11: not present: Windows\System32\OneDriveSetup.exe"));
+    }
+
+    [Fact]
     public void Nano11_recipe_settings_are_the_smallest_ones_available()
     {
         var recipe = new BuildRecipe
@@ -139,4 +170,18 @@ public sealed class Nano11Tests
         var recipe = Recipe(fixture) with { SelectedOptions = [.. CleanupCatalog.ForMode(BuildMode.Nano11), "camera"] };
         await Assert.ThrowsAsync<InvalidDataException>(() => fixture.Engine.BuildAsync(recipe, null, CancellationToken.None));
     }
+
+internal sealed class TempMount : IDisposable
+{
+    public string Root { get; } = Path.Combine(Path.GetTempPath(), "nano11-mount-" + Guid.NewGuid().ToString("N"));
+    public TempMount() => Directory.CreateDirectory(Root);
+    public string Path(string relative) => System.IO.Path.Combine(Root, relative);
+    public void File(string relative)
+    {
+        var path = Path(relative);
+        Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path)!);
+        System.IO.File.WriteAllText(path, "fixture");
+    }
+    public void Dispose() { if (Directory.Exists(Root)) Directory.Delete(Root, recursive: true); }
+}
 }

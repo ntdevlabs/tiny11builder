@@ -24,8 +24,12 @@ public sealed partial class BuildEngine
         await CleanComponentsAsync(s, token).ConfigureAwait(false);
         await RemoveNano11AppsAsync(target, token).ConfigureAwait(false);
         await RemoveNano11PackagesAsync(target, token).ConfigureAwait(false);
-        RemoveNano11Payloads(target);
-        RemoveNano11Services(target);
+        await s.Tracking.RunAsync("nano:files", NanoStage, "Remove Nano11 payloads, drivers, fonts and services", () =>
+        {
+            Nano11Files.Apply(target.Mount, s.Log, s.Recipe.TurboMode);
+            Nano11Files.RemoveServices(target.Mount, s.Log);
+            return Task.CompletedTask;
+        }).ConfigureAwait(false);
         await ReplaceNano11ComponentStoreAsync(s, target, token).ConfigureAwait(false);
         s.Log("Nano11: reductions applied. Test this image in an isolated VM; it is not a Windows 11 replacement.");
     }
@@ -102,106 +106,6 @@ public sealed partial class BuildEngine
         await s.Tracking.RunBatchAsync(names.Select(name => ("nano:capability:" + name, $"Remove Nano11 capability: {name}")).ToArray(),
             NanoStage, async () => { await s.Dism.RemoveCapabilitiesAsync(target.Mount, names, token).ConfigureAwait(false); },
             "capabilities").ConfigureAwait(false);
-    }
-
-    private static void RemoveNano11Payloads(Nano11Target target)
-    {
-        var s = target.Session;
-        foreach (var relative in Nano11Plan.Payloads) RemovePayload(target, relative);
-        // The recovery image is replaced by an empty placeholder, as nano11.ps1 does: a missing file makes WinRE
-        // look broken to Setup and Windows, while an empty one reports that recovery is unavailable.
-        var recovery = Path.Combine(target.Mount, @"Windows\System32\Recovery\winre.wim");
-        if (!ImageFileAccess.Exists(recovery))
-        {
-            try
-            {
-                Directory.CreateDirectory(Path.GetDirectoryName(recovery)!);
-                using var placeholder = File.Create(recovery);
-                s.Log(@"Nano11: created an empty Recovery\winre.wim placeholder so recovery reports as unavailable.");
-            }
-            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-            {
-                s.Warn($@"Nano11 could not create the empty Recovery\winre.wim placeholder: {error.Message}");
-            }
-        }
-        RemoveMatchingDirectories(target, @"Windows\System32\DriverStore\FileRepository", "driver package", name =>
-            Nano11Plan.DriverPrefixes.Any(prefix => name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) ||
-            Nano11Plan.DriverNames.Any(driver => name.StartsWith(driver, StringComparison.OrdinalIgnoreCase)));
-        RemoveMatchingDirectories(target, @"Windows\assembly", "precompiled .NET assembly",
-            name => name.StartsWith("NativeImages_", StringComparison.OrdinalIgnoreCase));
-        RemoveMatchingDirectories(target, @"Windows\System32\Tasks", "scheduled task",
-            name => false, Nano11Plan.TaskFiles);
-
-        var fonts = Path.Combine(target.Mount, @"Windows\Fonts");
-        if (!Directory.Exists(fonts)) s.Log("Nano11: no Windows\\Fonts folder in this image; fonts were left as they are.");
-        else
-            foreach (var file in Directory.EnumerateFiles(fonts).ToArray())
-            {
-                var name = Path.GetFileName(file);
-                if (Nano11Plan.KeptFontPrefixes.Any(prefix => name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))) continue;
-                RemovePayload(target, Path.GetRelativePath(target.Mount, file));
-            }
-        s.Log("Nano11: payload, font, driver-store and scheduled-task removals finished.");
-    }
-
-    private static void RemoveMatchingDirectories(Nano11Target target, string relativeRoot, string what,
-        Func<string, bool> match, IReadOnlyList<string>? exact = null)
-    {
-        var root = Path.Combine(target.Mount, relativeRoot);
-        if (!Directory.Exists(root)) { target.Session.Log($@"Nano11: no {relativeRoot} in this image; no {what} was removed."); return; }
-        foreach (var path in Directory.EnumerateFileSystemEntries(root).ToArray())
-        {
-            var name = Path.GetFileName(path);
-            var selected = (exact is not null && exact.Any(item => item.StartsWith(relativeRoot, StringComparison.OrdinalIgnoreCase) &&
-                                                                    Path.Combine(target.Mount, item).Equals(path, StringComparison.OrdinalIgnoreCase))) ||
-                           match(name);
-            if (selected) RemovePayload(target, Path.GetRelativePath(target.Mount, path));
-        }
-    }
-
-    private static void RemovePayload(Nano11Target target, string relative)
-    {
-        var s = target.Session;
-        var path = Path.GetFullPath(Path.Combine(target.Mount, relative));
-        if (!PathSafety.IsInside(path, target.Mount)) throw new InvalidDataException("A Nano11 payload path escaped the offline mount.");
-        if (!ImageFileAccess.Exists(path)) { s.Log($@"Nano11: not present: {relative}"); return; }
-        PathSafety.RejectReparsePoints(Path.GetDirectoryName(path)!);
-        try
-        {
-            ImageOperations.DeleteTree(path, s.Recipe.TurboMode);
-            s.Log($@"Nano11: removed {relative}");
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            // A payload held by the offline servicing stack is reported, never claimed as removed.
-            s.Warn($"Nano11 could not remove {relative}: {error.Message}");
-        }
-    }
-
-    private static void RemoveNano11Services(Nano11Target target)
-    {
-        var s = target.Session;
-        using var privileges = new ImageOperations.PrivilegeScope();
-        using var hive = OfflineRegistry.Load(Path.Combine(target.Mount, @"Windows\System32\config\SYSTEM"));
-        var root = hive.Root;
-        var removed = 0;
-        foreach (var control in root.GetSubKeyNames().Where(key => Regex.IsMatch(key, @"^ControlSet\d{3}$")))
-        {
-            using var services = OfflineRegistry.OpenWriteKey(root, control + @"\Services");
-            foreach (var name in Nano11Plan.RemovedServices)
-            {
-                if (!services.GetSubKeyNames().Contains(name, StringComparer.OrdinalIgnoreCase))
-                {
-                    s.Log($@"Nano11: not present in {control}: service {name}");
-                    continue;
-                }
-                OfflineRegistry.DeleteKeyTree(services, name);
-                removed++;
-                s.Log($@"Nano11: removed service {control}\{name}");
-            }
-        }
-        s.Log(removed == 0 ? "Nano11: no named service existed in this image to remove." :
-            $"Nano11: {removed} service definition(s) removed. Audio services are kept: they are a boot dependency.");
     }
 
     /// <summary>
