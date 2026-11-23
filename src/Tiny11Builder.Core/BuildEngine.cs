@@ -139,6 +139,11 @@ public sealed partial class BuildEngine
         var efiRelative = new[] { @"efi\microsoft\boot\efisys.bin", @"efi\microsoft\boot\efisys_noprompt.bin" }
             .FirstOrDefault(p => File.Exists(Path.Combine(media.RootPath, p))) ??
             throw new InvalidDataException("The source does not contain a supported UEFI boot image.");
+        // Older media, 21H2 in particular, can omit the .NET 3.5 payload. Refuse before a job or mount exists
+        // rather than stopping after the image has already been serviced for earlier stages.
+        if (recipe.EnableNetFx3 && !MediaManifest.HasNetFx3Payload(media.RootPath))
+            throw new InvalidDataException("This source has no sources\\sxs .NET 3.5 payload, so .NET 3.5 cannot be " +
+                "enabled offline from it. Turn off .NET 3.5 in Build settings, or use media that includes that folder.");
         var sourceInstall = new FileInfo(sourceWim);
         using var job = BuildJob.Create(recipe.WorkspacePath, "build", execution.BufferedLog);
         var staging = Path.Combine(job.Directory, "media");
@@ -405,7 +410,7 @@ public sealed partial class BuildEngine
             {
                 Stage(".NET 3.5", "Enabling .NET 3.5 from matching source media, without Windows Update.");
                 var sxs = Path.Combine(media.RootPath, @"sources\sxs");
-                if (!Directory.Exists(sxs)) throw new DirectoryNotFoundException("The source has no sources\\sxs payload for .NET 3.5.");
+                if (!MediaManifest.HasNetFx3Payload(media.RootPath)) throw new DirectoryNotFoundException("The source has no sources\\sxs payload for .NET 3.5.");
                 await dism.RunAsync(token, $"/Image:{mount}", "/Enable-Feature", "/FeatureName:NetFx3", "/All",
                     "/LimitAccess", $"/Source:{sxs}", "/NoRestart").ConfigureAwait(false);
             }

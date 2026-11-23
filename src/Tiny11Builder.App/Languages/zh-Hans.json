@@ -691,6 +691,7 @@
     "Preset.EdgePolicyWithFileRemoval": "抑制首次运行提示、侧边栏和推荐内容。此预设还会通过单独的文件移除分组删除 Edge 和 WebView2 文件。",
     "Text.Windows1121H2OrNewerX64AndARM64Insider": "Windows 11 21H2 或更高版本 · x64 和 ARM64 · Insider／Canary",
     "Text.ChooseAWindows11ClientImage21H2OrNewer": "请选择 Windows 11 21H2 或更高版本的客户端映像，体系结构须为 x64 或 ARM64。",
-    "Image.LegacyReleaseNote": "Windows 11 21H2 是较旧的代码库。此映像中不存在的移除项将被跳过并记录到日志。"
+    "Image.LegacyReleaseNote": "Windows 11 21H2 是较旧的代码库。此映像中不存在的移除项将被跳过并记录到日志。",
+    "Text.ThisSourceHasNoNetFxPayload": "此源没有 sources\\sxs 载荷，因此无法从中启用 .NET 3.5。"
   }
 }

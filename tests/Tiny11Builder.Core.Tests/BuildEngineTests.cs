@@ -36,6 +36,34 @@ public sealed class BuildEngineTests
         Assert.Equal("completed", JsonSerializer.Deserialize<JobState>(File.ReadAllText(Path.Combine(result.WorkDirectory, "job.json")), JsonDefaults.Options)!.Status);
     }
 
+    [Theory]
+    [InlineData(22000)]
+    [InlineData(22621)]
+    public async Task Requesting_netfx3_from_media_without_the_payload_is_refused_before_anything_changes(int build)
+    {
+        using var fixture = new BuildFixture(build);
+        var messages = new List<BuildProgress>();
+        var error = await Assert.ThrowsAsync<InvalidDataException>(() => fixture.Engine.BuildAsync(
+            fixture.Recipe with { EnableNetFx3 = true }, new ImmediateProgress<BuildProgress>(messages.Add), CancellationToken.None));
+        Assert.Contains("sources", error.Message);
+        Assert.Contains("Turn off .NET 3.5", error.Message);
+        // Refused before a job, mount or staging copy existed, so no stage had already run.
+        Assert.DoesNotContain(fixture.Runner.Calls, c => c.Contains("/Mount-Image"));
+        Assert.DoesNotContain(messages, m => m.Stage == "Copy media");
+    }
+
+    [Fact]
+    public async Task Media_that_carries_the_netfx3_payload_still_enables_it()
+    {
+        using var fixture = new BuildFixture(22000);
+        var sxs = Path.Combine(fixture.Source, "sources", "sxs");
+        Directory.CreateDirectory(sxs);
+        File.WriteAllText(Path.Combine(sxs, "netfx3.cab"), "fixture");
+        var result = await fixture.Engine.BuildAsync(fixture.Recipe with { EnableNetFx3 = true }, null, CancellationToken.None);
+        Assert.True(File.Exists(result.IsoPath));
+        Assert.Contains(fixture.Runner.Calls, c => c.Contains("/Enable-Feature") && c.Contains("/FeatureName:NetFx3"));
+    }
+
     [Fact]
     public async Task Twenty_one_H_two_media_can_be_added_and_offers_its_editions_for_selection()
     {

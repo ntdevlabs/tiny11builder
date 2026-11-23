@@ -691,6 +691,7 @@
     "Preset.EdgePolicyWithFileRemoval": "Suppress first-run, sidebar and recommendations. This preset also removes Edge and WebView2 files through its separate file-removal group.",
     "Text.Windows1121H2OrNewerX64AndARM64Insider": "Windows 11 21H2 or newer · x64 and ARM64 · Insider / Canary",
     "Text.ChooseAWindows11ClientImage21H2OrNewer": "Choose a Windows 11 client image, 21H2 or newer, in x64 or ARM64 format.",
-    "Image.LegacyReleaseNote": "Windows 11 21H2 is an older codebase. Removals that do not exist in this image are skipped and logged."
+    "Image.LegacyReleaseNote": "Windows 11 21H2 is an older codebase. Removals that do not exist in this image are skipped and logged.",
+    "Text.ThisSourceHasNoNetFxPayload": "This source has no sources\\sxs payload, so .NET 3.5 cannot be enabled from it."
   }
 }

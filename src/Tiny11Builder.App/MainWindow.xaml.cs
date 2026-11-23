@@ -38,6 +38,8 @@ public sealed partial class MainWindow : Window
     private bool resultTurbo;
     private int resultUpdateCount;
     private bool coreAcknowledged;
+    // False when the inspected media has no sources\sxs, so .NET 3.5 cannot be enabled offline from it.
+    private bool hasNetFx3Payload = true;
     private bool modalOpen;
     private enum NoticeAction { None, OpenLogs, CopyDetails, OpenTools, OpenOfficialDownload }
     private string officialDownloadPage = OfficialImageDownloader.DownloadPage;
@@ -806,8 +808,13 @@ public sealed partial class MainWindow : Window
         var restored = source.Equals(pendingSourcePath, StringComparison.OrdinalIgnoreCase) ? pendingImageIndex : null;
         EditionChoice.ItemsSource = images;
         EditionChoice.SelectedIndex = ImageDefaults.SelectPosition(images, restored);
+        // Older media can omit sources\sxs; say so where the build options are chosen, not mid-build.
+        hasNetFx3Payload = Directory.Exists(Path.Combine(source, @"sources\sxs"));
+        NetFxPayloadNote.Visibility = hasNetFx3Payload ? Visibility.Collapsed : Visibility.Visible;
+        if (!hasNetFx3Payload) NetFxCheck.IsOn = false;
         ShowNotice(UiText.Get("Image.Inspected"), UiText.Format("Image.EditionsFound", images.Count, image?.Name) +
             (image?.IsLegacyRelease == true ? " " + UiText.Get("Image.LegacyReleaseNote") : "") +
+            (hasNetFx3Payload ? "" : " " + UiText.Get("Text.ThisSourceHasNoNetFxPayload")) +
             (SkippedImageTools ? " " + UiText.Get("Tools.TrustedFallback") : ""),
             SkippedImageTools ? InfoBarSeverity.Warning : InfoBarSeverity.Informational,
             SkippedImageTools ? NoticeAction.CopyDetails : NoticeAction.None,

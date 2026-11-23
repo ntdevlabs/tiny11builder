@@ -81,8 +81,11 @@ The six-step wizard provides:
   not a VM-only DVD-disconnection workaround; Windows licensing and
   activation requirements are unchanged.
 - Optional .NET 3.5 from matching `sources\sxs`, compact installation, and
-  best-effort local-account setup. No account, password, product key, automatic
-  logon or EULA acceptance is injected.
+  best-effort local-account setup. Media without that payload (some 21H2
+  images) disables the option with the reason shown next to it, and a build
+  that still requests it stops before any stage runs rather than after
+  servicing has started. No account, password, product key, automatic logon
+  or EULA acceptance is injected.
 - Automatic image-tool detection and compatible-version checks. oscdimg is
   found locally or downloaded from Microsoft's symbol server with an exact
   SHA-256 pin. No tool-selection controls or script execution-policy changes.
