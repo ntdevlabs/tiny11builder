@@ -65,9 +65,11 @@ image checkpoint is available.
 
 ## Compatibility and advanced use
 
-Windows 11 images from **22H2 onward** are supported. Insider and Canary builds
+Windows 11 images from **21H2 onward** are supported. Insider and Canary builds
 need compatible Microsoft image tools; Windows Server is not supported.
-See [requirements and compatibility](docs/usage.md) before choosing a source.
+21H2 is an older codebase than the 22H2-and-newer removal plans, so verify its
+output the same way you would test any build. See
+[requirements and compatibility](docs/usage.md) before choosing a source.
 
 <details>
 <summary>Looking for deeper customization or a very small image?</summary>

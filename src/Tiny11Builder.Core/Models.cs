@@ -28,9 +28,19 @@ public sealed record WindowsImage(
     int Index, string Name, string Description, string Architecture,
     Version Version, string Edition, string Installation, long Size)
 {
+    /// <summary>Windows 11 21H2 (the original release). The oldest build this engine accepts.</summary>
+    public const int MinimumBuild = 22000;
+    public const string MinimumRelease = "21H2";
+
     public string Summary => $"{Name}  |  {Architecture}  |  build {Version.Build}.{Version.Revision}";
-    public bool IsSupported => Index > 0 && Size > 0 && Version.Major == 10 && Version.Build >= 22621 &&
+    public bool IsSupported => Index > 0 && Size > 0 && Version.Major == 10 && Version.Build >= MinimumBuild &&
         Installation.Equals("Client", StringComparison.OrdinalIgnoreCase) && Architecture is "x64" or "arm64";
+
+    /// <summary>
+    /// 21H2 predates the 22H2 servicing baseline. It needs the same image tools as any other build, so it is supported,
+    /// but it is an older codebase: announce that so callers can set expectations instead of implying certification.
+    /// </summary>
+    public bool IsLegacyRelease => IsSupported && Version.Build < 22621;
 
     public void Validate()
     {
@@ -38,7 +48,7 @@ public sealed record WindowsImage(
             throw new InvalidDataException("Tiny11 Builder supports Windows 11 client images only. Windows Server images are not supported.");
         if (!IsSupported)
             throw new InvalidDataException(
-                "Choose a Windows 11 client image, build 22621 (22H2) or newer, in x64 or ARM64 format.");
+                $"Choose a Windows 11 client image, build {MinimumBuild} ({MinimumRelease}) or newer, in x64 or ARM64 format.");
     }
 }
 

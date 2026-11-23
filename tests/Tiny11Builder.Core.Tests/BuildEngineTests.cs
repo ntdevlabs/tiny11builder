@@ -10,6 +10,7 @@ namespace Tiny11Builder.Core.Tests;
 public sealed class BuildEngineTests
 {
     [Theory]
+    [InlineData(22000, "arm64", Compression.Recovery)]
     [InlineData(22621, "x64", Compression.Recovery)]
     [InlineData(22631, "arm64", Compression.Maximum)]
     [InlineData(26300, "x64", Compression.Recovery)]
@@ -33,6 +34,30 @@ public sealed class BuildEngineTests
             a[7..].Equals(fixture.Source, StringComparison.OrdinalIgnoreCase)));
         Assert.False(Directory.Exists(Path.Combine(result.WorkDirectory, "media")));
         Assert.Equal("completed", JsonSerializer.Deserialize<JobState>(File.ReadAllText(Path.Combine(result.WorkDirectory, "job.json")), JsonDefaults.Options)!.Status);
+    }
+
+    [Fact]
+    public async Task Twenty_one_H_two_builds_end_to_end_and_is_announced_as_an_older_codebase()
+    {
+        using var fixture = new BuildFixture(22000);
+        var messages = new List<BuildProgress>();
+        var result = await fixture.Engine.BuildAsync(fixture.Recipe,
+            new ImmediateProgress<BuildProgress>(messages.Add), CancellationToken.None);
+        Assert.True(File.Exists(result.IsoPath));
+        Assert.Contains(messages, m => m.Message.Contains("21H2") && m.Message.Contains("22000") &&
+            m.Message.Contains("predates the 22H2 removal plans"));
+        Assert.Contains(fixture.Runner.Calls, c => c.Contains("/Export-Image") && c.Contains("/SourceIndex:3"));
+    }
+
+    [Fact]
+    public async Task Twenty_one_H_two_refuses_to_build_below_the_21H2_floor_without_touching_the_source()
+    {
+        using var fixture = new BuildFixture(21999);
+        var original = File.ReadAllBytes(Path.Combine(fixture.Source, @"sources\install.wim"));
+        await Assert.ThrowsAsync<InvalidDataException>(() =>
+            fixture.Engine.BuildAsync(fixture.Recipe, null, CancellationToken.None));
+        Assert.Equal(original, File.ReadAllBytes(Path.Combine(fixture.Source, @"sources\install.wim")));
+        Assert.DoesNotContain(fixture.Runner.Calls, c => c.Contains("/Mount-Image"));
     }
 
     [Fact]

@@ -118,7 +118,7 @@ extreme removal profile. Its source, workspace, output and tool paths are
 empty intentionally: loading it keeps your current local paths and selected
 edition, or lets you choose any supported Windows 11 ISO afterward. It is
 not tied to a prepared image, language, edition or architecture. Supported
-means Windows 11 client x64/ARM64, 22H2 or newer, with compatible tools;
+means Windows 11 client x64/ARM64, 21H2 (22000) or newer, with compatible tools;
 unknown Insider builds still need a compatible engine.
 
 Every selected removal group appears **checked** in Components, including
@@ -351,9 +351,16 @@ around by disabling certificate validation. Follow the reported trust problem
 and use a current complete Microsoft toolset.
 Windows Server images are outside the supported client-image scope.
 
-The engine accepts **Windows 11 client builds 22621 (22H2) and newer**, including
-23H2, 24H2, 25H2, 26H2 and Insider/Canary media, in **x64 and ARM64**, without a
-hard-coded maximum build number. Image architecture, edition and version are
+The engine accepts **Windows 11 client builds 22000 (21H2) and newer**, including
+22H2, 23H2, 24H2, 25H2, 26H2 and Insider/Canary media, in **x64 and ARM64**,
+without a hard-coded maximum build number.
+
+21H2 is the original Windows 11 release and predates the removal plans written
+for 22H2 and newer. It is accepted, but treat it as a legacy source: some
+preset targets do not exist in that build and are reported as *not present*
+rather than guessed, and the installer, WinRE and servicing behaviour differ
+from later releases. Keep a current Microsoft image toolset and confirm the
+result in a VM. Image architecture, edition and version are
 read from DISM, not inferred from the ISO filename. Package/capability/feature
 identities come from the mounted image, so missing items are logged as *not
 present*, rather than guessed.

@@ -241,7 +241,6 @@
     "Text.SelectCustomAndChooseAWindowsISO": "选择自定义移除项或加载已保存的 JSON 配方。",
     "Text.SelectIndividualAppsComponentsAndServicesToRemove": "自行选择要移除的应用、组件和服务。",
     "Text.ProtectedItemsIncluded": "包含受保护的组件",
-    "Text.Windows1122H2OrNewerX64AndARM64Insider": "Windows 11 22H2 或更高版本 · x64 和 ARM64 · Insider／Canary",
     "Text.TestCoreAndCustomImagesInAVMBefore": "使用 Core 或自定义映像之前，请先在虚拟机中测试。",
     "Text.DownloadTheLatestWindows11FromMicrosoftOrSelect": "从微软下载最新的 Windows 11，或选择本地 ISO／已解压的安装文件夹。检查映像后即可选择要构建的版本。",
     "Text.LocalInstallationMedia": "本地安装介质",
@@ -409,7 +408,6 @@
     "Text.SupportOptionsCouldNotBeOpened": "无法打开支持方式选择界面。",
     "Text.ThisSupportLinkHasNoValidDestination": "此支持链接没有有效的目标地址。",
     "Text.ThisEditionIsNotSupported": "不支持此版本。",
-    "Text.ChooseAWindows11ClientImage22H2OrNewer": "请选择 Windows 11 22H2 或更高版本的客户端映像，体系结构须为 x64 或 ARM64。",
     "Text.AdministratorPrivilegesRequired": "需要管理员权限。",
     "Text.CloseAndReopenTiny11BuilderExeThenApproveTheWindows": "请关闭并重新打开 Tiny11Builder.exe，然后在 Windows 管理员权限提示中选择允许。",
     "Text.ImageSelected": "已选择映像。",
@@ -690,6 +688,9 @@
     "Text.Joined657": "“恢复工作区”会丢弃作业的工作副本，但不会丢弃已有保存进度的作业。请改用“恢复构建”，从已保存的进度继续。\n\n未进行任何更改。",
     "Text.Joined658": "请仅选择中断的 tiny11 作业中的 job.json。这会丢弃该作业挂载的工作副本，并移除暂存的安装介质。日志、配置、报告和源 ISO 将保留。映像已经提交的作业具有已保存的进度，此处绝不会将其丢弃；请对这类作业使用“恢复构建”。正在运行的构建不能恢复工作区。",
     "Image.ServerUnsupported": "不支持 Windows Server 映像。",
-    "Preset.EdgePolicyWithFileRemoval": "抑制首次运行提示、侧边栏和推荐内容。此预设还会通过单独的文件移除分组删除 Edge 和 WebView2 文件。"
+    "Preset.EdgePolicyWithFileRemoval": "抑制首次运行提示、侧边栏和推荐内容。此预设还会通过单独的文件移除分组删除 Edge 和 WebView2 文件。",
+    "Text.Windows1121H2OrNewerX64AndARM64Insider": "Windows 11 21H2 或更高版本 · x64 和 ARM64 · Insider／Canary",
+    "Text.ChooseAWindows11ClientImage21H2OrNewer": "请选择 Windows 11 21H2 或更高版本的客户端映像，体系结构须为 x64 或 ARM64。",
+    "Image.LegacyReleaseNote": "Windows 11 21H2 是较旧的代码库。此映像中不存在的移除项将被跳过并记录到日志。"
   }
 }

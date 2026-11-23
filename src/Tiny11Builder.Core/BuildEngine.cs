@@ -204,6 +204,8 @@ public sealed partial class BuildEngine
                 $"copy workers={execution.CopyWorkers}; intermediate={workingCompression}.");
             Log("Policies are verified as offline registry values, not as guarantees of Windows behavior. Build/edition support varies.");
             if (image.Version.Build > 26100) Log("Newer/Insider builds require matching tools; no boot certification is implied.");
+            if (image.IsLegacyRelease) Log($"Windows 11 {WindowsImage.MinimumRelease} media (build {image.Version.Build}) predates the "
+                "22H2 removal plans. Supported items that are absent are logged as not present; verify the result in a VM.");
             if (recipe.Flavor == BuildFlavor.Core || recipe.ExpertActions.Length > 0)
                 Log("WARNING: Core/expert output may not boot, update, recover, or provide antivirus protection. Test in an isolated VM.");
             Stage("Copy media", "Copying setup media, excluding the original multi-edition installation image.");

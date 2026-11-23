@@ -241,7 +241,6 @@
     "Text.SelectCustomAndChooseAWindowsISO": "Choose Custom removals or load a saved JSON recipe.",
     "Text.SelectIndividualAppsComponentsAndServicesToRemove": "Select individual apps, components and services to remove.",
     "Text.ProtectedItemsIncluded": "Protected items included",
-    "Text.Windows1122H2OrNewerX64AndARM64Insider": "Windows 11 22H2 or newer · x64 and ARM64 · Insider / Canary",
     "Text.TestCoreAndCustomImagesInAVMBefore": "Test Core and custom images in a VM before use.",
     "Text.DownloadTheLatestWindows11FromMicrosoftOrSelect": "Download the latest Windows 11 from Microsoft, or select an ISO or extracted installation folder. Inspect the image to select an edition.",
     "Text.LocalInstallationMedia": "Local installation media",
@@ -409,7 +408,6 @@
     "Text.SupportOptionsCouldNotBeOpened": "Support options could not be opened.",
     "Text.ThisSupportLinkHasNoValidDestination": "This support link has no valid destination.",
     "Text.ThisEditionIsNotSupported": "This edition is not supported.",
-    "Text.ChooseAWindows11ClientImage22H2OrNewer": "Choose a Windows 11 client image, 22H2 or newer, in x64 or ARM64 format.",
     "Text.AdministratorPrivilegesRequired": "Administrator privileges required.",
     "Text.CloseAndReopenTiny11BuilderExeThenApproveTheWindows": "Close and reopen Tiny11Builder.exe, then approve the Windows administrator prompt.",
     "Text.ImageSelected": "Image selected.",
@@ -690,6 +688,9 @@
     "Text.Joined657": "Recover discards a job's working copy, and it does not do that for a job with saved progress. Resume continues the build from that progress instead.\n\nNothing has been changed.",
     "Text.Joined658": "Select only job.json from the interrupted tiny11 job. This discards that job's mounted working copy and removes its staged media. Its logs, recipe, report and your source ISO are kept. A job whose image was already committed has saved progress and is never discarded here; use Resume build for it. Active builds cannot be recovered.",
     "Image.ServerUnsupported": "Windows Server images are not supported.",
-    "Preset.EdgePolicyWithFileRemoval": "Suppress first-run, sidebar and recommendations. This preset also removes Edge and WebView2 files through its separate file-removal group."
+    "Preset.EdgePolicyWithFileRemoval": "Suppress first-run, sidebar and recommendations. This preset also removes Edge and WebView2 files through its separate file-removal group.",
+    "Text.Windows1121H2OrNewerX64AndARM64Insider": "Windows 11 21H2 or newer · x64 and ARM64 · Insider / Canary",
+    "Text.ChooseAWindows11ClientImage21H2OrNewer": "Choose a Windows 11 client image, 21H2 or newer, in x64 or ARM64 format.",
+    "Image.LegacyReleaseNote": "Windows 11 21H2 is an older codebase. Removals that do not exist in this image are skipped and logged."
   }
 }

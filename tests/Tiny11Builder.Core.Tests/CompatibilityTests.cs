@@ -10,6 +10,8 @@ namespace Tiny11Builder.Core.Tests;
 public sealed class CompatibilityTests
 {
     [Theory]
+    [InlineData(22000, "x64")]
+    [InlineData(22000, "arm64")]
     [InlineData(22621, "x64")]
     [InlineData(22621, "arm64")]
     [InlineData(22631, "x64")]
@@ -19,15 +21,42 @@ public sealed class CompatibilityTests
     [InlineData(28000, "x64")]
     [InlineData(29689, "arm64")]
     [InlineData(99999, "x64")]
-    public void Accepts_22H2_through_newer_and_Canary_without_an_upper_limit(int build, string architecture) =>
+    public void Accepts_21H2_through_newer_and_Canary_without_an_upper_limit(int build, string architecture) =>
         Image(build, architecture).Validate();
 
     [Theory]
-    [InlineData(22000, "x64", "Client")]
+    [InlineData(19045, "x64", "Client")]
+    [InlineData(21999, "x64", "Client")]
     [InlineData(22621, "x86", "Client")]
     [InlineData(29689, "arm64", "Server")]
     public void Rejects_non_supported_image_families(int build, string architecture, string installation) =>
         Assert.Throws<InvalidDataException>(() => (Image(build, architecture) with { Installation = installation }).Validate());
+
+    [Fact]
+    public void Minimum_release_is_21H2_and_21H2_is_flagged_as_a_legacy_release()
+    {
+        Assert.Equal(22000, WindowsImage.MinimumBuild);
+        Assert.Equal("21H2", WindowsImage.MinimumRelease);
+        Assert.True(Image(22000).IsLegacyRelease);
+        Assert.True(Image(22621).IsSupported);
+        Assert.False(Image(22621).IsLegacyRelease);
+        Assert.False(Image(21999).IsLegacyRelease);
+        var error = Assert.Throws<InvalidDataException>(() => Image(21999).Validate());
+        Assert.Contains("21H2", error.Message);
+        Assert.Contains("22000", error.Message);
+    }
+
+    [Theory]
+    [InlineData(22000)]
+    [InlineData(22621)]
+    [InlineData(26100)]
+    public void Supported_builds_are_unchanged_by_the_lower_floor(int build)
+    {
+        var image = Image(build);
+        image.Validate();
+        Assert.True(image.IsSupported);
+        Assert.Equal(build, image.Version.Build);
+    }
 
     [Fact]
     public void Parses_actual_build_revision_and_empty_description()

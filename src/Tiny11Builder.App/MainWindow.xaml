@@ -165,7 +165,7 @@
                             </Grid>
                             <Grid Grid.Row="2" Padding="0,16,0,0">
                                 <StackPanel Spacing="8">
-                                    <TextBlock Text="Windows 11 22H2 or newer · x64 and ARM64 · Insider / Canary" FontSize="13" TextWrapping="Wrap" local:Translation.Properties="Text=Text.Windows1122H2OrNewerX64AndARM64Insider"/>
+                                    <TextBlock Text="Windows 11 21H2 or newer · x64 and ARM64 · Insider / Canary" FontSize="13" TextWrapping="Wrap" local:Translation.Properties="Text=Text.Windows1121H2OrNewerX64AndARM64Insider"/>
                                     <TextBlock Text="Test Core and custom images in a VM before use."
                                                Style="{StaticResource Secondary}" FontSize="12" local:Translation.Properties="Text=Text.TestCoreAndCustomImagesInAVMBefore"/>
                                 </StackPanel>
