@@ -121,6 +121,9 @@ public sealed partial class BuildEngine
     public async Task<BuildResult> BuildAsync(BuildRecipe recipe, IProgress<BuildProgress>? progress, CancellationToken token)
     {
         var elapsed = Stopwatch.StartNew();
+        // Nano11 exists to produce the smallest ISO, so its output settings are the smallest ones. The recipe that is
+        // written to the job and used for resume is the one that actually ran.
+        if (recipe.Flavor == BuildFlavor.Nano) recipe = recipe.WithSmallestOutput();
         PathSafety.Validate(recipe);
         WindowsUpdates.ValidateSources(recipe);
         if (string.IsNullOrEmpty(recipe.OscdimgPath)) throw new FileNotFoundException("Windows ADK oscdimg.exe is required to create a bootable ISO.");
@@ -139,6 +142,11 @@ public sealed partial class BuildEngine
         var efiRelative = new[] { @"efi\microsoft\boot\efisys.bin", @"efi\microsoft\boot\efisys_noprompt.bin" }
             .FirstOrDefault(p => File.Exists(Path.Combine(media.RootPath, p))) ??
             throw new InvalidDataException("The source does not contain a supported UEFI boot image.");
+        // Older media, 21H2 in particular, can omit the .NET 3.5 payload. Refuse before a job or mount exists
+        // rather than stopping after the image has already been serviced for earlier stages.
+        if (recipe.EnableNetFx3 && !MediaManifest.HasNetFx3Payload(media.RootPath))
+            throw new InvalidDataException("This source has no sources\\sxs .NET 3.5 payload, so .NET 3.5 cannot be " +
+                "enabled offline from it. Turn off .NET 3.5 in Build settings, or use media that includes that folder.");
         var sourceInstall = new FileInfo(sourceWim);
         using var job = BuildJob.Create(recipe.WorkspacePath, "build", execution.BufferedLog);
         var staging = Path.Combine(job.Directory, "media");
@@ -194,6 +202,7 @@ public sealed partial class BuildEngine
                 ".NET 3.5" => recipe.EnableNetFx3,
                 "Component cleanup" => recipe.SelectedOptions.Contains("cleanup") || recipe.Flavor == BuildFlavor.Core,
                 "Core pruning" => recipe.Flavor == BuildFlavor.Core,
+                "Nano11 reductions" => recipe.Flavor == BuildFlavor.Nano,
                 "Redundant data" => recipe.RemoveRedundantData,
                 "Setup image" => SetupInstaller.RequiresBootEdit(recipe),
                 _ => true
@@ -204,7 +213,9 @@ public sealed partial class BuildEngine
                 $"copy workers={execution.CopyWorkers}; intermediate={workingCompression}.");
             Log("Policies are verified as offline registry values, not as guarantees of Windows behavior. Build/edition support varies.");
             if (image.Version.Build > 26100) Log("Newer/Insider builds require matching tools; no boot certification is implied.");
-            if (recipe.Flavor == BuildFlavor.Core || recipe.ExpertActions.Length > 0)
+            if (image.IsLegacyRelease) Log($"Windows 11 {WindowsImage.MinimumRelease} media (build {image.Version.Build}) predates the "
+                "22H2 removal plans. Supported items that are absent are logged as not present; verify the result in a VM.");
+            if (recipe.Flavor is BuildFlavor.Core or BuildFlavor.Nano || recipe.ExpertActions.Length > 0)
                 Log("WARNING: Core/expert output may not boot, update, recover, or provide antivirus protection. Test in an isolated VM.");
             Stage("Copy media", "Copying setup media, excluding the original multi-edition installation image.");
             session.StagingResult = await MediaStager.CopyAsync(media.RootPath, staging, execution.CopyWorkers,
@@ -393,17 +404,20 @@ public sealed partial class BuildEngine
                 recipe.TurboMode, "Optional features", token).ConfigureAwait(false);
             WarnDeferredCapabilities(session);
             // DISM refuses cleanup while operations are pending, and .NET 3.5 leaves some until first boot.
-            if (recipe.SelectedOptions.Contains("cleanup") || recipe.Flavor == BuildFlavor.Core)
+            if (recipe.SelectedOptions.Contains("cleanup") || recipe.Flavor is BuildFlavor.Core or BuildFlavor.Nano)
             {
                 Stage("Component cleanup", recipe.Flavor == BuildFlavor.Core ?
-                    "Cleaning and resetting the component base before Core payload pruning." : "Cleaning superseded components without ResetBase.");
+                    "Cleaning and resetting the component base before Core payload pruning." :
+                    recipe.Flavor == BuildFlavor.Nano ?
+                        "Cleaning and resetting the component base before the Nano11 store replacement." :
+                        "Cleaning superseded components without ResetBase.");
                 await CleanComponentsAsync(session, token).ConfigureAwait(false);
             }
             if (recipe.EnableNetFx3)
             {
                 Stage(".NET 3.5", "Enabling .NET 3.5 from matching source media, without Windows Update.");
                 var sxs = Path.Combine(media.RootPath, @"sources\sxs");
-                if (!Directory.Exists(sxs)) throw new DirectoryNotFoundException("The source has no sources\\sxs payload for .NET 3.5.");
+                if (!MediaManifest.HasNetFx3Payload(media.RootPath)) throw new DirectoryNotFoundException("The source has no sources\\sxs payload for .NET 3.5.");
                 await dism.RunAsync(token, $"/Image:{mount}", "/Enable-Feature", "/FeatureName:NetFx3", "/All",
                     "/LimitAccess", $"/Source:{sxs}", "/NoRestart").ConfigureAwait(false);
             }
@@ -423,7 +437,10 @@ public sealed partial class BuildEngine
                 Stage("Core pruning", "Trimming Core component payloads and recovery files.");
                 imageOperations.TrimCore(mount, image.Architecture, Log, token, recipe.TurboMode);
             }
+            // Cross-check the retained families before any Nano11 file is removed, so a wrong image is refused early.
+            if (recipe.Flavor == BuildFlavor.Nano) Nano11Plan.RequireRetainedFamilies(mount, image.Architecture);
             imageOperations.ApplyNativeActions(mount, recipe.ExpertActions, Log, recipe.TurboMode);
+            if (recipe.Flavor == BuildFlavor.Nano) await TrimNano11Async(session, token).ConfigureAwait(false);
             if (recipe.RemoveRedundantData)
             {
                 Stage("Redundant data", "Removing offline cache, archived logs and crash reports.");

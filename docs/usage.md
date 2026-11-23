@@ -19,13 +19,25 @@ unchanged below for compatibility.
 | --- | --- |
 | Tiny11 | The fixed original-style removal set: bundled apps, Edge/WebView2 and OneDrive binaries, hardware-check settings, reserved-storage and automatic-encryption settings. Keeps Update, Defender, WinRE, Store and shared runtimes. Choose Custom to edit removals. |
 | Tiny11 Core | Applies changes before resetting the component base. Keeps common-controls/GDI+/CRT/servicing files, deletes other WinSxS component folders, removes WinRE and disables Windows Update and Defender. These changes cannot be reversed. Use only for test VMs. |
+| Nano11 | Core's removals plus the reductions from the nano11 builder, and always the smallest output settings (recovery-ESD installation image, redundant data removed, no staged .NET 3.5 setup payload, rebuilt single-index `boot.wim`). Those four settings are shown but locked while Nano11 is selected: a longer app and package list, direct payload, driver-store and font removal, deleted services, and a component store replaced by only the retained runtime and servicing families (WinSxS is deleted and rebuilt from that list). Not a Windows 11 replacement. |
 | Custom | Starts with no removals selected. Choose individual removal groups or list preinstalled apps, protected system apps, optional features, language capabilities, CBS packages, services, drivers and WinSxS component folders. Features and services also offer disable-only. Core's irreversible removals are a separate, unchecked option with the same warning and acknowledgement. |
 
 The presets are original-style, not command-for-command copies of the scripts.
 Tiny11 cleans superseded components without `/ResetBase`, preserving the
 ability to uninstall existing updates. Core does reset the base, retains
 additional detected runtime/servicing families, and removes WinRE without
-creating the original script's empty placeholder. These compatibility choices
+creating the original script's empty placeholder.
+
+Nano11 mirrors nano11.ps1: it names 39 provisioned-app fragments, 31 package
+and capability families, direct payloads (Edge, WebView2, OneDrive setup, four
+IME folders, Web/Help/Cursors, TTS engines, Defender definitions, Temp), the
+printer/scanner/multi-function driver classes, all fonts except the plan's
+Latin families, five scheduled tasks and 14 services, then deletes WinSxS and
+rebuilds it from the retained families. It also keeps the original builder's
+empty `Recovery\winre.wim` placeholder. Audio services are deliberately not
+removed. Nano11 reads the image's own default UI language and architecture
+instead of asking, and it refuses to start its store replacement when a
+required family is missing rather than producing an unbootable image. These compatibility choices
 are unchanged by the reliability update; further reductions require separate
 Setup/boot testing.
 
@@ -81,8 +93,11 @@ The six-step wizard provides:
   not a VM-only DVD-disconnection workaround; Windows licensing and
   activation requirements are unchanged.
 - Optional .NET 3.5 from matching `sources\sxs`, compact installation, and
-  best-effort local-account setup. No account, password, product key, automatic
-  logon or EULA acceptance is injected.
+  best-effort local-account setup. Media without that payload (some 21H2
+  images) disables the option with the reason shown next to it, and a build
+  that still requests it stops before any stage runs rather than after
+  servicing has started. No account, password, product key, automatic logon
+  or EULA acceptance is injected.
 - Automatic image-tool detection and compatible-version checks. oscdimg is
   found locally or downloaded from Microsoft's symbol server with an exact
   SHA-256 pin. No tool-selection controls or script execution-policy changes.
@@ -118,7 +133,7 @@ extreme removal profile. Its source, workspace, output and tool paths are
 empty intentionally: loading it keeps your current local paths and selected
 edition, or lets you choose any supported Windows 11 ISO afterward. It is
 not tied to a prepared image, language, edition or architecture. Supported
-means Windows 11 client x64/ARM64, 22H2 or newer, with compatible tools;
+means Windows 11 client x64/ARM64, 21H2 (22000) or newer, with compatible tools;
 unknown Insider builds still need a compatible engine.
 
 Every selected removal group appears **checked** in Components, including
@@ -351,9 +366,16 @@ around by disabling certificate validation. Follow the reported trust problem
 and use a current complete Microsoft toolset.
 Windows Server images are outside the supported client-image scope.
 
-The engine accepts **Windows 11 client builds 22621 (22H2) and newer**, including
-23H2, 24H2, 25H2, 26H2 and Insider/Canary media, in **x64 and ARM64**, without a
-hard-coded maximum build number. Image architecture, edition and version are
+The engine accepts **Windows 11 client builds 22000 (21H2) and newer**, including
+22H2, 23H2, 24H2, 25H2, 26H2 and Insider/Canary media, in **x64 and ARM64**,
+without a hard-coded maximum build number.
+
+21H2 is the original Windows 11 release and predates the removal plans written
+for 22H2 and newer. It is accepted, but treat it as a legacy source: some
+preset targets do not exist in that build and are reported as *not present*
+rather than guessed, and the installer, WinRE and servicing behaviour differ
+from later releases. Keep a current Microsoft image toolset and confirm the
+result in a VM. Image architecture, edition and version are
 read from DISM, not inferred from the ISO filename. Package/capability/feature
 identities come from the mounted image, so missing items are logged as *not
 present*, rather than guessed.

@@ -255,6 +255,10 @@ internal static class Digest
 
 internal static class MediaManifest
 {
+    /// <summary>Whether the media carries the .NET 3.5 payload that /Enable-Feature /Source requires.</summary>
+    public static bool HasNetFx3Payload(string root) =>
+        Directory.Exists(Path.Combine(root, @"sources\sxs"));
+
     public static IEnumerable<string> Files(string root)
     {
         foreach (var entry in Directory.EnumerateFileSystemEntries(root))

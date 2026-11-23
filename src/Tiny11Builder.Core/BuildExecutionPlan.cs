@@ -13,7 +13,7 @@ public sealed record BuildExecutionPlan(bool OptimizedMount, bool FastWorkingIma
     {
         if (logicalProcessors < 1) throw new ArgumentOutOfRangeException(nameof(logicalProcessors));
         return new(recipe.TurboMode && allowOptimizedMount,
-            recipe.TurboMode && (recipe.Flavor == BuildFlavor.Core ||
+            recipe.TurboMode && (recipe.Flavor is BuildFlavor.Core or BuildFlavor.Nano ||
                 recipe.Compression == Compression.Fast ||
                 recipe.ExpertActions.Any(a => a.Kind == ImageItemKind.ComponentPayload)),
             recipe.TurboMode ? Math.Clamp(logicalProcessors / 2, 4, 8) : 4,

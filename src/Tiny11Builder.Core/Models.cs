@@ -5,8 +5,9 @@ namespace Tiny11Builder.Core;
 
 public enum Compression { Recovery, Maximum, Fast }
 public enum CleanupPreset { Balanced, Minimal, Original, Custom }
-public enum BuildFlavor { Regular, Core }
-public enum BuildMode { Tiny11, Tiny11Core, Custom }
+public enum BuildFlavor { Regular, Core, Nano }
+// Custom stays last: the app maps a combo-box index onto this enum.
+public enum BuildMode { Tiny11, Tiny11Core, Nano11, Custom }
 public enum OptionKind { App, Feature, Capability, Policy, File }
 public enum PolicyHive { Software, DefaultUser, System }
 public enum ImageItemKind { ProvisionedApp, SystemApp, Feature, Capability, Package, Service, ComponentPayload, FilePayload }
@@ -28,9 +29,19 @@ public sealed record WindowsImage(
     int Index, string Name, string Description, string Architecture,
     Version Version, string Edition, string Installation, long Size)
 {
+    /// <summary>Windows 11 21H2 (the original release). The oldest build this engine accepts.</summary>
+    public const int MinimumBuild = 22000;
+    public const string MinimumRelease = "21H2";
+
     public string Summary => $"{Name}  |  {Architecture}  |  build {Version.Build}.{Version.Revision}";
-    public bool IsSupported => Index > 0 && Size > 0 && Version.Major == 10 && Version.Build >= 22621 &&
+    public bool IsSupported => Index > 0 && Size > 0 && Version.Major == 10 && Version.Build >= MinimumBuild &&
         Installation.Equals("Client", StringComparison.OrdinalIgnoreCase) && Architecture is "x64" or "arm64";
+
+    /// <summary>
+    /// 21H2 predates the 22H2 servicing baseline. It needs the same image tools as any other build, so it is supported,
+    /// but it is an older codebase: announce that so callers can set expectations instead of implying certification.
+    /// </summary>
+    public bool IsLegacyRelease => IsSupported && Version.Build < 22621;
 
     public void Validate()
     {
@@ -38,7 +49,7 @@ public sealed record WindowsImage(
             throw new InvalidDataException("Tiny11 Builder supports Windows 11 client images only. Windows Server images are not supported.");
         if (!IsSupported)
             throw new InvalidDataException(
-                "Choose a Windows 11 client image, build 22621 (22H2) or newer, in x64 or ARM64 format.");
+                $"Choose a Windows 11 client image, build {MinimumBuild} ({MinimumRelease}) or newer, in x64 or ARM64 format.");
     }
 }
 
@@ -92,8 +103,8 @@ public sealed record BuildRecipe
         if (SchemaVersion != 1 || !Enum.IsDefined(Compression) || !Enum.IsDefined(Flavor) ||
             (Mode is { } mode && !Enum.IsDefined(mode)))
             throw new InvalidDataException("This recipe version or compression mode is not supported.");
-        if (Flavor == BuildFlavor.Core && !CoreAcknowledged)
-            throw new InvalidDataException("Core requires acknowledgement of the loss of updates, recovery and antivirus protection.");
+        if (Flavor is BuildFlavor.Core or BuildFlavor.Nano && !CoreAcknowledged)
+            throw new InvalidDataException("Core and Nano11 require acknowledgement of the loss of updates, recovery and antivirus protection.");
         if (ExpertActions is null || ExpertActions.Any(action => action is null) ||
             (ExpertActions.Length > 0 && !ExpertAcknowledged))
             throw new InvalidDataException("Custom removals require acknowledgement of the risk of an unbootable image.");
@@ -110,8 +121,8 @@ public sealed record BuildRecipe
                 "Load the portable extreme recipe, choose your Windows ISO, and use Shrink boot.wim to rebuild its stock installer.");
         if (IsoSizeLimitBytes is { } limit && (limit is < 64_000_000 or > 4_000_000_000 || Mode is not (null or BuildMode.Custom)))
             throw new InvalidDataException("Custom ISO size limits must be between 64 MB and 4 GB (decimal bytes).");
-        if (ShrinkBootImage && Mode is not (null or BuildMode.Custom))
-            throw new InvalidDataException("Shrinking boot.wim is a Custom option.");
+        if (ShrinkBootImage && Mode is not (null or BuildMode.Custom or BuildMode.Nano11))
+            throw new InvalidDataException("Shrinking boot.wim is a Custom or Nano11 option.");
         if (ImageIndex < 1 || SelectedOptions is null ||
             SelectedOptions.Length != SelectedOptions.Distinct(StringComparer.Ordinal).Count())
             throw new InvalidDataException("Invalid image index or duplicate cleanup options.");
@@ -130,12 +141,23 @@ public sealed record BuildRecipe
                 throw new InvalidDataException($"Unknown cleanup option: {id}");
         if (SelectedOptions.Any(NativePayloadOptions.IsSelected) && (!ExpertAcknowledged || Mode is not (null or BuildMode.Custom)))
             throw new InvalidDataException("Direct payload groups require Custom and the advanced-risk acknowledgement.");
-        if (Mode is BuildMode.Tiny11 or BuildMode.Tiny11Core &&
-            (Flavor != (Mode == BuildMode.Tiny11Core ? BuildFlavor.Core : BuildFlavor.Regular) ||
+        if (Mode is BuildMode.Tiny11 or BuildMode.Tiny11Core or BuildMode.Nano11 &&
+            (Flavor != (Mode switch { BuildMode.Tiny11Core => BuildFlavor.Core, BuildMode.Nano11 => BuildFlavor.Nano, _ => BuildFlavor.Regular }) ||
              ExpertActions.Length > 0 ||
              !SelectedOptions.ToHashSet(StringComparer.Ordinal).SetEquals(CleanupCatalog.ForMode(Mode.Value))))
-            throw new InvalidDataException("Use Custom for changes to the Tiny11 or Tiny11 Core removal sets.");
+            throw new InvalidDataException("Use Custom for changes to the Tiny11, Tiny11 Core or Nano11 removal sets.");
     }
+
+    /// <summary>
+    /// The smallest settings a mode can use. Nano11 applies all of them automatically, because its purpose is the
+    /// smallest ISO rather than a serviceable one: recovery ESD, no redundant offline data, no staged .NET 3.5 setup
+    /// payload and a rebuilt single-index boot.wim.
+    /// </summary>
+    public BuildRecipe WithSmallestOutput() => this with
+    {
+        Compression = Compression.Recovery, RemoveRedundantData = true, OmitNetFx3SetupPayload = true,
+        ShrinkBootImage = true
+    };
 
     public static BuildRecipe Read(string path)
     {

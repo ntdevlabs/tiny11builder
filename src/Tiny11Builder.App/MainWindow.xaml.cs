@@ -38,6 +38,8 @@ public sealed partial class MainWindow : Window
     private bool resultTurbo;
     private int resultUpdateCount;
     private bool coreAcknowledged;
+    // False when the inspected media has no sources\sxs, so .NET 3.5 cannot be enabled offline from it.
+    private bool hasNetFx3Payload = true;
     private bool modalOpen;
     private enum NoticeAction { None, OpenLogs, CopyDetails, OpenTools, OpenOfficialDownload }
     private string officialDownloadPage = OfficialImageDownloader.DownloadPage;
@@ -157,7 +159,7 @@ public sealed partial class MainWindow : Window
 
     private FrameworkElement[] Panels => [WelcomePanel, SourcePanel, CleanupPanel, SettingsPanel, ReviewPanel, BuildPanel];
     private BuildMode SelectedMode => (BuildMode)ModeChoice.SelectedIndex;
-    private bool UsesCore => SelectedMode == BuildMode.Tiny11Core ||
+    private bool UsesCore => SelectedMode is BuildMode.Tiny11Core or BuildMode.Nano11 ||
         (SelectedMode == BuildMode.Custom && CustomCoreCheck.IsOn);
     private static string HostArchitecture => RuntimeInformation.OSArchitecture == Architecture.Arm64 ? "arm64" : "x64";
 
@@ -173,9 +175,9 @@ public sealed partial class MainWindow : Window
         if (WelcomePanel is null || ModeCards is null || RemovalModeCards is null || ReviewCards is null || SourceCards is null) return;
         var padding = ContentScroller.Padding;
         WelcomePanel.MinHeight = Math.Max(0, ContentScroller.ActualHeight - padding.Top - padding.Bottom);
-        var stacked = ContentScroller.ActualWidth - padding.Left - padding.Right < 560;
-        ArrangeModeCards(ModeCards, [RegularModeCard, CoreModeCard, CustomModeCard], stacked);
-        ArrangeModeCards(RemovalModeCards, [Tiny11Selection, CoreSelection, CustomSelection], stacked);
+        var stacked = ContentScroller.ActualWidth - padding.Left - padding.Right < 760;
+        ArrangeModeCards(ModeCards, [RegularModeCard, CoreModeCard, CustomModeCard, NanoModeCard], stacked);
+        ArrangeModeCards(RemovalModeCards, [Tiny11Selection, CoreSelection, CustomSelection, NanoSelection], stacked);
         ArrangeSourceCards(ContentScroller.ActualWidth - padding.Left - padding.Right);
         ReviewCards.ColumnDefinitions[1].Width = stacked ? new GridLength(0) : new GridLength(1, GridUnitType.Star);
         FrameworkElement[] review = [ReviewImageCard, ReviewModeCard, ReviewPathsCard, ReviewOptionsCard];
@@ -393,24 +395,35 @@ public sealed partial class MainWindow : Window
         });
     }
 
-    private BuildRecipe CreateRecipe() => new()
+    // Nano11 always builds its smallest output, so the recipe reflects that here: the review, the validation and the
+    // build all describe the same settings.
+    private BuildRecipe CreateRecipe()
     {
-        SourcePath = SourcePathBox.Text.Trim(), ImageIndex = image?.Index ?? 1,
-        WorkspacePath = WorkspaceBox.Text.Trim(), OutputPath = OutputBox.Text.Trim(),
-        DismPath = servicingTool, OscdimgPath = isoTool,
-        Mode = SelectedMode, Flavor = UsesCore ? BuildFlavor.Core : BuildFlavor.Regular,
-        CoreAcknowledged = coreAcknowledged, ExpertAcknowledged = ExpertAccepted,
-        SelectedOptions = options.Where(o => o.Selected).Select(o => o.Option.Id).ToArray(),
-        ExpertActions = inventory.Count > 0 ? inventory.Where(i => i.Selected).Select(i => i.Action).ToArray() : pendingActions,
-        Compression = (Compression)CompressionChoice.SelectedIndex,
-        CompactInstallation = CompactCheck.IsOn, EnableNetFx3 = NetFxCheck.IsOn,
-        PreferLocalAccount = LocalAccountCheck.IsOn, KeepWorkingFiles = KeepFilesCheck.IsOn,
-        TurboMode = TurboCheck.IsOn, RemoveRedundantData = RedundantDataCheck.IsOn,
-        OmitNetFx3SetupPayload = OmitSetupCheck.IsOn,
-        UpdatePackages = updatePackages.Paths,
-        IsoSizeLimitBytes = SelectedMode == BuildMode.Custom ? recipeIsoSizeLimit : null,
-        ShrinkBootImage = SelectedMode == BuildMode.Custom && ShrinkBootCheck.IsChecked == true
-    };
+        var recipe = new BuildRecipe
+        {
+            SourcePath = SourcePathBox.Text.Trim(), ImageIndex = image?.Index ?? 1,
+            WorkspacePath = WorkspaceBox.Text.Trim(), OutputPath = OutputBox.Text.Trim(),
+            DismPath = servicingTool, OscdimgPath = isoTool,
+            CoreAcknowledged = coreAcknowledged, ExpertAcknowledged = ExpertAccepted,
+            SelectedOptions = options.Where(o => o.Selected).Select(o => o.Option.Id).ToArray(),
+            ExpertActions = inventory.Count > 0 ? inventory.Where(i => i.Selected).Select(i => i.Action).ToArray() : pendingActions,
+            Compression = (Compression)CompressionChoice.SelectedIndex,
+            CompactInstallation = CompactCheck.IsOn, EnableNetFx3 = NetFxCheck.IsOn,
+            PreferLocalAccount = LocalAccountCheck.IsOn, KeepWorkingFiles = KeepFilesCheck.IsOn,
+            TurboMode = TurboCheck.IsOn, RemoveRedundantData = RedundantDataCheck.IsOn,
+            OmitNetFx3SetupPayload = OmitSetupCheck.IsOn,
+            UpdatePackages = updatePackages.Paths,
+            IsoSizeLimitBytes = SelectedMode == BuildMode.Custom ? recipeIsoSizeLimit : null,
+            ShrinkBootImage = SelectedMode is BuildMode.Custom or BuildMode.Nano11 && ShrinkBootCheck.IsChecked == true
+        };
+        recipe = recipe with
+        {
+            Mode = SelectedMode,
+            Flavor = SelectedMode == BuildMode.Nano11 ? BuildFlavor.Nano : UsesCore ? BuildFlavor.Core : BuildFlavor.Regular
+        };
+        // The engine applies this too, so a recipe that never passed through the app still builds the smallest ISO.
+        return SelectedMode == BuildMode.Nano11 ? recipe.WithSmallestOutput() : recipe;
+    }
 
     private async Task RunOperation(OperationKind kind, Func<CancellationToken, Task> action)
     {
@@ -777,7 +790,7 @@ public sealed partial class MainWindow : Window
             ShowNotice(image.Installation.StartsWith("Server", StringComparison.OrdinalIgnoreCase) ||
                 image.Name.Contains("Windows Server", StringComparison.OrdinalIgnoreCase) ?
                 UiText.Get("Image.ServerUnsupported") : UiText.FromEnglish("This edition is not supported."),
-                UiText.FromEnglish("Choose a Windows 11 client image, 22H2 or newer, in x64 or ARM64 format."), InfoBarSeverity.Warning);
+                UiText.FromEnglish("Choose a Windows 11 client image, 21H2 or newer, in x64 or ARM64 format."), InfoBarSeverity.Warning);
         UpdateNavigation();
     }
 
@@ -806,7 +819,13 @@ public sealed partial class MainWindow : Window
         var restored = source.Equals(pendingSourcePath, StringComparison.OrdinalIgnoreCase) ? pendingImageIndex : null;
         EditionChoice.ItemsSource = images;
         EditionChoice.SelectedIndex = ImageDefaults.SelectPosition(images, restored);
+        // Older media can omit sources\sxs; say so where the build options are chosen, not mid-build.
+        hasNetFx3Payload = Directory.Exists(Path.Combine(source, @"sources\sxs"));
+        NetFxPayloadNote.Visibility = hasNetFx3Payload ? Visibility.Collapsed : Visibility.Visible;
+        if (!hasNetFx3Payload) NetFxCheck.IsOn = false;
         ShowNotice(UiText.Get("Image.Inspected"), UiText.Format("Image.EditionsFound", images.Count, image?.Name) +
+            (image?.IsLegacyRelease == true ? " " + UiText.Get("Image.LegacyReleaseNote") : "") +
+            (hasNetFx3Payload ? "" : " " + UiText.Get("Text.ThisSourceHasNoNetFxPayload")) +
             (SkippedImageTools ? " " + UiText.Get("Tools.TrustedFallback") : ""),
             SkippedImageTools ? InfoBarSeverity.Warning : InfoBarSeverity.Informational,
             SkippedImageTools ? NoticeAction.CopyDetails : NoticeAction.None,
@@ -1072,7 +1091,7 @@ public sealed partial class MainWindow : Window
     private void UpdateModePresentation()
     {
         CustomChoices.Visibility = SelectedMode == BuildMode.Custom ? Visibility.Visible : Visibility.Collapsed;
-        CustomMediaSettings.Visibility = SelectedMode == BuildMode.Custom ? Visibility.Visible : Visibility.Collapsed;
+        CustomMediaSettings.Visibility = SelectedMode is BuildMode.Custom or BuildMode.Nano11 ? Visibility.Visible : Visibility.Collapsed;
         PresetPreview.Visibility = SelectedMode == BuildMode.Custom ? Visibility.Collapsed : Visibility.Visible;
         var presetOptions = PresetRemovalPreview.ForMode(SelectedMode);
         var presetRemovesEdgeFiles = presetOptions.Any(option => option.Id == "edge-files");
@@ -1085,12 +1104,14 @@ public sealed partial class MainWindow : Window
         {
             BuildMode.Tiny11 => "Original Tiny11 removals, including Edge/WebView2 and OneDrive binaries. Windows Update, Defender and recovery are kept. Choose Custom to change individual removals.",
             BuildMode.Tiny11Core => "Tiny11 Core removals, including irreversible component pruning. Choose Custom to change individual removals.",
+            BuildMode.Nano11 => "Core plus Nano11: smaller apps, features, drivers, fonts, services and a component store limited to the retained runtime and servicing families. Not a Windows replacement.",
             _ => "Start with nothing selected, then choose what to remove or disable. You can also list individual components, including protected items."
         });
         SourceMode.Text = UiText.Format("Mode.Selected", (ModeChoice.SelectedItem as ComboBoxItem)?.Content);
         MarkChoice(Tiny11Selection, SelectedMode == BuildMode.Tiny11);
         MarkChoice(CoreSelection, SelectedMode == BuildMode.Tiny11Core);
         MarkChoice(CustomSelection, SelectedMode == BuildMode.Custom);
+        MarkChoice(NanoSelection, SelectedMode == BuildMode.Nano11);
     }
 
     // The chosen card gets an accent outline and is announced as selected; unchosen cards keep full-strength text.
@@ -1099,6 +1120,29 @@ public sealed partial class MainWindow : Window
         card.Style = (Style)Application.Current.Resources[selected ? "ModeCardSelected" : "ModeCard"];
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetItemStatus(card, UiText.Get(selected ? "Common.Selected" : "Common.NotSelected"));
     }
+    private bool applyingSmallest;
+
+    /// <summary>
+    /// Nano11 builds the smallest ISO it can, so its output settings are shown as they will be built and cannot be
+    /// relaxed into a larger image. Every other mode keeps its own settings, so a Tiny11 or Core build can still be
+    /// made smaller by hand here.
+    /// </summary>
+    private void ApplySmallestOutput(bool smallest)
+    {
+        if (applyingSmallest) return;
+        applyingSmallest = true;
+        if (smallest)
+        {
+            CompressionChoice.SelectedIndex = (int)Compression.Recovery;
+            RedundantDataCheck.IsOn = true;
+            OmitSetupCheck.IsOn = true;
+            ShrinkBootCheck.IsChecked = true;
+        }
+        foreach (var control in new Control[] { CompressionChoice, RedundantDataCheck, OmitSetupCheck, ShrinkBootCheck })
+            control.IsEnabled = !smallest;
+        applyingSmallest = false;
+    }
+
     private void OnChoicesChanged(object sender, RoutedEventArgs args)
     {
         if (!initialized || applyingMode) return;
@@ -1127,6 +1171,7 @@ public sealed partial class MainWindow : Window
         NativePayloadWarning.IsOpen = directGroups;
         NativePayloadConsent.Visibility = directGroups ? Visibility.Visible : Visibility.Collapsed;
         RecipeLimitPanel.Visibility = SelectedMode == BuildMode.Custom && recipeIsoSizeLimit is not null ? Visibility.Visible : Visibility.Collapsed;
+        ApplySmallestOutput(SelectedMode == BuildMode.Nano11);
         RecipeLimitText.Text = recipeIsoSizeLimit is { } limit ? UiText.Format("CustomMedia.ReviewLimit", limit) : "";
         ExportInventoryButton.IsEnabled = !busy && inventory.Count > 0;
         UpdateNavigation();
@@ -1204,7 +1249,7 @@ public sealed partial class MainWindow : Window
         void Row(string key, object? value) => text.AppendLine(UiText.Format(key, value));
         Row("Review.Image", image?.Summary ?? UiText.Get("Image.NotInspected"));
         Row("Review.Mode", (ModeChoice.SelectedItem as ComboBoxItem)?.Content);
-        if (SelectedMode == BuildMode.Custom) Row("Review.CoreRemovals", YesNo(UsesCore));
+        if (SelectedMode is BuildMode.Custom) Row("Review.CoreRemovals", YesNo(UsesCore));
         if (recipe.IsoSizeLimitBytes is { } limit) Row("CustomMedia.ReviewLimit", limit);
         Row("Review.Source", recipe.SourcePath);
         Row("Review.Output", recipe.OutputPath);
@@ -1228,6 +1273,7 @@ public sealed partial class MainWindow : Window
         text.AppendLine();
         text.AppendLine(UiText.Get("Review.UnselectedKept"));
         if (recipe.Flavor == BuildFlavor.Core) text.AppendLine(UiText.Get("Review.CoreWarning"));
+        if (recipe.Flavor == BuildFlavor.Nano) text.AppendLine(UiText.Get("Review.NanoWarning"));
         if (recipe.ExpertActions.Length > 0) text.AppendLine(UiText.Get("Review.ExpertWarning"));
         text.AppendLine(UiText.Get("Review.PolicyWarning"));
         return text.ToString();

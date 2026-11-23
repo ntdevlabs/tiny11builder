@@ -26,7 +26,7 @@ internal static class PendingOperations
     public static bool IsPending(string state) =>
         Regex.Replace(state, @"\s+", " ").Trim().EndsWith("pending", StringComparison.OrdinalIgnoreCase);
 
-    public static string Refusal(BuildRecipe recipe) => (recipe.Flavor == BuildFlavor.Core ?
+    public static string Refusal(BuildRecipe recipe) => (recipe.Flavor is BuildFlavor.Core or BuildFlavor.Nano ?
         "Core stopped before trimming any component: the image has pending operations, and Core would delete the files needed to finish them at first boot. " :
         "Component payloads were not removed: the image has pending operations, and removing payloads would delete the files needed to finish them at first boot. ") +
         "Build without .NET 3.5, or build a serviceable Tiny11, which keeps those files. Pending actions are never reverted.";

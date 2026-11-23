@@ -10,6 +10,7 @@ namespace Tiny11Builder.Core.Tests;
 public sealed class BuildEngineTests
 {
     [Theory]
+    [InlineData(22000, "arm64", Compression.Recovery)]
     [InlineData(22621, "x64", Compression.Recovery)]
     [InlineData(22631, "arm64", Compression.Maximum)]
     [InlineData(26300, "x64", Compression.Recovery)]
@@ -33,6 +34,72 @@ public sealed class BuildEngineTests
             a[7..].Equals(fixture.Source, StringComparison.OrdinalIgnoreCase)));
         Assert.False(Directory.Exists(Path.Combine(result.WorkDirectory, "media")));
         Assert.Equal("completed", JsonSerializer.Deserialize<JobState>(File.ReadAllText(Path.Combine(result.WorkDirectory, "job.json")), JsonDefaults.Options)!.Status);
+    }
+
+    [Theory]
+    [InlineData(22000)]
+    [InlineData(22621)]
+    public async Task Requesting_netfx3_from_media_without_the_payload_is_refused_before_anything_changes(int build)
+    {
+        using var fixture = new BuildFixture(build);
+        var messages = new List<BuildProgress>();
+        var error = await Assert.ThrowsAsync<InvalidDataException>(() => fixture.Engine.BuildAsync(
+            fixture.Recipe with { EnableNetFx3 = true }, new ImmediateProgress<BuildProgress>(messages.Add), CancellationToken.None));
+        Assert.Contains("sources", error.Message);
+        Assert.Contains("Turn off .NET 3.5", error.Message);
+        // Refused before a job, mount or staging copy existed, so no stage had already run.
+        Assert.DoesNotContain(fixture.Runner.Calls, c => c.Contains("/Mount-Image"));
+        Assert.DoesNotContain(messages, m => m.Stage == "Copy media");
+    }
+
+    [Fact]
+    public async Task Media_that_carries_the_netfx3_payload_still_enables_it()
+    {
+        using var fixture = new BuildFixture(22000);
+        var sxs = Path.Combine(fixture.Source, "sources", "sxs");
+        Directory.CreateDirectory(sxs);
+        File.WriteAllText(Path.Combine(sxs, "netfx3.cab"), "fixture");
+        var result = await fixture.Engine.BuildAsync(fixture.Recipe with { EnableNetFx3 = true }, null, CancellationToken.None);
+        Assert.True(File.Exists(result.IsoPath));
+        Assert.Contains(fixture.Runner.Calls, c => c.Contains("/Enable-Feature") && c.Contains("/FeatureName:NetFx3"));
+    }
+
+    [Fact]
+    public async Task Twenty_one_H_two_media_can_be_added_and_offers_its_editions_for_selection()
+    {
+        using var fixture = new BuildFixture(22000);
+        var images = await fixture.Engine.InspectAsync(fixture.Source, fixture.Recipe.DismPath, CancellationToken.None);
+        var image = Assert.Single(images);
+        Assert.Equal(22000, image.Version.Build);
+        Assert.True(image.IsSupported);
+        Assert.True(image.IsLegacyRelease);
+        image.Validate();
+        // The picker defaults to the first usable edition; nothing filters 21H2 media out.
+        Assert.Equal(0, ImageDefaults.SelectPosition(images));
+    }
+
+    [Fact]
+    public async Task Twenty_one_H_two_builds_end_to_end_and_is_announced_as_an_older_codebase()
+    {
+        using var fixture = new BuildFixture(22000);
+        var messages = new List<BuildProgress>();
+        var result = await fixture.Engine.BuildAsync(fixture.Recipe,
+            new ImmediateProgress<BuildProgress>(messages.Add), CancellationToken.None);
+        Assert.True(File.Exists(result.IsoPath));
+        Assert.Contains(messages, m => m.Message.Contains("21H2") && m.Message.Contains("22000") &&
+            m.Message.Contains("predates the 22H2 removal plans"));
+        Assert.Contains(fixture.Runner.Calls, c => c.Contains("/Export-Image") && c.Contains("/SourceIndex:3"));
+    }
+
+    [Fact]
+    public async Task Twenty_one_H_two_refuses_to_build_below_the_21H2_floor_without_touching_the_source()
+    {
+        using var fixture = new BuildFixture(21999);
+        var original = File.ReadAllBytes(Path.Combine(fixture.Source, @"sources\install.wim"));
+        await Assert.ThrowsAsync<InvalidDataException>(() =>
+            fixture.Engine.BuildAsync(fixture.Recipe, null, CancellationToken.None));
+        Assert.Equal(original, File.ReadAllBytes(Path.Combine(fixture.Source, @"sources\install.wim")));
+        Assert.DoesNotContain(fixture.Runner.Calls, c => c.Contains("/Mount-Image"));
     }
 
     [Fact]
