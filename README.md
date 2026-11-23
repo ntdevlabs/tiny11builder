@@ -11,7 +11,7 @@ Your original source media is left unchanged.
 [Watch the 0.2.0 demo](https://youtu.be/Ijp3J8SYqLc) ·
 [Get help or report a problem](https://github.com/ntdevlabs/tiny11builder/issues)
 
-![Tiny11 Builder: choose Tiny11, Tiny11 Core or Custom from the welcome screen](docs/images/ui-welcome.png)
+![Tiny11 Builder: choose Tiny11, Tiny11 Core, Nano11 or Custom from the welcome screen](docs/images/ui-welcome.png)
 
 ## Get started
 
@@ -31,8 +31,9 @@ walkthrough, see the [usage guide](docs/usage.md).
 | **Tiny11** | A leaner image that keeps Windows Update, Defender and recovery. |
 | **Custom** | Choose removals yourself, or load a recipe and adjust it to your needs. |
 | **Tiny11 Core** | Disposable test VMs. Removes update and recovery support and disables Defender. |
+| **Nano11** | Core plus a stripped component store, drivers and fonts. The smallest mode; not a Windows replacement. |
 
-> **Try your image in a virtual machine first.** Core cannot be updated or
+> **Try your image in a virtual machine first.** Core and Nano11 cannot be updated or
 > serviced. Advanced Custom removals can break Windows, apps or devices.
 
 ## More control in 0.2.0

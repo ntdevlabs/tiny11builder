@@ -24,7 +24,8 @@ public sealed partial class BuildEngine
         }
         try
         {
-            await s.Dism.RunAsync(token, s.Recipe.Flavor == BuildFlavor.Core ?
+            // Core and Nano11 reset the base: both prune component payloads afterwards, so superseded copies are useless.
+            await s.Dism.RunAsync(token, s.Recipe.Flavor is BuildFlavor.Core or BuildFlavor.Nano ?
                 [$"/Image:{s.Mount}", "/Cleanup-Image", "/StartComponentCleanup", "/ResetBase"] :
                 [$"/Image:{s.Mount}", "/Cleanup-Image", "/StartComponentCleanup"]).ConfigureAwait(false);
         }

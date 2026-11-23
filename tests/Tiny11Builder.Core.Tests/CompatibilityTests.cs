@@ -140,12 +140,13 @@ public sealed class CompatibilityTests
     [Fact]
     public void Build_modes_have_exact_original_core_and_empty_custom_removal_sets()
     {
-        Assert.Equal(3, Enum.GetValues<BuildMode>().Length);
+        Assert.Equal(4, Enum.GetValues<BuildMode>().Length);
         Assert.Equal(CleanupCatalog.ForPreset(CleanupPreset.Original), CleanupCatalog.ForMode(BuildMode.Tiny11));
         var core = CleanupCatalog.Options.Where(o => o.Minimal || o.Id is
             "language-extras" or "edge-files" or "onedrive-files" or
             "hardware-bypass" or "reserved-storage" or "device-encryption").Select(o => o.Id).ToArray();
         Assert.Equal(core, CleanupCatalog.ForMode(BuildMode.Tiny11Core));
+        Assert.Equal(CleanupCatalog.ForMode(BuildMode.Tiny11Core), CleanupCatalog.ForMode(BuildMode.Nano11));
         Assert.Empty(CleanupCatalog.ForMode(BuildMode.Custom));
         Assert.Throws<ArgumentOutOfRangeException>(() => CleanupCatalog.ForMode((BuildMode)99));
     }
@@ -153,6 +154,7 @@ public sealed class CompatibilityTests
     [Theory]
     [InlineData(BuildMode.Tiny11, BuildFlavor.Regular)]
     [InlineData(BuildMode.Tiny11Core, BuildFlavor.Core)]
+    [InlineData(BuildMode.Nano11, BuildFlavor.Nano)]
     public void Fixed_modes_require_their_exact_removals_and_flavor(BuildMode mode, BuildFlavor flavor)
     {
         var recipe = new BuildRecipe
@@ -163,7 +165,7 @@ public sealed class CompatibilityTests
         recipe.ValidateOptions();
         Assert.Throws<InvalidDataException>(() => (recipe with { SelectedOptions = [] }).ValidateOptions());
         Assert.Throws<InvalidDataException>(() => (recipe with
-        { Flavor = flavor == BuildFlavor.Core ? BuildFlavor.Regular : BuildFlavor.Core }).ValidateOptions());
+        { Flavor = flavor == BuildFlavor.Regular ? BuildFlavor.Core : BuildFlavor.Regular }).ValidateOptions());
         Assert.Throws<InvalidDataException>(() => (recipe with
         {
             ExpertAcknowledged = true,
@@ -191,6 +193,8 @@ public sealed class CompatibilityTests
         { SelectedOptions = CleanupCatalog.ForMode(BuildMode.Tiny11) }));
         Assert.Equal(BuildMode.Tiny11Core, CleanupCatalog.ModeForRecipe(new()
         { Flavor = BuildFlavor.Core, SelectedOptions = CleanupCatalog.ForMode(BuildMode.Tiny11Core) }));
+        Assert.Equal(BuildMode.Nano11, CleanupCatalog.ModeForRecipe(new()
+        { Flavor = BuildFlavor.Nano, SelectedOptions = CleanupCatalog.ForMode(BuildMode.Nano11) }));
         var modifiedCore = new BuildRecipe { Flavor = BuildFlavor.Core, SelectedOptions = ["camera"] };
         Assert.Equal(BuildMode.Custom, CleanupCatalog.ModeForRecipe(modifiedCore));
         Assert.Equal(BuildFlavor.Core, modifiedCore.Flavor);
@@ -222,6 +226,8 @@ public sealed class CompatibilityTests
     public void Core_and_expert_actions_require_explicit_acknowledgement()
     {
         Assert.Throws<InvalidDataException>(() => new BuildRecipe { Flavor = BuildFlavor.Core }.ValidateOptions());
+        Assert.Throws<InvalidDataException>(() => new BuildRecipe { Flavor = BuildFlavor.Nano }.ValidateOptions());
+        new BuildRecipe { Flavor = BuildFlavor.Nano, CoreAcknowledged = true }.ValidateOptions();
         Assert.Throws<InvalidDataException>(() => new BuildRecipe
         { ExpertActions = [new(ImageItemKind.Service, "BootCriticalDriver", ExpertActionMode.Remove)] }.ValidateOptions());
         new BuildRecipe { Flavor = BuildFlavor.Core, CoreAcknowledged = true, ExpertAcknowledged = true,

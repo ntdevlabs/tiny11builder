@@ -199,6 +199,7 @@ public sealed partial class BuildEngine
                 ".NET 3.5" => recipe.EnableNetFx3,
                 "Component cleanup" => recipe.SelectedOptions.Contains("cleanup") || recipe.Flavor == BuildFlavor.Core,
                 "Core pruning" => recipe.Flavor == BuildFlavor.Core,
+                "Nano11 reductions" => recipe.Flavor == BuildFlavor.Nano,
                 "Redundant data" => recipe.RemoveRedundantData,
                 "Setup image" => SetupInstaller.RequiresBootEdit(recipe),
                 _ => true
@@ -211,7 +212,7 @@ public sealed partial class BuildEngine
             if (image.Version.Build > 26100) Log("Newer/Insider builds require matching tools; no boot certification is implied.");
             if (image.IsLegacyRelease) Log($"Windows 11 {WindowsImage.MinimumRelease} media (build {image.Version.Build}) predates the "
                 "22H2 removal plans. Supported items that are absent are logged as not present; verify the result in a VM.");
-            if (recipe.Flavor == BuildFlavor.Core || recipe.ExpertActions.Length > 0)
+            if (recipe.Flavor is BuildFlavor.Core or BuildFlavor.Nano || recipe.ExpertActions.Length > 0)
                 Log("WARNING: Core/expert output may not boot, update, recover, or provide antivirus protection. Test in an isolated VM.");
             Stage("Copy media", "Copying setup media, excluding the original multi-edition installation image.");
             session.StagingResult = await MediaStager.CopyAsync(media.RootPath, staging, execution.CopyWorkers,
@@ -400,10 +401,13 @@ public sealed partial class BuildEngine
                 recipe.TurboMode, "Optional features", token).ConfigureAwait(false);
             WarnDeferredCapabilities(session);
             // DISM refuses cleanup while operations are pending, and .NET 3.5 leaves some until first boot.
-            if (recipe.SelectedOptions.Contains("cleanup") || recipe.Flavor == BuildFlavor.Core)
+            if (recipe.SelectedOptions.Contains("cleanup") || recipe.Flavor is BuildFlavor.Core or BuildFlavor.Nano)
             {
                 Stage("Component cleanup", recipe.Flavor == BuildFlavor.Core ?
-                    "Cleaning and resetting the component base before Core payload pruning." : "Cleaning superseded components without ResetBase.");
+                    "Cleaning and resetting the component base before Core payload pruning." :
+                    recipe.Flavor == BuildFlavor.Nano ?
+                        "Cleaning and resetting the component base before the Nano11 store replacement." :
+                        "Cleaning superseded components without ResetBase.");
                 await CleanComponentsAsync(session, token).ConfigureAwait(false);
             }
             if (recipe.EnableNetFx3)
@@ -430,7 +434,10 @@ public sealed partial class BuildEngine
                 Stage("Core pruning", "Trimming Core component payloads and recovery files.");
                 imageOperations.TrimCore(mount, image.Architecture, Log, token, recipe.TurboMode);
             }
+            // Cross-check the retained families before any Nano11 file is removed, so a wrong image is refused early.
+            if (recipe.Flavor == BuildFlavor.Nano) Nano11Plan.RequireRetainedFamilies(mount, image.Architecture);
             imageOperations.ApplyNativeActions(mount, recipe.ExpertActions, Log, recipe.TurboMode);
+            if (recipe.Flavor == BuildFlavor.Nano) await TrimNano11Async(session, token).ConfigureAwait(false);
             if (recipe.RemoveRedundantData)
             {
                 Stage("Redundant data", "Removing offline cache, archived logs and crash reports.");

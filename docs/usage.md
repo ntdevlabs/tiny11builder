@@ -19,13 +19,25 @@ unchanged below for compatibility.
 | --- | --- |
 | Tiny11 | The fixed original-style removal set: bundled apps, Edge/WebView2 and OneDrive binaries, hardware-check settings, reserved-storage and automatic-encryption settings. Keeps Update, Defender, WinRE, Store and shared runtimes. Choose Custom to edit removals. |
 | Tiny11 Core | Applies changes before resetting the component base. Keeps common-controls/GDI+/CRT/servicing files, deletes other WinSxS component folders, removes WinRE and disables Windows Update and Defender. These changes cannot be reversed. Use only for test VMs. |
+| Nano11 | Core's removals plus the reductions from the nano11 builder: a longer app and package list, direct payload, driver-store and font removal, deleted services, and a component store replaced by only the retained runtime and servicing families (WinSxS is deleted and rebuilt from that list). Not a Windows 11 replacement. |
 | Custom | Starts with no removals selected. Choose individual removal groups or list preinstalled apps, protected system apps, optional features, language capabilities, CBS packages, services, drivers and WinSxS component folders. Features and services also offer disable-only. Core's irreversible removals are a separate, unchecked option with the same warning and acknowledgement. |
 
 The presets are original-style, not command-for-command copies of the scripts.
 Tiny11 cleans superseded components without `/ResetBase`, preserving the
 ability to uninstall existing updates. Core does reset the base, retains
 additional detected runtime/servicing families, and removes WinRE without
-creating the original script's empty placeholder. These compatibility choices
+creating the original script's empty placeholder.
+
+Nano11 mirrors nano11.ps1: it names 39 provisioned-app fragments, 31 package
+and capability families, direct payloads (Edge, WebView2, OneDrive setup, four
+IME folders, Web/Help/Cursors, TTS engines, Defender definitions, Temp), the
+printer/scanner/multi-function driver classes, all fonts except the plan's
+Latin families, five scheduled tasks and 14 services, then deletes WinSxS and
+rebuilds it from the retained families. It also keeps the original builder's
+empty `Recovery\winre.wim` placeholder. Audio services are deliberately not
+removed. Nano11 reads the image's own default UI language and architecture
+instead of asking, and it refuses to start its store replacement when a
+required family is missing rather than producing an unbootable image. These compatibility choices
 are unchanged by the reliability update; further reductions require separate
 Setup/boot testing.
 

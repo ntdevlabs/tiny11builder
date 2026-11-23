@@ -98,6 +98,9 @@ public static class CleanupCatalog
             "language-extras" or "edge-files" or "onedrive-files" or
             "hardware-bypass" or "reserved-storage" or "device-encryption")
             .Select(o => o.Id).ToArray(),
+        // Nano11 is Core plus its own built-in reductions (apps, features, payloads, component store), which
+        // the engine applies from Nano11Plan rather than from selectable groups. So its group set is Core's.
+        BuildMode.Nano11 => ForMode(BuildMode.Tiny11Core),
         BuildMode.Custom => [],
         _ => throw new ArgumentOutOfRangeException(nameof(mode))
     };
@@ -105,7 +108,10 @@ public static class CleanupCatalog
     public static BuildMode ModeForRecipe(BuildRecipe recipe)
     {
         if (recipe.Mode is { } mode) return mode;
-        var preset = recipe.Flavor == BuildFlavor.Core ? BuildMode.Tiny11Core : BuildMode.Tiny11;
+        var preset = recipe.Flavor switch
+        {
+            BuildFlavor.Core => BuildMode.Tiny11Core, BuildFlavor.Nano => BuildMode.Nano11, _ => BuildMode.Tiny11
+        };
         return !recipe.ShrinkBootImage && recipe.ExpertActions.Length == 0 && recipe.IsoSizeLimitBytes is null &&
             recipe.SelectedOptions.ToHashSet(StringComparer.Ordinal).SetEquals(ForMode(preset))
             ? preset : BuildMode.Custom;

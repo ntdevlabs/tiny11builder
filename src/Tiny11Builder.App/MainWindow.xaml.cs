@@ -159,7 +159,7 @@ public sealed partial class MainWindow : Window
 
     private FrameworkElement[] Panels => [WelcomePanel, SourcePanel, CleanupPanel, SettingsPanel, ReviewPanel, BuildPanel];
     private BuildMode SelectedMode => (BuildMode)ModeChoice.SelectedIndex;
-    private bool UsesCore => SelectedMode == BuildMode.Tiny11Core ||
+    private bool UsesCore => SelectedMode is BuildMode.Tiny11Core or BuildMode.Nano11 ||
         (SelectedMode == BuildMode.Custom && CustomCoreCheck.IsOn);
     private static string HostArchitecture => RuntimeInformation.OSArchitecture == Architecture.Arm64 ? "arm64" : "x64";
 
@@ -175,9 +175,9 @@ public sealed partial class MainWindow : Window
         if (WelcomePanel is null || ModeCards is null || RemovalModeCards is null || ReviewCards is null || SourceCards is null) return;
         var padding = ContentScroller.Padding;
         WelcomePanel.MinHeight = Math.Max(0, ContentScroller.ActualHeight - padding.Top - padding.Bottom);
-        var stacked = ContentScroller.ActualWidth - padding.Left - padding.Right < 560;
-        ArrangeModeCards(ModeCards, [RegularModeCard, CoreModeCard, CustomModeCard], stacked);
-        ArrangeModeCards(RemovalModeCards, [Tiny11Selection, CoreSelection, CustomSelection], stacked);
+        var stacked = ContentScroller.ActualWidth - padding.Left - padding.Right < 760;
+        ArrangeModeCards(ModeCards, [RegularModeCard, CoreModeCard, CustomModeCard, NanoModeCard], stacked);
+        ArrangeModeCards(RemovalModeCards, [Tiny11Selection, CoreSelection, CustomSelection, NanoSelection], stacked);
         ArrangeSourceCards(ContentScroller.ActualWidth - padding.Left - padding.Right);
         ReviewCards.ColumnDefinitions[1].Width = stacked ? new GridLength(0) : new GridLength(1, GridUnitType.Star);
         FrameworkElement[] review = [ReviewImageCard, ReviewModeCard, ReviewPathsCard, ReviewOptionsCard];
@@ -400,7 +400,8 @@ public sealed partial class MainWindow : Window
         SourcePath = SourcePathBox.Text.Trim(), ImageIndex = image?.Index ?? 1,
         WorkspacePath = WorkspaceBox.Text.Trim(), OutputPath = OutputBox.Text.Trim(),
         DismPath = servicingTool, OscdimgPath = isoTool,
-        Mode = SelectedMode, Flavor = UsesCore ? BuildFlavor.Core : BuildFlavor.Regular,
+        Mode = SelectedMode, Flavor = SelectedMode == BuildMode.Nano11 ? BuildFlavor.Nano :
+            UsesCore ? BuildFlavor.Core : BuildFlavor.Regular,
         CoreAcknowledged = coreAcknowledged, ExpertAcknowledged = ExpertAccepted,
         SelectedOptions = options.Where(o => o.Selected).Select(o => o.Option.Id).ToArray(),
         ExpertActions = inventory.Count > 0 ? inventory.Where(i => i.Selected).Select(i => i.Action).ToArray() : pendingActions,
@@ -1093,12 +1094,14 @@ public sealed partial class MainWindow : Window
         {
             BuildMode.Tiny11 => "Original Tiny11 removals, including Edge/WebView2 and OneDrive binaries. Windows Update, Defender and recovery are kept. Choose Custom to change individual removals.",
             BuildMode.Tiny11Core => "Tiny11 Core removals, including irreversible component pruning. Choose Custom to change individual removals.",
+            BuildMode.Nano11 => "Core plus Nano11: smaller apps, features, drivers, fonts, services and a component store limited to the retained runtime and servicing families. Not a Windows replacement.",
             _ => "Start with nothing selected, then choose what to remove or disable. You can also list individual components, including protected items."
         });
         SourceMode.Text = UiText.Format("Mode.Selected", (ModeChoice.SelectedItem as ComboBoxItem)?.Content);
         MarkChoice(Tiny11Selection, SelectedMode == BuildMode.Tiny11);
         MarkChoice(CoreSelection, SelectedMode == BuildMode.Tiny11Core);
         MarkChoice(CustomSelection, SelectedMode == BuildMode.Custom);
+        MarkChoice(NanoSelection, SelectedMode == BuildMode.Nano11);
     }
 
     // The chosen card gets an accent outline and is announced as selected; unchosen cards keep full-strength text.
@@ -1212,7 +1215,7 @@ public sealed partial class MainWindow : Window
         void Row(string key, object? value) => text.AppendLine(UiText.Format(key, value));
         Row("Review.Image", image?.Summary ?? UiText.Get("Image.NotInspected"));
         Row("Review.Mode", (ModeChoice.SelectedItem as ComboBoxItem)?.Content);
-        if (SelectedMode == BuildMode.Custom) Row("Review.CoreRemovals", YesNo(UsesCore));
+        if (SelectedMode is BuildMode.Custom) Row("Review.CoreRemovals", YesNo(UsesCore));
         if (recipe.IsoSizeLimitBytes is { } limit) Row("CustomMedia.ReviewLimit", limit);
         Row("Review.Source", recipe.SourcePath);
         Row("Review.Output", recipe.OutputPath);
@@ -1236,6 +1239,7 @@ public sealed partial class MainWindow : Window
         text.AppendLine();
         text.AppendLine(UiText.Get("Review.UnselectedKept"));
         if (recipe.Flavor == BuildFlavor.Core) text.AppendLine(UiText.Get("Review.CoreWarning"));
+        if (recipe.Flavor == BuildFlavor.Nano) text.AppendLine(UiText.Get("Review.NanoWarning"));
         if (recipe.ExpertActions.Length > 0) text.AppendLine(UiText.Get("Review.ExpertWarning"));
         text.AppendLine(UiText.Get("Review.PolicyWarning"));
         return text.ToString();

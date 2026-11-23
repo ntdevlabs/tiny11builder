@@ -37,18 +37,22 @@ public sealed class OfflineRegistry : IOfflineRegistry
                     value.Key.Replace("{ControlSet}", controlSet, StringComparison.Ordinal), value.Name, value.Value, log);
         if (recipe.PreferLocalAccount)
             Set(software, @"Microsoft\Windows\CurrentVersion\OOBE", "BypassNRO", 1, log);
-        if (recipe.Flavor == BuildFlavor.Core)
+        if (recipe.Flavor is BuildFlavor.Core or BuildFlavor.Nano)
         {
             foreach (var control in system.GetSubKeyNames().Where(key =>
                          System.Text.RegularExpressions.Regex.IsMatch(key, @"^ControlSet\d{3}$")))
             {
                 using var services = OpenWriteKey(system, control + @"\Services");
                 var names = services.GetSubKeyNames().ToHashSet(StringComparer.OrdinalIgnoreCase);
-                foreach (var name in new[] { "wuauserv", "UsoSvc", "WaaSMedicSvc", "WinDefend", "WdNisSvc", "WdNisDrv", "WdFilter", "Sense" })
+                // Nano11 additionally switches off Defender's driver/telemetry services, as its builder does.
+                var services = recipe.Flavor == BuildFlavor.Nano ?
+                    ["wuauserv", "UsoSvc", "WaaSMedicSvc", .. Nano11Plan.DisabledServices] :
+                    ["wuauserv", "UsoSvc", "WaaSMedicSvc", "WinDefend", "WdNisSvc", "WdNisDrv", "WdFilter", "Sense"];
+                foreach (var name in services)
                 {
                     if (!names.Contains(name)) { log($"Not present in {control}: service {name}"); continue; }
                     Set(system, $@"{control}\Services\{name}", "Start", 4, log);
-                    log($"Core: disabled service {control}\\{name}");
+                    log($"Disabled service {control}\\{name}");
                 }
             }
             Set(software, @"Policies\Microsoft\Windows\WindowsUpdate\AU", "NoAutoUpdate", 1, log);
@@ -56,6 +60,10 @@ public sealed class OfflineRegistry : IOfflineRegistry
             Set(software, @"Policies\Microsoft\Windows Defender", "DisableAntiSpyware", 1, log);
             Set(software, @"Policies\Microsoft\Windows Defender\Real-Time Protection", "DisableRealtimeMonitoring", 1, log);
         }
+        if (recipe.Flavor == BuildFlavor.Nano)
+            foreach (var value in Nano11Plan.Policies)
+                Set(value.Hive switch { PolicyHive.Software => software, PolicyHive.DefaultUser => user, _ => system },
+                    value.Key.Replace("{ControlSet}", controlSet, StringComparison.Ordinal), value.Name, value.Value, log);
     }
 
     public void ApplySetupBypass(string mountDirectory, Action<string> log)

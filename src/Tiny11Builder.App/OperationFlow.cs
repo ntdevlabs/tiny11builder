@@ -245,6 +245,7 @@ internal static class ResumeSupport
         var mode = CleanupCatalog.ModeForRecipe(recipe) switch
         {
             BuildMode.Tiny11 => "Tiny11", BuildMode.Tiny11Core => "Tiny11 Core",
+            BuildMode.Nano11 => UiText.Get("Mode.Nano11"),
             _ => UiText.Get(recipe.Flavor == BuildFlavor.Core ? "Resume.CustomCore" : "Mode.Custom")
         };
         var compression = UiText.Get(recipe.Compression switch
@@ -260,6 +261,7 @@ internal static class ResumeSupport
         text.AppendLine();
         text.AppendLine(UiText.Get("Resume.FrozenChoices"));
         if (recipe.Flavor == BuildFlavor.Core) text.AppendLine(UiText.Get("Resume.CoreWarning"));
+        if (recipe.Flavor == BuildFlavor.Nano) text.AppendLine(UiText.Get("Review.NanoWarning"));
         if (SetupLabels.Legacy(recipe) is { } legacy) text.AppendLine(legacy + ".");
         if (recipe.ExpertActions.Length > 0) text.AppendLine(UiText.Get("Resume.ExpertWarning"));
         text.AppendLine();
@@ -278,6 +280,7 @@ internal static class SetupLabels
         if (!SetupInstaller.RequiresLegacy(recipe)) return null;
         var core = recipe.Flavor == BuildFlavor.Core;
         var payload = recipe.ExpertActions.Any(a => a.Kind == ImageItemKind.ComponentPayload && a.Mode == ExpertActionMode.Remove);
+        if (recipe.Flavor == BuildFlavor.Nano) return UiText.FromEnglish(payload ? "Nano11 and component-payload removals" : "Nano11 removals");
         return UiText.FromEnglish(core && payload ? "Core and component-payload removals" : core ? "Core removals" :
             payload ? "component-payload removals" : "the selected removals");
     }

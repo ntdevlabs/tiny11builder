@@ -265,7 +265,7 @@
     "Text.CopyFromMicrosoftSVerifyYourDownloadSection": "Copy from Microsoft's Verify your download section",
     "Text.DownloadISOResumePartial": "Download ISO / resume partial",
     "Text.Components": "Components",
-    "Text.ChooseTiny11Tiny11CoreOrSelectYourOwnRemovals": "Choose Tiny11, Tiny11 Core, or select your own removals with Custom. Every change is recorded in the build log.",
+    "Text.ChooseTiny11Tiny11CoreOrSelectYourOwnRemovals": "Choose Tiny11, Tiny11 Core, Nano11, or select your own removals with Custom. Every change is recorded in the build log.",
     "Text.UseTiny11": "Use Tiny11",
     "Text.OriginalRemovalsKeepUpdateSupport": "Original removals. Keep update support.",
     "Text.UseTiny11Core": "Use Tiny11 Core",
@@ -692,6 +692,13 @@
     "Text.Windows1121H2OrNewerX64AndARM64Insider": "Windows 11 21H2 or newer · x64 and ARM64 · Insider / Canary",
     "Text.ChooseAWindows11ClientImage21H2OrNewer": "Choose a Windows 11 client image, 21H2 or newer, in x64 or ARM64 format.",
     "Image.LegacyReleaseNote": "Windows 11 21H2 is an older codebase. Removals that do not exist in this image are skipped and logged.",
-    "Text.ThisSourceHasNoNetFxPayload": "This source has no sources\\sxs payload, so .NET 3.5 cannot be enabled from it."
+    "Text.ThisSourceHasNoNetFxPayload": "This source has no sources\\sxs payload, so .NET 3.5 cannot be enabled from it.",
+    "Mode.Nano11": "Nano11",
+    "Review.NanoWarning": "Nano11 is not a Windows 11 replacement: updates, recovery, Defender, component servicing, printers, most fonts and many drivers are gone. Test it in an isolated VM.",
+    "Text.SelectNano11AndChooseAWindowsISO": "Select Nano11 and choose a Windows ISO.",
+    "Text.CorePlusAStrippedComponentStoreDriversAndFonts": "Core plus a stripped component store, drivers and fonts. The smallest mode.",
+    "Text.NotAWindowsReplacement": "Not a Windows replacement",
+    "Text.UseNano11": "Use Nano11",
+    "Text.SmallestImageTestVMsOnly": "Smallest image. Test VMs only."
   }
 }

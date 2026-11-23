@@ -265,7 +265,7 @@
     "Text.CopyFromMicrosoftSVerifyYourDownloadSection": "从微软“验证下载”部分复制",
     "Text.DownloadISOResumePartial": "下载 ISO／继续未完成的下载",
     "Text.Components": "组件",
-    "Text.ChooseTiny11Tiny11CoreOrSelectYourOwnRemovals": "选择 Tiny11、Tiny11 Core，或使用自定义模式自行选择移除项。所有更改都会记录到构建日志。",
+    "Text.ChooseTiny11Tiny11CoreOrSelectYourOwnRemovals": "选择 Tiny11、Tiny11 Core、Nano11，或使用 Custom 自行选择要移除的内容。所有更改都会记录在构建日志中。",
     "Text.UseTiny11": "使用 Tiny11",
     "Text.OriginalRemovalsKeepUpdateSupport": "原版移除设置，保留更新支持。",
     "Text.UseTiny11Core": "使用 Tiny11 Core",
@@ -692,6 +692,13 @@
     "Text.Windows1121H2OrNewerX64AndARM64Insider": "Windows 11 21H2 或更高版本 · x64 和 ARM64 · Insider／Canary",
     "Text.ChooseAWindows11ClientImage21H2OrNewer": "请选择 Windows 11 21H2 或更高版本的客户端映像，体系结构须为 x64 或 ARM64。",
     "Image.LegacyReleaseNote": "Windows 11 21H2 是较旧的代码库。此映像中不存在的移除项将被跳过并记录到日志。",
-    "Text.ThisSourceHasNoNetFxPayload": "此源没有 sources\\sxs 载荷，因此无法从中启用 .NET 3.5。"
+    "Text.ThisSourceHasNoNetFxPayload": "此源没有 sources\\sxs 载荷，因此无法从中启用 .NET 3.5。",
+    "Mode.Nano11": "Nano11",
+    "Review.NanoWarning": "Nano11 不能替代 Windows 11：更新、恢复环境、Defender、组件服务、打印机、大部分字体和许多驱动程序均已被移除。请在隔离的虚拟机中测试。",
+    "Text.SelectNano11AndChooseAWindowsISO": "选择 Nano11 并选择一个 Windows ISO。",
+    "Text.CorePlusAStrippedComponentStoreDriversAndFonts": "在 Core 基础上进一步精简组件存储、驱动和字体，是体积最小的模式。",
+    "Text.NotAWindowsReplacement": "不能替代 Windows",
+    "Text.UseNano11": "使用 Nano11",
+    "Text.SmallestImageTestVMsOnly": "体积最小的映像，仅供测试虚拟机使用。"
   }
 }

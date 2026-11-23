@@ -111,10 +111,10 @@
                                 <TextBlock Text="Build modes" FontSize="18" FontWeight="SemiBold" local:Translation.Properties="Text=Text.BuildModes"/>
                                 <Grid x:Name="ModeCards" Grid.Row="1" ColumnSpacing="16">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
                                     <Grid.RowDefinitions>
-                                        <RowDefinition Height="*"/><RowDefinition Height="0"/><RowDefinition Height="0"/>
+                                        <RowDefinition Height="*"/><RowDefinition Height="0"/><RowDefinition Height="0"/><RowDefinition Height="0"/>
                                     </Grid.RowDefinitions>
                                     <Button x:Name="RegularModeCard" Style="{StaticResource ModeCard}" Tag="Tiny11" Click="OnModeCardClick"
                                             AutomationProperties.Name="Tiny11" AutomationProperties.HelpText="Select Tiny11 and choose a Windows ISO." local:Translation.Properties="AutomationProperties.HelpText=Text.SelectTiny11AndChooseAWindowsISO">
@@ -159,6 +159,21 @@
                                             </StackPanel>
                                             <TextBlock Grid.Row="2" Text="Protected items included" FontSize="12" TextWrapping="Wrap"
                                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}" local:Translation.Properties="Text=Text.ProtectedItemsIncluded"/>
+                                        </Grid>
+                                    </Button>
+                                    <Button x:Name="NanoModeCard" Grid.Column="3" Style="{StaticResource ModeCard}" Tag="Nano11" Click="OnModeCardClick"
+                                            AutomationProperties.Name="Nano11" AutomationProperties.HelpText="Select Nano11 and choose a Windows ISO." local:Translation.Properties="AutomationProperties.Name=Mode.Nano11;AutomationProperties.HelpText=Text.SelectNano11AndChooseAWindowsISO">
+                                        <Grid RowSpacing="12">
+                                            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                                            <FontIcon Glyph="&#xE74B;" FontSize="64" HorizontalAlignment="Left"
+                                                      Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                                            <StackPanel Grid.Row="1" Spacing="10">
+                                                <TextBlock Text="Nano11" FontSize="20" FontWeight="SemiBold" TextWrapping="Wrap" local:Translation.Properties="Text=Mode.Nano11"/>
+                                                <TextBlock Text="Core plus a stripped component store, drivers and fonts. The smallest mode."
+                                                           Style="{StaticResource Secondary}" FontSize="13" local:Translation.Properties="Text=Text.CorePlusAStrippedComponentStoreDriversAndFonts"/>
+                                            </StackPanel>
+                                            <TextBlock Grid.Row="2" Text="Not a Windows replacement" FontSize="12" TextWrapping="Wrap"
+                                                       Foreground="{ThemeResource SystemFillColorCriticalBrush}" local:Translation.Properties="Text=Text.NotAWindowsReplacement"/>
                                         </Grid>
                                     </Button>
                                 </Grid>
@@ -226,17 +241,18 @@
                         </StackPanel>
                         <StackPanel x:Name="CleanupPanel" Visibility="Collapsed" Spacing="18">
                             <TextBlock Text="Components" Style="{StaticResource PageHeading}" local:Translation.Properties="Text=Text.Components"/>
-                            <TextBlock Text="Choose Tiny11, Tiny11 Core, or select your own removals with Custom. Every change is recorded in the build log." Style="{StaticResource Secondary}" local:Translation.Properties="Text=Text.ChooseTiny11Tiny11CoreOrSelectYourOwnRemovals"/>
+                            <TextBlock Text="Choose Tiny11, Tiny11 Core, Nano11, or select your own removals with Custom. Every change is recorded in the build log." Style="{StaticResource Secondary}" local:Translation.Properties="Text=Text.ChooseTiny11Tiny11CoreOrSelectYourOwnRemovals"/>
                             <Border Style="{StaticResource Card}">
                                 <StackPanel Spacing="14">
                                     <ComboBox x:Name="ModeChoice" Visibility="Collapsed" SelectionChanged="OnModeChanged" SelectedIndex="0">
                                         <ComboBoxItem Content="Tiny11"/>
                                         <ComboBoxItem Content="Tiny11 Core"/>
+                                        <ComboBoxItem Content="Nano11" local:Translation.Properties="Content=Mode.Nano11"/>
                                         <ComboBoxItem Content="Custom" local:Translation.Properties="Content=Mode.Custom"/>
                                     </ComboBox>
                                     <Grid x:Name="RemovalModeCards" ColumnSpacing="16">
-                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                        <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="0"/><RowDefinition Height="0"/></Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="0"/><RowDefinition Height="0"/><RowDefinition Height="0"/></Grid.RowDefinitions>
                                         <Button x:Name="Tiny11Selection" Style="{StaticResource ModeCard}" MinHeight="140" Click="OnRemovalModeClick" Tag="Tiny11" AutomationProperties.Name="Use Tiny11" local:Translation.Properties="AutomationProperties.Name=Text.UseTiny11">
                                             <StackPanel Spacing="12"><FontIcon Glyph="&#xE7F4;" FontSize="48" HorizontalAlignment="Left"/><TextBlock Text="Tiny11" FontSize="20" FontWeight="SemiBold"/><TextBlock Text="Original removals. Keep update support." Style="{StaticResource Secondary}" local:Translation.Properties="Text=Text.OriginalRemovalsKeepUpdateSupport"/></StackPanel>
                                         </Button>
@@ -245,6 +261,9 @@
                                         </Button>
                                         <Button x:Name="CustomSelection" Grid.Column="2" Style="{StaticResource ModeCard}" MinHeight="140" Click="OnRemovalModeClick" Tag="Custom" AutomationProperties.Name="Use Custom" local:Translation.Properties="AutomationProperties.Name=Text.UseCustom">
                                             <StackPanel Spacing="12"><FontIcon Glyph="&#xE713;" FontSize="48" HorizontalAlignment="Left"/><TextBlock Text="Custom" FontSize="20" FontWeight="SemiBold" local:Translation.Properties="Text=Mode.Custom"/><TextBlock Text="Choose individual removals." Style="{StaticResource Secondary}" local:Translation.Properties="Text=Text.ChooseIndividualRemovals"/></StackPanel>
+                                        </Button>
+                                        <Button x:Name="NanoSelection" Grid.Column="3" Style="{StaticResource ModeCard}" MinHeight="140" Click="OnRemovalModeClick" Tag="Nano11" AutomationProperties.Name="Use Nano11" local:Translation.Properties="AutomationProperties.Name=Text.UseNano11">
+                                            <StackPanel Spacing="12"><FontIcon Glyph="&#xE74B;" FontSize="48" HorizontalAlignment="Left"/><TextBlock Text="Nano11" FontSize="20" FontWeight="SemiBold" local:Translation.Properties="Text=Mode.Nano11"/><TextBlock Text="Smallest image. Test VMs only." Style="{StaticResource Secondary}" local:Translation.Properties="Text=Text.SmallestImageTestVMsOnly"/></StackPanel>
                                         </Button>
                                     </Grid>
                                     <TextBlock x:Name="ModeDescription" Style="{StaticResource Secondary}"/>

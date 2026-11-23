@@ -4,7 +4,8 @@ namespace Tiny11Builder.Core;
 
 public static class SetupInstaller
 {
-    public static bool RequiresLegacy(BuildRecipe recipe) => recipe.Flavor == BuildFlavor.Core || recipe.SelectedOptions.Any(NativePayloadOptions.IsSelected) ||
+    public static bool RequiresLegacy(BuildRecipe recipe) => recipe.Flavor is BuildFlavor.Core or BuildFlavor.Nano ||
+        recipe.SelectedOptions.Any(NativePayloadOptions.IsSelected) ||
         recipe.ExpertActions.Any(action => action.Kind is ImageItemKind.ComponentPayload or ImageItemKind.FilePayload && action.Mode == ExpertActionMode.Remove);
 
     internal static bool RequiresBootEdit(BuildRecipe recipe) =>

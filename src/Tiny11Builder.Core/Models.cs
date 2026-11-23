@@ -5,8 +5,9 @@ namespace Tiny11Builder.Core;
 
 public enum Compression { Recovery, Maximum, Fast }
 public enum CleanupPreset { Balanced, Minimal, Original, Custom }
-public enum BuildFlavor { Regular, Core }
-public enum BuildMode { Tiny11, Tiny11Core, Custom }
+public enum BuildFlavor { Regular, Core, Nano }
+// Custom stays last: the app maps a combo-box index onto this enum.
+public enum BuildMode { Tiny11, Tiny11Core, Nano11, Custom }
 public enum OptionKind { App, Feature, Capability, Policy, File }
 public enum PolicyHive { Software, DefaultUser, System }
 public enum ImageItemKind { ProvisionedApp, SystemApp, Feature, Capability, Package, Service, ComponentPayload, FilePayload }
@@ -102,8 +103,8 @@ public sealed record BuildRecipe
         if (SchemaVersion != 1 || !Enum.IsDefined(Compression) || !Enum.IsDefined(Flavor) ||
             (Mode is { } mode && !Enum.IsDefined(mode)))
             throw new InvalidDataException("This recipe version or compression mode is not supported.");
-        if (Flavor == BuildFlavor.Core && !CoreAcknowledged)
-            throw new InvalidDataException("Core requires acknowledgement of the loss of updates, recovery and antivirus protection.");
+        if (Flavor is BuildFlavor.Core or BuildFlavor.Nano && !CoreAcknowledged)
+            throw new InvalidDataException("Core and Nano11 require acknowledgement of the loss of updates, recovery and antivirus protection.");
         if (ExpertActions is null || ExpertActions.Any(action => action is null) ||
             (ExpertActions.Length > 0 && !ExpertAcknowledged))
             throw new InvalidDataException("Custom removals require acknowledgement of the risk of an unbootable image.");
@@ -140,11 +141,11 @@ public sealed record BuildRecipe
                 throw new InvalidDataException($"Unknown cleanup option: {id}");
         if (SelectedOptions.Any(NativePayloadOptions.IsSelected) && (!ExpertAcknowledged || Mode is not (null or BuildMode.Custom)))
             throw new InvalidDataException("Direct payload groups require Custom and the advanced-risk acknowledgement.");
-        if (Mode is BuildMode.Tiny11 or BuildMode.Tiny11Core &&
-            (Flavor != (Mode == BuildMode.Tiny11Core ? BuildFlavor.Core : BuildFlavor.Regular) ||
+        if (Mode is BuildMode.Tiny11 or BuildMode.Tiny11Core or BuildMode.Nano11 &&
+            (Flavor != (Mode switch { BuildMode.Tiny11Core => BuildFlavor.Core, BuildMode.Nano11 => BuildFlavor.Nano, _ => BuildFlavor.Regular }) ||
              ExpertActions.Length > 0 ||
              !SelectedOptions.ToHashSet(StringComparer.Ordinal).SetEquals(CleanupCatalog.ForMode(Mode.Value))))
-            throw new InvalidDataException("Use Custom for changes to the Tiny11 or Tiny11 Core removal sets.");
+            throw new InvalidDataException("Use Custom for changes to the Tiny11, Tiny11 Core or Nano11 removal sets.");
     }
 
     public static BuildRecipe Read(string path)
