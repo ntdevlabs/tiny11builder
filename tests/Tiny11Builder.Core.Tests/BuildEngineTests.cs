@@ -37,6 +37,20 @@ public sealed class BuildEngineTests
     }
 
     [Fact]
+    public async Task Twenty_one_H_two_media_can_be_added_and_offers_its_editions_for_selection()
+    {
+        using var fixture = new BuildFixture(22000);
+        var images = await fixture.Engine.InspectAsync(fixture.Source, fixture.Recipe.DismPath, CancellationToken.None);
+        var image = Assert.Single(images);
+        Assert.Equal(22000, image.Version.Build);
+        Assert.True(image.IsSupported);
+        Assert.True(image.IsLegacyRelease);
+        image.Validate();
+        // The picker defaults to the first usable edition; nothing filters 21H2 media out.
+        Assert.Equal(0, ImageDefaults.SelectPosition(images));
+    }
+
+    [Fact]
     public async Task Twenty_one_H_two_builds_end_to_end_and_is_announced_as_an_older_codebase()
     {
         using var fixture = new BuildFixture(22000);
